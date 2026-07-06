@@ -552,6 +552,9 @@ components:
     ScheduleBlockInput:
       type: object
       properties:
+        id:
+          type: string
+          description: "Stable block id. Include for existing blocks so Google Calendar sync mapping is preserved; omit for newly added blocks and the server will assign one."
         day:
           $ref: "#/components/schemas/DayOfWeek"
         startTime:

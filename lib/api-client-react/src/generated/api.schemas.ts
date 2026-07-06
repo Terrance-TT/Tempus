@@ -140,6 +140,8 @@ export interface Schedule {
 }
 
 export interface ScheduleBlockInput {
+  /** Stable block id. Include for existing blocks so Google Calendar sync mapping is preserved; omit for newly added blocks and the server will assign one. */
+  id?: string;
   day: DayOfWeek;
   startTime: string;
   endTime: string;

@@ -189,6 +189,7 @@ export const UpdateScheduleParams = zod.object({
 export const UpdateScheduleBody = zod.object({
   "deviceId": zod.string(),
   "blocks": zod.array(zod.object({
+  "id": zod.string().optional().describe('Stable block id. Include for existing blocks so Google Calendar sync mapping is preserved; omit for newly added blocks and the server will assign one.'),
   "day": zod.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
   "startTime": zod.string(),
   "endTime": zod.string(),

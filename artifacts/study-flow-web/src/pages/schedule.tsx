@@ -84,6 +84,7 @@ export default function Schedule() {
       {
         onSuccess: (data) => {
           toast({ title: "Synced to Google Calendar", description: `${data.syncedCount} event(s) up to date.` });
+          queryClient.invalidateQueries({ queryKey: getGetScheduleCalendarSyncsQueryKey(id) });
         },
         onError: (err: any) => {
           if (err?.status === 409) {
@@ -164,6 +165,7 @@ export default function Schedule() {
     if (!schedule || !id) return;
     
     let newBlocks: ScheduleBlockInput[] = [...schedule.blocks].map(b => ({
+      id: b.id,
       day: b.day,
       startTime: b.startTime,
       endTime: b.endTime,
@@ -176,6 +178,7 @@ export default function Schedule() {
       const index = schedule.blocks.findIndex(b => b.id === editingBlock.id);
       if (index !== -1) {
         newBlocks[index] = {
+          id: editingBlock.id,
           day: editingBlock.day,
           title: editTitle,
           startTime: editStart,
@@ -201,6 +204,7 @@ export default function Schedule() {
       {
         onSuccess: (data) => {
           queryClient.setQueryData(getGetScheduleQueryKey(id, { deviceId: deviceId || "" }), data);
+          queryClient.invalidateQueries({ queryKey: getGetScheduleCalendarSyncsQueryKey(id) });
           setEditingBlock(null);
           setAddingForDay(null);
           toast({ title: "Schedule updated" });
@@ -212,6 +216,7 @@ export default function Schedule() {
   const handleDeleteBlock = (blockId: string) => {
     if (!schedule || !id || !deviceId) return;
     const newBlocks = schedule.blocks.filter(b => b.id !== blockId).map(b => ({
+      id: b.id,
       day: b.day,
       startTime: b.startTime,
       endTime: b.endTime,
@@ -225,6 +230,7 @@ export default function Schedule() {
       {
         onSuccess: (data) => {
           queryClient.setQueryData(getGetScheduleQueryKey(id, { deviceId: deviceId || "" }), data);
+          queryClient.invalidateQueries({ queryKey: getGetScheduleCalendarSyncsQueryKey(id) });
           toast({ title: "Block removed" });
         }
       }

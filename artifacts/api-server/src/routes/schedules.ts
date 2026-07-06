@@ -351,7 +351,7 @@ router.patch("/schedules/:id", async (req, res) => {
   }
 
   const blocks: ScheduleBlock[] = body.blocks.map((block) => ({
-    id: randomUUID(),
+    id: block.id || randomUUID(),
     day: block.day,
     startTime: block.startTime,
     endTime: block.endTime,
