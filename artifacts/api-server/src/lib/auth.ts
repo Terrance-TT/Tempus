@@ -1,5 +1,14 @@
 import { getAuth } from "@clerk/express";
 import type { Request } from "express";
+import { randomUUID } from "node:crypto";
+
+// Clerk user ids always take the form "user_<random>". Real mobile/anonymous
+// deviceIds are generated client-side (see artifacts/study-flow's
+// useDeviceId.ts and study-flow-web's device id generation) and never take
+// this shape. This lets us detect and reject attempts to read/write
+// account-owned rows by guessing/replaying a Clerk userId as a deviceId
+// without an authenticated session.
+const CLERK_USER_ID_PATTERN = /^user_/;
 
 /**
  * Resolves the effective tenant/owner id used to scope commitments and
@@ -12,8 +21,15 @@ import type { Request } from "express";
  *   fall back to the client-supplied deviceId, exactly as before Clerk was
  *   introduced. This keeps the mobile app's existing deviceId-based flow
  *   completely unaffected.
+ * - Unauthenticated requests that supply a deviceId shaped like a Clerk user
+ *   id are never trusted — that would let someone who merely knows (or
+ *   guesses) another user's Clerk id read or write that user's account-owned
+ *   rows without ever signing in. Such requests are rebound to a fresh
+ *   random id that cannot match any stored row, so they see/affect nothing.
  */
 export function resolveOwnerId(req: Request, providedDeviceId: string): string {
   const auth = getAuth(req);
-  return auth?.userId ?? providedDeviceId;
+  if (auth?.userId) return auth.userId;
+  if (CLERK_USER_ID_PATTERN.test(providedDeviceId)) return randomUUID();
+  return providedDeviceId;
 }

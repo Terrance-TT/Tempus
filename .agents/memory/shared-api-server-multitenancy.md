@@ -58,3 +58,11 @@ Both the web (`study-flow-web`) and mobile (`study-flow`) apps share it.
   extra OAuth scope Clerk doesn't expose, set up a **separate**, purpose-specific
   OAuth app (own client id/secret, own connect/callback routes, own token storage
   table) rather than trying to extend the Clerk connection.
+
+- The `resolveOwnerId` session-override pattern has a spoofing gap: an unauthenticated
+  caller who merely knows another user's Clerk id can pass it as `deviceId` and read/write
+  that account's rows, since the fallback path doesn't require a session. Close it by
+  detecting the auth provider's id shape (e.g. Clerk ids start with `user_`) and rebinding
+  any unauthenticated request using that shape to a fresh random id instead of trusting it.
+  **Why:** real anonymous device ids are generated client-side and never take the auth
+  provider's id shape, so this only ever blocks spoofing attempts, never legitimate traffic.
