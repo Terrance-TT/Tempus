@@ -32,7 +32,7 @@ export default function History() {
     e.stopPropagation();
     if (!deviceId) return;
     deleteSchedule.mutate(
-      { id },
+      { id, params: { deviceId } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListSchedulesQueryKey({ deviceId }) });

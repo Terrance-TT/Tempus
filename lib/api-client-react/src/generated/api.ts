@@ -22,9 +22,12 @@ import type {
 import type {
   Commitment,
   CreateCommitmentInput,
+  DeleteCommitmentParams,
+  DeleteScheduleParams,
   ExtractCommitmentsInput,
   GenerateScheduleInput,
   GenerateScheduleResult,
+  GetScheduleParams,
   HealthStatus,
   ListCommitmentsParams,
   ListSchedulesParams,
@@ -436,20 +439,29 @@ export const useUpdateCommitment = <TError = ErrorType<unknown>,
       return useMutation(getUpdateCommitmentMutationOptions(options));
     }
 
-export const getDeleteCommitmentUrl = (id: string,) => {
+export const getDeleteCommitmentUrl = (id: string,
+    params: DeleteCommitmentParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/commitments/${id}`
+  return stringifiedParams.length > 0 ? `/api/commitments/${id}?${stringifiedParams}` : `/api/commitments/${id}`
 }
 
 /**
  * @summary Delete a commitment
  */
-export const deleteCommitment = async (id: string, options?: RequestInit): Promise<void> => {
+export const deleteCommitment = async (id: string,
+    params: DeleteCommitmentParams, options?: RequestInit): Promise<void> => {
 
-  return customFetch<void>(getDeleteCommitmentUrl(id),
+  return customFetch<void>(getDeleteCommitmentUrl(id,params),
   {
     ...options,
     method: 'DELETE'
@@ -462,8 +474,8 @@ export const deleteCommitment = async (id: string, options?: RequestInit): Promi
 
 
 export const getDeleteCommitmentMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCommitment>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteCommitment>>, TError,{id: string}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCommitment>>, TError,{id: string;params: DeleteCommitmentParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCommitment>>, TError,{id: string;params: DeleteCommitmentParams}, TContext> => {
 
 const mutationKey = ['deleteCommitment'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -475,10 +487,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCommitment>>, {id: string}> = (props) => {
-          const {id} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCommitment>>, {id: string;params: DeleteCommitmentParams}> = (props) => {
+          const {id,params} = props ?? {};
 
-          return  deleteCommitment(id,requestOptions)
+          return  deleteCommitment(id,params,requestOptions)
         }
 
 
@@ -496,11 +508,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Delete a commitment
  */
 export const useDeleteCommitment = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCommitment>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCommitment>>, TError,{id: string;params: DeleteCommitmentParams}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteCommitment>>,
         TError,
-        {id: string},
+        {id: string;params: DeleteCommitmentParams},
         TContext
       > => {
       return useMutation(getDeleteCommitmentMutationOptions(options));
@@ -590,20 +602,29 @@ export function useListSchedules<TData = Awaited<ReturnType<typeof listSchedules
 
 
 
-export const getGetScheduleUrl = (id: string,) => {
+export const getGetScheduleUrl = (id: string,
+    params: GetScheduleParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/schedules/${id}`
+  return stringifiedParams.length > 0 ? `/api/schedules/${id}?${stringifiedParams}` : `/api/schedules/${id}`
 }
 
 /**
  * @summary Get a schedule with its blocks
  */
-export const getSchedule = async (id: string, options?: RequestInit): Promise<Schedule> => {
+export const getSchedule = async (id: string,
+    params: GetScheduleParams, options?: RequestInit): Promise<Schedule> => {
 
-  return customFetch<Schedule>(getGetScheduleUrl(id),
+  return customFetch<Schedule>(getGetScheduleUrl(id,params),
   {
     ...options,
     method: 'GET'
@@ -616,23 +637,25 @@ export const getSchedule = async (id: string, options?: RequestInit): Promise<Sc
 
 
 
-export const getGetScheduleQueryKey = (id: string,) => {
+export const getGetScheduleQueryKey = (id: string,
+    params?: GetScheduleParams,) => {
     return [
-    `/api/schedules/${id}`
+    `/api/schedules/${id}`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetScheduleQueryOptions = <TData = Awaited<ReturnType<typeof getSchedule>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSchedule>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetScheduleQueryOptions = <TData = Awaited<ReturnType<typeof getSchedule>>, TError = ErrorType<unknown>>(id: string,
+    params: GetScheduleParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSchedule>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetScheduleQueryKey(id);
+  const queryKey =  queryOptions?.queryKey ?? getGetScheduleQueryKey(id,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSchedule>>> = ({ signal }) => getSchedule(id, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSchedule>>> = ({ signal }) => getSchedule(id,params, { signal, ...requestOptions });
 
 
 
@@ -650,11 +673,12 @@ export type GetScheduleQueryError = ErrorType<unknown>
  */
 
 export function useGetSchedule<TData = Awaited<ReturnType<typeof getSchedule>>, TError = ErrorType<unknown>>(
- id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSchedule>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ id: string,
+    params: GetScheduleParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSchedule>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetScheduleQueryOptions(id,options)
+  const queryOptions = getGetScheduleQueryOptions(id,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -739,20 +763,29 @@ export const useUpdateSchedule = <TError = ErrorType<unknown>,
       return useMutation(getUpdateScheduleMutationOptions(options));
     }
 
-export const getDeleteScheduleUrl = (id: string,) => {
+export const getDeleteScheduleUrl = (id: string,
+    params: DeleteScheduleParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/schedules/${id}`
+  return stringifiedParams.length > 0 ? `/api/schedules/${id}?${stringifiedParams}` : `/api/schedules/${id}`
 }
 
 /**
  * @summary Delete a schedule
  */
-export const deleteSchedule = async (id: string, options?: RequestInit): Promise<void> => {
+export const deleteSchedule = async (id: string,
+    params: DeleteScheduleParams, options?: RequestInit): Promise<void> => {
 
-  return customFetch<void>(getDeleteScheduleUrl(id),
+  return customFetch<void>(getDeleteScheduleUrl(id,params),
   {
     ...options,
     method: 'DELETE'
@@ -765,8 +798,8 @@ export const deleteSchedule = async (id: string, options?: RequestInit): Promise
 
 
 export const getDeleteScheduleMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSchedule>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteSchedule>>, TError,{id: string}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSchedule>>, TError,{id: string;params: DeleteScheduleParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSchedule>>, TError,{id: string;params: DeleteScheduleParams}, TContext> => {
 
 const mutationKey = ['deleteSchedule'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -778,10 +811,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSchedule>>, {id: string}> = (props) => {
-          const {id} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSchedule>>, {id: string;params: DeleteScheduleParams}> = (props) => {
+          const {id,params} = props ?? {};
 
-          return  deleteSchedule(id,requestOptions)
+          return  deleteSchedule(id,params,requestOptions)
         }
 
 
@@ -799,11 +832,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Delete a schedule
  */
 export const useDeleteSchedule = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSchedule>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSchedule>>, TError,{id: string;params: DeleteScheduleParams}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteSchedule>>,
         TError,
-        {id: string},
+        {id: string;params: DeleteScheduleParams},
         TContext
       > => {
       return useMutation(getDeleteScheduleMutationOptions(options));

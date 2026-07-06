@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator } from
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
+import { useDeviceId } from "@/hooks/useDeviceId";
 import { useGetSchedule, DayOfWeek, ScheduleBlockCategory } from "@workspace/api-client-react";
 
 const DAY_ORDER: DayOfWeek[] = [
@@ -55,10 +56,15 @@ export default function ScheduleScreen() {
   const colors = useColors();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { deviceId } = useDeviceId();
 
-  const { data: schedule, isLoading } = useGetSchedule(id ?? "", {
-    query: { enabled: !!id } as any,
-  });
+  const { data: schedule, isLoading } = useGetSchedule(
+    id ?? "",
+    { deviceId: deviceId ?? "" },
+    {
+      query: { enabled: !!id && !!deviceId } as any,
+    },
+  );
 
   if (isLoading || !schedule) {
     return (

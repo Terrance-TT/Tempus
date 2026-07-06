@@ -56,6 +56,7 @@ export interface CreateCommitmentInput {
 }
 
 export interface UpdateCommitmentInput {
+  deviceId: string;
   title?: string;
   type?: CommitmentType;
   daysOfWeek?: DayOfWeek[];
@@ -184,7 +185,19 @@ export type ListCommitmentsParams = {
 deviceId: string;
 };
 
+export type DeleteCommitmentParams = {
+deviceId: string;
+};
+
 export type ListSchedulesParams = {
+deviceId: string;
+};
+
+export type GetScheduleParams = {
+deviceId: string;
+};
+
+export type DeleteScheduleParams = {
 deviceId: string;
 };
 

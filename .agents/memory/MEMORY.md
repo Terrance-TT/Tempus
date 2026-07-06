@@ -1,1 +1,1 @@
-- [Shared api-server multitenancy](shared-api-server-multitenancy.md) — device-scoped write routes must check deviceId ownership; drafts use persisted scope; new input fields stay optional for mobile/web compat.
+- [Shared api-server multitenancy](shared-api-server-multitenancy.md) — every read/write/delete route must scope by deviceId (IDOR); required new input fields break mobile/web compat; orval path+query param name-collision barrel fix.

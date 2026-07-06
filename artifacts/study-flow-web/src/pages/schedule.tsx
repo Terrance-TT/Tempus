@@ -51,7 +51,8 @@ export default function Schedule() {
 
   const { data: schedule, isLoading } = useGetSchedule(
     id || "",
-    { query: { enabled: !!id, queryKey: getGetScheduleQueryKey(id || "") } }
+    { deviceId: deviceId || "" },
+    { query: { enabled: !!id && !!deviceId, queryKey: getGetScheduleQueryKey(id || "", { deviceId: deviceId || "" }) } }
   );
 
   const deleteSchedule = useDeleteSchedule();
@@ -61,7 +62,7 @@ export default function Schedule() {
   const handleDelete = () => {
     if (!id || !deviceId) return;
     deleteSchedule.mutate(
-      { id },
+      { id, params: { deviceId } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListSchedulesQueryKey({ deviceId }) });
@@ -83,7 +84,7 @@ export default function Schedule() {
       { id, data: { deviceId, instruction: aiInstruction } },
       {
         onSuccess: (data) => {
-          queryClient.setQueryData(getGetScheduleQueryKey(id), data);
+          queryClient.setQueryData(getGetScheduleQueryKey(id, { deviceId: deviceId || "" }), data);
           setAiInstruction("");
           toast({ title: "Schedule updated by AI!" });
         },
@@ -134,7 +135,7 @@ export default function Schedule() {
       { id, data: { deviceId, blocks: newBlocks } },
       {
         onSuccess: (data) => {
-          queryClient.setQueryData(getGetScheduleQueryKey(id), data);
+          queryClient.setQueryData(getGetScheduleQueryKey(id, { deviceId: deviceId || "" }), data);
           setEditingBlock(null);
           setAddingForDay(null);
           toast({ title: "Schedule updated" });
@@ -158,7 +159,7 @@ export default function Schedule() {
       { id, data: { deviceId, blocks: newBlocks } },
       {
         onSuccess: (data) => {
-          queryClient.setQueryData(getGetScheduleQueryKey(id), data);
+          queryClient.setQueryData(getGetScheduleQueryKey(id, { deviceId: deviceId || "" }), data);
           toast({ title: "Block removed" });
         }
       }

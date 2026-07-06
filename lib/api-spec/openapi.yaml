@@ -123,6 +123,11 @@ paths:
           required: true
           schema:
             type: string
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         "204":
           description: Deleted
@@ -154,6 +159,11 @@ paths:
       parameters:
         - name: id
           in: path
+          required: true
+          schema:
+            type: string
+        - name: deviceId
+          in: query
           required: true
           schema:
             type: string
@@ -195,6 +205,11 @@ paths:
       parameters:
         - name: id
           in: path
+          required: true
+          schema:
+            type: string
+        - name: deviceId
+          in: query
           required: true
           schema:
             type: string
@@ -334,6 +349,8 @@ components:
     UpdateCommitmentInput:
       type: object
       properties:
+        deviceId:
+          type: string
         title:
           type: string
         type:
@@ -349,6 +366,8 @@ components:
         notes:
           type: string
           nullable: true
+      required:
+        - deviceId
     ExtractCommitmentsInput:
       type: object
       properties:

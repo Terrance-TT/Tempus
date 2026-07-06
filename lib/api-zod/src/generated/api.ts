@@ -95,6 +95,7 @@ export const UpdateCommitmentParams = zod.object({
 })
 
 export const UpdateCommitmentBody = zod.object({
+  "deviceId": zod.string(),
   "title": zod.string().optional(),
   "type": zod.enum(['class', 'extracurricular', 'routine']).optional(),
   "daysOfWeek": zod.array(zod.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])).optional(),
@@ -123,6 +124,10 @@ export const DeleteCommitmentParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const DeleteCommitmentQueryParams = zod.object({
+  "deviceId": zod.coerce.string()
+})
+
 export const DeleteCommitmentResponse = zod.void()
 
 
@@ -148,6 +153,10 @@ export const ListSchedulesResponse = zod.array(ListSchedulesResponseItem)
  */
 export const GetScheduleParams = zod.object({
   "id": zod.coerce.string()
+})
+
+export const GetScheduleQueryParams = zod.object({
+  "deviceId": zod.coerce.string()
 })
 
 export const GetScheduleResponse = zod.object({
@@ -213,6 +222,10 @@ export const UpdateScheduleResponse = zod.object({
  */
 export const DeleteScheduleParams = zod.object({
   "id": zod.coerce.string()
+})
+
+export const DeleteScheduleQueryParams = zod.object({
+  "deviceId": zod.coerce.string()
 })
 
 export const DeleteScheduleResponse = zod.void()

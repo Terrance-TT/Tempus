@@ -6,7 +6,9 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 import {
   ListSchedulesQueryParams,
   GetScheduleParams,
+  GetScheduleQueryParams,
   DeleteScheduleParams,
+  DeleteScheduleQueryParams,
   GenerateScheduleBody,
   UpdateScheduleParams,
   UpdateScheduleBody,
@@ -264,7 +266,11 @@ router.get("/schedules", async (req, res) => {
 
 router.get("/schedules/:id", async (req, res) => {
   const { id } = GetScheduleParams.parse(req.params);
-  const [row] = await db.select().from(schedules).where(eq(schedules.id, id));
+  const { deviceId } = GetScheduleQueryParams.parse(req.query);
+  const [row] = await db
+    .select()
+    .from(schedules)
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, deviceId)));
   if (!row) {
     res.status(404).json({ message: "Schedule not found" });
     return;
@@ -298,7 +304,7 @@ router.patch("/schedules/:id", async (req, res) => {
   const [updated] = await db
     .update(schedules)
     .set({ blocks, status: "complete", clarifyingQuestions: [] })
-    .where(eq(schedules.id, id))
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, body.deviceId)))
     .returning();
 
   res.json(serializeSchedule(updated));
@@ -306,7 +312,18 @@ router.patch("/schedules/:id", async (req, res) => {
 
 router.delete("/schedules/:id", async (req, res) => {
   const { id } = DeleteScheduleParams.parse(req.params);
-  await db.delete(schedules).where(eq(schedules.id, id));
+  const { deviceId } = DeleteScheduleQueryParams.parse(req.query);
+  const [existing] = await db
+    .select()
+    .from(schedules)
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, deviceId)));
+  if (!existing) {
+    res.status(404).json({ message: "Schedule not found" });
+    return;
+  }
+  await db
+    .delete(schedules)
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, deviceId)));
   res.status(204).end();
 });
 
@@ -334,7 +351,7 @@ router.post("/schedules/:id/revise", async (req, res) => {
   const [updated] = await db
     .update(schedules)
     .set({ blocks: revised, status: "complete", clarifyingQuestions: [] })
-    .where(eq(schedules.id, id))
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, body.deviceId)))
     .returning();
 
   res.json(serializeSchedule(updated));

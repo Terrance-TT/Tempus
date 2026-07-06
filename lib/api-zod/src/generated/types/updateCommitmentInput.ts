@@ -9,6 +9,7 @@ import type { CommitmentType } from './commitmentType';
 import type { DayOfWeek } from './dayOfWeek';
 
 export interface UpdateCommitmentInput {
+  deviceId: string;
   title?: string;
   type?: CommitmentType;
   daysOfWeek?: DayOfWeek[];

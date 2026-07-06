@@ -74,9 +74,9 @@ export default function CommitmentsScreen() {
     endTime: string;
     notes?: string | null;
   }) => {
-    if (modalMode === "edit" && editing) {
+    if (modalMode === "edit" && editing && deviceId) {
       updateCommitment.mutate(
-        { id: editing.id, data },
+        { id: editing.id, data: { deviceId, ...data } },
         { onSuccess: closeModal }
       );
     } else if (deviceId) {
@@ -120,7 +120,10 @@ export default function CommitmentsScreen() {
                 setEditing(c);
                 setModalMode("edit");
               }}
-              onDelete={() => deleteCommitment.mutate({ id: c.id })}
+              onDelete={() =>
+                deviceId &&
+                deleteCommitment.mutate({ id: c.id, params: { deviceId } })
+              }
             />
           ))}
           <Pressable

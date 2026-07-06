@@ -93,7 +93,7 @@ export default function Create() {
   const handleDeleteCommitment = (id: string) => {
     if (!deviceId) return;
     deleteCommitment.mutate(
-      { id },
+      { id, params: { deviceId } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListCommitmentsQueryKey({ deviceId }) });

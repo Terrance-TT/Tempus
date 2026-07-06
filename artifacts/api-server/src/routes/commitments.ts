@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, commitments } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import {
@@ -8,6 +8,7 @@ import {
   UpdateCommitmentParams,
   UpdateCommitmentBody,
   DeleteCommitmentParams,
+  DeleteCommitmentQueryParams,
   ExtractCommitmentsFromImageBody,
 } from "@workspace/api-zod";
 
@@ -200,7 +201,7 @@ router.patch("/commitments/:id", async (req, res) => {
       ...(body.endTime !== undefined ? { endTime: body.endTime } : {}),
       ...(body.notes !== undefined ? { notes: body.notes } : {}),
     })
-    .where(eq(commitments.id, id))
+    .where(and(eq(commitments.id, id), eq(commitments.deviceId, body.deviceId)))
     .returning();
 
   if (!row) {
@@ -213,7 +214,18 @@ router.patch("/commitments/:id", async (req, res) => {
 
 router.delete("/commitments/:id", async (req, res) => {
   const { id } = DeleteCommitmentParams.parse(req.params);
-  await db.delete(commitments).where(eq(commitments.id, id));
+  const { deviceId } = DeleteCommitmentQueryParams.parse(req.query);
+  const [existing] = await db
+    .select()
+    .from(commitments)
+    .where(and(eq(commitments.id, id), eq(commitments.deviceId, deviceId)));
+  if (!existing) {
+    res.status(404).json({ message: "Commitment not found" });
+    return;
+  }
+  await db
+    .delete(commitments)
+    .where(and(eq(commitments.id, id), eq(commitments.deviceId, deviceId)));
   res.status(204).end();
 });
 
