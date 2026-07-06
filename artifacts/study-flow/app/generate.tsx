@@ -256,17 +256,45 @@ function QuestionField({
   onChange: (text: string) => void;
   colors: ReturnType<typeof useColors>;
 }) {
-  const anim = useState(new Animated.Value(0))[0];
+  const anim = useState(new Animated.Value(Platform.OS === "web" ? 1 : 0))[0];
 
   React.useEffect(() => {
+    if (Platform.OS === "web") {
+      // Skip the JS-driven Animated pass on web: RN Web's non-native-driver
+      // style writes have been the root cause of intermittent
+      // "Failed to set an indexed property on 'CSSStyleDeclaration'" crashes
+      // elsewhere in this app (see bottom-tabs fix in app/(tabs)/_layout.tsx).
+      // The mount fade is purely cosmetic, so we just render at full opacity.
+      return;
+    }
     Animated.spring(anim, {
       toValue: 1,
       delay: index * 70,
-      useNativeDriver: Platform.OS !== "web",
+      useNativeDriver: true,
       friction: 8,
       tension: 60,
     }).start();
   }, []);
+
+  const content = (
+    <>
+      <Text style={[styles.questionLabel, { color: colors.foreground }]}>{question}</Text>
+      <TextInput
+        style={[
+          styles.questionInput,
+          { backgroundColor: colors.card, color: colors.foreground, borderColor: colors.border },
+        ]}
+        placeholder="Your answer"
+        placeholderTextColor={colors.mutedForeground}
+        value={value}
+        onChangeText={onChange}
+      />
+    </>
+  );
+
+  if (Platform.OS === "web") {
+    return <View style={{ gap: 8 }}>{content}</View>;
+  }
 
   return (
     <Animated.View
@@ -283,17 +311,7 @@ function QuestionField({
         gap: 8,
       }}
     >
-      <Text style={[styles.questionLabel, { color: colors.foreground }]}>{question}</Text>
-      <TextInput
-        style={[
-          styles.questionInput,
-          { backgroundColor: colors.card, color: colors.foreground, borderColor: colors.border },
-        ]}
-        placeholder="Your answer"
-        placeholderTextColor={colors.mutedForeground}
-        value={value}
-        onChangeText={onChange}
-      />
+      {content}
     </Animated.View>
   );
 }

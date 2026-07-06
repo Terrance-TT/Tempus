@@ -55,12 +55,22 @@ export default function OnboardingScreen() {
             ...prev,
             { id: commitment.id, title: commitment.title, type: commitment.type },
           ]);
-          fadeAnim.setValue(0);
           setShowForm(false);
+          if (Platform.OS === "web") {
+            // Skip the JS-driven Animated pass on web: RN Web's
+            // non-native-driver style writes have been the root cause of
+            // intermittent "Failed to set an indexed property on
+            // 'CSSStyleDeclaration'" crashes elsewhere in this app (see
+            // bottom-tabs fix in app/(tabs)/_layout.tsx). This fade is
+            // purely cosmetic, so just show it at full opacity.
+            fadeAnim.setValue(1);
+            return;
+          }
+          fadeAnim.setValue(0);
           Animated.timing(fadeAnim, {
             toValue: 1,
             duration: 280,
-            useNativeDriver: Platform.OS !== "web",
+            useNativeDriver: true,
           }).start();
         },
       }
@@ -113,7 +123,12 @@ export default function OnboardingScreen() {
             />
           </View>
         ) : (
-          <Animated.View style={[styles.nextActions, { opacity: fadeAnim }]}>
+          <Animated.View
+            style={[
+              styles.nextActions,
+              Platform.OS === "web" ? undefined : { opacity: fadeAnim },
+            ]}
+          >
             <Pressable
               style={[styles.primaryButton, { backgroundColor: colors.primary }]}
               onPress={() => setShowForm(true)}
@@ -149,17 +164,47 @@ function AddedRow({
   index: number;
   colors: ReturnType<typeof useColors>;
 }) {
-  const anim = useState(new Animated.Value(0))[0];
+  const anim = useState(new Animated.Value(Platform.OS === "web" ? 1 : 0))[0];
 
   React.useEffect(() => {
+    if (Platform.OS === "web") {
+      // Skip the JS-driven Animated pass on web: RN Web's non-native-driver
+      // style writes have been the root cause of intermittent
+      // "Failed to set an indexed property on 'CSSStyleDeclaration'" crashes
+      // elsewhere in this app (see bottom-tabs fix in app/(tabs)/_layout.tsx).
+      // The mount fade is purely cosmetic, so we just render at full opacity.
+      return;
+    }
     Animated.spring(anim, {
       toValue: 1,
       delay: index * 60,
-      useNativeDriver: Platform.OS !== "web",
+      useNativeDriver: true,
       friction: 8,
       tension: 60,
     }).start();
   }, []);
+
+  const content = (
+    <>
+      <View style={[styles.checkCircle, { backgroundColor: colors.primary }]}>
+        <Feather name="check" size={14} color={colors.primaryForeground} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.addedTitle, { color: colors.foreground }]}>{item.title}</Text>
+        <Text style={[styles.addedType, { color: colors.mutedForeground }]}>
+          {TYPE_LABEL[item.type] ?? item.type}
+        </Text>
+      </View>
+    </>
+  );
+
+  if (Platform.OS === "web") {
+    return (
+      <View style={[styles.addedRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        {content}
+      </View>
+    );
+  }
 
   return (
     <Animated.View
@@ -179,15 +224,7 @@ function AddedRow({
         },
       ]}
     >
-      <View style={[styles.checkCircle, { backgroundColor: colors.primary }]}>
-        <Feather name="check" size={14} color={colors.primaryForeground} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.addedTitle, { color: colors.foreground }]}>{item.title}</Text>
-        <Text style={[styles.addedType, { color: colors.mutedForeground }]}>
-          {TYPE_LABEL[item.type] ?? item.type}
-        </Text>
-      </View>
+      {content}
     </Animated.View>
   );
 }

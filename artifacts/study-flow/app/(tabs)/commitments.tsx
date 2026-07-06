@@ -190,17 +190,48 @@ function CommitmentRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const anim = useState(new Animated.Value(0))[0];
+  const anim = useState(new Animated.Value(Platform.OS === "web" ? 1 : 0))[0];
 
   React.useEffect(() => {
+    if (Platform.OS === "web") {
+      // Skip the JS-driven Animated pass on web: RN Web's non-native-driver
+      // style writes have been the root cause of intermittent
+      // "Failed to set an indexed property on 'CSSStyleDeclaration'" crashes
+      // elsewhere in this app (see bottom-tabs fix in app/(tabs)/_layout.tsx).
+      // The mount fade is purely cosmetic, so we just render at full opacity.
+      return;
+    }
     Animated.spring(anim, {
       toValue: 1,
       delay: index * 50,
-      useNativeDriver: Platform.OS !== "web",
+      useNativeDriver: true,
       friction: 8,
       tension: 60,
     }).start();
   }, []);
+
+  const card = (
+    <Pressable
+      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+      onPress={onEdit}
+    >
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.cardTitle, { color: colors.cardForeground }]}>
+          {commitment.title}
+        </Text>
+        <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
+          {TYPE_LABEL[commitment.type] ?? commitment.type} • {commitment.daysOfWeek.join(", ")} • {commitment.startTime}–{commitment.endTime}
+        </Text>
+      </View>
+      <Pressable onPress={onDelete} hitSlop={10} style={styles.deleteButton}>
+        <Feather name="trash-2" size={18} color={colors.destructive} />
+      </Pressable>
+    </Pressable>
+  );
+
+  if (Platform.OS === "web") {
+    return card;
+  }
 
   return (
     <Animated.View
@@ -211,22 +242,7 @@ function CommitmentRow({
         ],
       }}
     >
-      <Pressable
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={onEdit}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.cardTitle, { color: colors.cardForeground }]}>
-            {commitment.title}
-          </Text>
-          <Text style={[styles.cardSub, { color: colors.mutedForeground }]}>
-            {TYPE_LABEL[commitment.type] ?? commitment.type} • {commitment.daysOfWeek.join(", ")} • {commitment.startTime}–{commitment.endTime}
-          </Text>
-        </View>
-        <Pressable onPress={onDelete} hitSlop={10} style={styles.deleteButton}>
-          <Feather name="trash-2" size={18} color={colors.destructive} />
-        </Pressable>
-      </Pressable>
+      {card}
     </Animated.View>
   );
 }
