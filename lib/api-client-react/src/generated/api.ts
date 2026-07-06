@@ -20,16 +20,25 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  Assignment,
   Commitment,
+  ConnectCanvasInput,
   CreateCommitmentInput,
+  DeleteAssignmentParams,
   DeleteCommitmentParams,
   DeleteScheduleParams,
+  DisconnectCanvasParams,
   ExtractCommitmentsInput,
   GenerateScheduleInput,
   GenerateScheduleResult,
+  GetIntegrationsStatusParams,
   GetScheduleParams,
   GoogleCalendarStatus,
   HealthStatus,
+  ImportAssignmentsInput,
+  ImportAssignmentsResult,
+  IntegrationsStatus,
+  ListAssignmentsParams,
   ListCommitmentsParams,
   ListSchedulesParams,
   ReviseScheduleInput,
@@ -1214,5 +1223,540 @@ export const useGenerateSchedule = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getGenerateScheduleMutationOptions(options));
+    }
+
+export const getGetIntegrationsStatusUrl = (params: GetIntegrationsStatusParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/integrations/status?${stringifiedParams}` : `/api/integrations/status`
+}
+
+/**
+ * @summary Connection status for school integrations (Canvas, Google Classroom)
+ */
+export const getIntegrationsStatus = async (params: GetIntegrationsStatusParams, options?: RequestInit): Promise<IntegrationsStatus> => {
+
+  return customFetch<IntegrationsStatus>(getGetIntegrationsStatusUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetIntegrationsStatusQueryKey = (params?: GetIntegrationsStatusParams,) => {
+    return [
+    `/api/integrations/status`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetIntegrationsStatusQueryOptions = <TData = Awaited<ReturnType<typeof getIntegrationsStatus>>, TError = ErrorType<unknown>>(params: GetIntegrationsStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIntegrationsStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetIntegrationsStatusQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getIntegrationsStatus>>> = ({ signal }) => getIntegrationsStatus(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getIntegrationsStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetIntegrationsStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getIntegrationsStatus>>>
+export type GetIntegrationsStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Connection status for school integrations (Canvas, Google Classroom)
+ */
+
+export function useGetIntegrationsStatus<TData = Awaited<ReturnType<typeof getIntegrationsStatus>>, TError = ErrorType<unknown>>(
+ params: GetIntegrationsStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIntegrationsStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetIntegrationsStatusQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getConnectCanvasUrl = () => {
+
+
+
+
+  return `/api/integrations/canvas`
+}
+
+/**
+ * @summary Connect a Canvas LMS account using a personal access token
+ */
+export const connectCanvas = async (connectCanvasInput: ConnectCanvasInput, options?: RequestInit): Promise<IntegrationsStatus> => {
+
+  return customFetch<IntegrationsStatus>(getConnectCanvasUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(connectCanvasInput)
+  }
+);}
+
+
+
+
+export const getConnectCanvasMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connectCanvas>>, TError,{data: BodyType<ConnectCanvasInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof connectCanvas>>, TError,{data: BodyType<ConnectCanvasInput>}, TContext> => {
+
+const mutationKey = ['connectCanvas'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof connectCanvas>>, {data: BodyType<ConnectCanvasInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  connectCanvas(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConnectCanvasMutationResult = NonNullable<Awaited<ReturnType<typeof connectCanvas>>>
+    export type ConnectCanvasMutationBody = BodyType<ConnectCanvasInput>
+    export type ConnectCanvasMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Connect a Canvas LMS account using a personal access token
+ */
+export const useConnectCanvas = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connectCanvas>>, TError,{data: BodyType<ConnectCanvasInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof connectCanvas>>,
+        TError,
+        {data: BodyType<ConnectCanvasInput>},
+        TContext
+      > => {
+      return useMutation(getConnectCanvasMutationOptions(options));
+    }
+
+export const getDisconnectCanvasUrl = (params: DisconnectCanvasParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/integrations/canvas?${stringifiedParams}` : `/api/integrations/canvas`
+}
+
+/**
+ * @summary Disconnect the Canvas LMS account
+ */
+export const disconnectCanvas = async (params: DisconnectCanvasParams, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDisconnectCanvasUrl(params),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDisconnectCanvasMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectCanvas>>, TError,{params: DisconnectCanvasParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof disconnectCanvas>>, TError,{params: DisconnectCanvasParams}, TContext> => {
+
+const mutationKey = ['disconnectCanvas'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disconnectCanvas>>, {params: DisconnectCanvasParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  disconnectCanvas(params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DisconnectCanvasMutationResult = NonNullable<Awaited<ReturnType<typeof disconnectCanvas>>>
+
+    export type DisconnectCanvasMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Disconnect the Canvas LMS account
+ */
+export const useDisconnectCanvas = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectCanvas>>, TError,{params: DisconnectCanvasParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof disconnectCanvas>>,
+        TError,
+        {params: DisconnectCanvasParams},
+        TContext
+      > => {
+      return useMutation(getDisconnectCanvasMutationOptions(options));
+    }
+
+export const getImportCanvasAssignmentsUrl = () => {
+
+
+
+
+  return `/api/integrations/canvas/import`
+}
+
+/**
+ * @summary Import upcoming assignments from Canvas LMS
+ */
+export const importCanvasAssignments = async (importAssignmentsInput: ImportAssignmentsInput, options?: RequestInit): Promise<ImportAssignmentsResult> => {
+
+  return customFetch<ImportAssignmentsResult>(getImportCanvasAssignmentsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(importAssignmentsInput)
+  }
+);}
+
+
+
+
+export const getImportCanvasAssignmentsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importCanvasAssignments>>, TError,{data: BodyType<ImportAssignmentsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importCanvasAssignments>>, TError,{data: BodyType<ImportAssignmentsInput>}, TContext> => {
+
+const mutationKey = ['importCanvasAssignments'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importCanvasAssignments>>, {data: BodyType<ImportAssignmentsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importCanvasAssignments(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportCanvasAssignmentsMutationResult = NonNullable<Awaited<ReturnType<typeof importCanvasAssignments>>>
+    export type ImportCanvasAssignmentsMutationBody = BodyType<ImportAssignmentsInput>
+    export type ImportCanvasAssignmentsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Import upcoming assignments from Canvas LMS
+ */
+export const useImportCanvasAssignments = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importCanvasAssignments>>, TError,{data: BodyType<ImportAssignmentsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importCanvasAssignments>>,
+        TError,
+        {data: BodyType<ImportAssignmentsInput>},
+        TContext
+      > => {
+      return useMutation(getImportCanvasAssignmentsMutationOptions(options));
+    }
+
+export const getImportClassroomAssignmentsUrl = () => {
+
+
+
+
+  return `/api/integrations/classroom/import`
+}
+
+/**
+ * Requires the signed-in user to have connected their Google account with Classroom access. Returns 409 if the Google connection is missing or needs to be re-authorized with Classroom permissions.
+ * @summary Import upcoming coursework from Google Classroom
+ */
+export const importClassroomAssignments = async (importAssignmentsInput: ImportAssignmentsInput, options?: RequestInit): Promise<ImportAssignmentsResult> => {
+
+  return customFetch<ImportAssignmentsResult>(getImportClassroomAssignmentsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(importAssignmentsInput)
+  }
+);}
+
+
+
+
+export const getImportClassroomAssignmentsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importClassroomAssignments>>, TError,{data: BodyType<ImportAssignmentsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importClassroomAssignments>>, TError,{data: BodyType<ImportAssignmentsInput>}, TContext> => {
+
+const mutationKey = ['importClassroomAssignments'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importClassroomAssignments>>, {data: BodyType<ImportAssignmentsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importClassroomAssignments(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportClassroomAssignmentsMutationResult = NonNullable<Awaited<ReturnType<typeof importClassroomAssignments>>>
+    export type ImportClassroomAssignmentsMutationBody = BodyType<ImportAssignmentsInput>
+    export type ImportClassroomAssignmentsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Import upcoming coursework from Google Classroom
+ */
+export const useImportClassroomAssignments = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importClassroomAssignments>>, TError,{data: BodyType<ImportAssignmentsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importClassroomAssignments>>,
+        TError,
+        {data: BodyType<ImportAssignmentsInput>},
+        TContext
+      > => {
+      return useMutation(getImportClassroomAssignmentsMutationOptions(options));
+    }
+
+export const getListAssignmentsUrl = (params: ListAssignmentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/assignments?${stringifiedParams}` : `/api/assignments`
+}
+
+/**
+ * @summary List imported assignments
+ */
+export const listAssignments = async (params: ListAssignmentsParams, options?: RequestInit): Promise<Assignment[]> => {
+
+  return customFetch<Assignment[]>(getListAssignmentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAssignmentsQueryKey = (params?: ListAssignmentsParams,) => {
+    return [
+    `/api/assignments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAssignmentsQueryOptions = <TData = Awaited<ReturnType<typeof listAssignments>>, TError = ErrorType<unknown>>(params: ListAssignmentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssignments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAssignmentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAssignments>>> = ({ signal }) => listAssignments(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAssignments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAssignmentsQueryResult = NonNullable<Awaited<ReturnType<typeof listAssignments>>>
+export type ListAssignmentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List imported assignments
+ */
+
+export function useListAssignments<TData = Awaited<ReturnType<typeof listAssignments>>, TError = ErrorType<unknown>>(
+ params: ListAssignmentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssignments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAssignmentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDeleteAssignmentUrl = (id: string,
+    params: DeleteAssignmentParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/assignments/${id}?${stringifiedParams}` : `/api/assignments/${id}`
+}
+
+/**
+ * @summary Delete an imported assignment
+ */
+export const deleteAssignment = async (id: string,
+    params: DeleteAssignmentParams, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAssignmentUrl(id,params),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAssignmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAssignment>>, TError,{id: string;params: DeleteAssignmentParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAssignment>>, TError,{id: string;params: DeleteAssignmentParams}, TContext> => {
+
+const mutationKey = ['deleteAssignment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAssignment>>, {id: string;params: DeleteAssignmentParams}> = (props) => {
+          const {id,params} = props ?? {};
+
+          return  deleteAssignment(id,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAssignmentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAssignment>>>
+
+    export type DeleteAssignmentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an imported assignment
+ */
+export const useDeleteAssignment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAssignment>>, TError,{id: string;params: DeleteAssignmentParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAssignment>>,
+        TError,
+        {id: string;params: DeleteAssignmentParams},
+        TContext
+      > => {
+      return useMutation(getDeleteAssignmentMutationOptions(options));
     }
 

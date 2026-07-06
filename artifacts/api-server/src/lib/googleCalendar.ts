@@ -3,6 +3,14 @@ import { eq } from "drizzle-orm";
 import { db, googleCalendarConnections } from "@workspace/db";
 
 const GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
+const GOOGLE_CLASSROOM_SCOPES = [
+  "https://www.googleapis.com/auth/classroom.courses.readonly",
+  "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
+];
+export const GOOGLE_OAUTH_SCOPES = [
+  GOOGLE_CALENDAR_SCOPE,
+  ...GOOGLE_CLASSROOM_SCOPES,
+].join(" ");
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_CALENDAR_API = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
@@ -26,7 +34,7 @@ export function buildGoogleAuthUrl(req: Request, state: string): string {
     client_id: requireEnv("GOOGLE_CLIENT_ID"),
     redirect_uri: getRedirectUri(req),
     response_type: "code",
-    scope: GOOGLE_CALENDAR_SCOPE,
+    scope: GOOGLE_OAUTH_SCOPES,
     access_type: "offline",
     prompt: "consent",
     include_granted_scopes: "true",

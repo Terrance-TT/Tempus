@@ -12,6 +12,7 @@ import Home from "@/pages/home";
 import Create from "@/pages/create";
 import Schedule from "@/pages/schedule";
 import History from "@/pages/history";
+import Integrations from "@/pages/integrations";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -198,6 +199,9 @@ function ClerkProviderWithRoutes() {
             </Route>
             <Route path="/history">
               <AuthedRoute component={History} />
+            </Route>
+            <Route path="/integrations">
+              <AuthedRoute component={Integrations} />
             </Route>
             <Route component={NotFound} />
           </Switch>

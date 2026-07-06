@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, PlusCircle, History } from "lucide-react";
+import { Calendar, PlusCircle, History, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LayoutProps {
@@ -14,6 +14,7 @@ export function Layout({ children }: LayoutProps) {
     { href: "/", label: "Today", icon: Calendar },
     { href: "/create", label: "New Plan", icon: PlusCircle },
     { href: "/history", label: "History", icon: History },
+    { href: "/integrations", label: "Integrations", icon: Plug },
   ];
 
   return (

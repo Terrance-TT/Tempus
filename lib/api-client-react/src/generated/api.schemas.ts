@@ -203,6 +203,53 @@ export interface GenerateScheduleResult {
   schedule?: Schedule;
 }
 
+export type AssignmentSource = typeof AssignmentSource[keyof typeof AssignmentSource];
+
+
+export const AssignmentSource = {
+  canvas: 'canvas',
+  classroom: 'classroom',
+} as const;
+
+export interface Assignment {
+  id: string;
+  deviceId: string;
+  source: AssignmentSource;
+  externalId: string;
+  courseName?: string | null;
+  title: string;
+  /** ISO date or datetime when the assignment is due. */
+  dueDate: string;
+  /** Link to the assignment in the source system. */
+  url?: string | null;
+  createdAt: string;
+}
+
+export interface IntegrationsStatus {
+  canvasConnected: boolean;
+  canvasBaseUrl?: string | null;
+  /** Whether the signed-in user's Google account is connected (Classroom access is granted through the same connection). */
+  classroomConnected: boolean;
+}
+
+export interface ConnectCanvasInput {
+  deviceId: string;
+  /** The school's Canvas URL, e.g. "https://myschool.instructure.com". */
+  baseUrl: string;
+  /** Canvas personal access token generated in Account → Settings → New Access Token. */
+  accessToken: string;
+}
+
+export interface ImportAssignmentsInput {
+  deviceId: string;
+}
+
+export interface ImportAssignmentsResult {
+  /** Number of new assignments imported (existing ones are updated, not duplicated). */
+  importedCount: number;
+  assignments: Assignment[];
+}
+
 export type ListCommitmentsParams = {
 deviceId: string;
 };
@@ -220,6 +267,22 @@ deviceId: string;
 };
 
 export type DeleteScheduleParams = {
+deviceId: string;
+};
+
+export type GetIntegrationsStatusParams = {
+deviceId: string;
+};
+
+export type DisconnectCanvasParams = {
+deviceId: string;
+};
+
+export type ListAssignmentsParams = {
+deviceId: string;
+};
+
+export type DeleteAssignmentParams = {
 deviceId: string;
 };
 

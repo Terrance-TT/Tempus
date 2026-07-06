@@ -1,2 +1,3 @@
 - [Shared api-server multitenancy](shared-api-server-multitenancy.md) — deviceId scoping/IDOR rules, Clerk ownership migration, auth-id spoofing fix, and OAuth state CSRF binding.
+- [User-supplied base URLs SSRF](user-supplied-base-urls-ssrf.md) — server-side fetches of user-provided URLs need HTTPS-only + public-host DNS checks; deterministic import counts; no auto-redirect loops after OAuth callback.
 - [Multi-artifact e2e testing](multi-artifact-e2e-testing.md) — runTest path steps aren't artifact-scoped, always prefix with the artifact's preview path; how to seed DB rows owned by a real signed-in Clerk user via an API round-trip.

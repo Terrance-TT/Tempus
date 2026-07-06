@@ -333,6 +333,134 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GenerateScheduleResult"
+  /integrations/status:
+    get:
+      operationId: getIntegrationsStatus
+      tags: [integrations]
+      summary: Connection status for school integrations (Canvas, Google Classroom)
+      parameters:
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Integration connection status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationsStatus"
+  /integrations/canvas:
+    post:
+      operationId: connectCanvas
+      tags: [integrations]
+      summary: Connect a Canvas LMS account using a personal access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectCanvasInput"
+      responses:
+        "200":
+          description: Updated integration status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationsStatus"
+    delete:
+      operationId: disconnectCanvas
+      tags: [integrations]
+      summary: Disconnect the Canvas LMS account
+      parameters:
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Disconnected
+  /integrations/canvas/import:
+    post:
+      operationId: importCanvasAssignments
+      tags: [integrations]
+      summary: Import upcoming assignments from Canvas LMS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportAssignmentsInput"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportAssignmentsResult"
+  /integrations/classroom/import:
+    post:
+      operationId: importClassroomAssignments
+      tags: [integrations]
+      summary: Import upcoming coursework from Google Classroom
+      description: >
+        Requires the signed-in user to have connected their Google account
+        with Classroom access. Returns 409 if the Google connection is
+        missing or needs to be re-authorized with Classroom permissions.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportAssignmentsInput"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportAssignmentsResult"
+  /assignments:
+    get:
+      operationId: listAssignments
+      tags: [integrations]
+      summary: List imported assignments
+      parameters:
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Assignment"
+  /assignments/{id}:
+    delete:
+      operationId: deleteAssignment
+      tags: [integrations]
+      summary: Delete an imported assignment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
 components:
   schemas:
     HealthStatus:
@@ -687,3 +815,89 @@ components:
       required:
         - id
         - status
+    AssignmentSource:
+      type: string
+      enum: [canvas, classroom]
+    Assignment:
+      type: object
+      properties:
+        id:
+          type: string
+        deviceId:
+          type: string
+        source:
+          $ref: "#/components/schemas/AssignmentSource"
+        externalId:
+          type: string
+        courseName:
+          type: string
+          nullable: true
+        title:
+          type: string
+        dueDate:
+          type: string
+          description: ISO date or datetime when the assignment is due.
+        url:
+          type: string
+          nullable: true
+          description: Link to the assignment in the source system.
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - deviceId
+        - source
+        - externalId
+        - title
+        - dueDate
+        - createdAt
+    IntegrationsStatus:
+      type: object
+      properties:
+        canvasConnected:
+          type: boolean
+        canvasBaseUrl:
+          type: string
+          nullable: true
+        classroomConnected:
+          type: boolean
+          description: Whether the signed-in user's Google account is connected (Classroom access is granted through the same connection).
+      required:
+        - canvasConnected
+        - classroomConnected
+    ConnectCanvasInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        baseUrl:
+          type: string
+          description: The school's Canvas URL, e.g. "https://myschool.instructure.com".
+        accessToken:
+          type: string
+          description: Canvas personal access token generated in Account → Settings → New Access Token.
+      required:
+        - deviceId
+        - baseUrl
+        - accessToken
+    ImportAssignmentsInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+      required:
+        - deviceId
+    ImportAssignmentsResult:
+      type: object
+      properties:
+        importedCount:
+          type: integer
+          description: Number of new assignments imported (existing ones are updated, not duplicated).
+        assignments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Assignment"
+      required:
+        - importedCount
+        - assignments

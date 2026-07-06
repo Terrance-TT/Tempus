@@ -8,6 +8,8 @@ import {
   useDeleteCommitment,
   useGenerateSchedule,
   getListCommitmentsQueryKey,
+  useListAssignments,
+  getListAssignmentsQueryKey,
   Task,
   ScheduleScope,
   ClarificationAnswer
@@ -50,6 +52,11 @@ export default function Create() {
   const { data: commitments = [], isLoading: isLoadingCommitments } = useListCommitments(
     { deviceId: deviceId || "" },
     { query: { enabled: !!deviceId, queryKey: getListCommitmentsQueryKey({ deviceId: deviceId || "" }) } }
+  );
+
+  const { data: importedAssignments = [] } = useListAssignments(
+    { deviceId: deviceId || "" },
+    { query: { enabled: !!deviceId, queryKey: getListAssignmentsQueryKey({ deviceId: deviceId || "" }) } }
   );
 
   const extractCommitments = useExtractCommitmentsFromImage();
@@ -119,6 +126,26 @@ export default function Create() {
 
   const handleRemoveTask = (index: number) => {
     setTasks(tasks.filter((_, i) => i !== index));
+  };
+
+  const handleAddImportedAssignments = () => {
+    const existingTitles = new Set(tasks.map(t => t.title));
+    const newTasks: Task[] = importedAssignments
+      .filter(a => !existingTitles.has(a.courseName ? `${a.courseName}: ${a.title}` : a.title))
+      .map(a => {
+        const due = new Date(a.dueDate);
+        return {
+          title: a.courseName ? `${a.courseName}: ${a.title}` : a.title,
+          dueDate: Number.isNaN(due.getTime()) ? a.dueDate : due.toISOString().slice(0, 10),
+          estimatedMinutes: null
+        };
+      });
+    if (newTasks.length === 0) {
+      toast({ title: "Nothing new to add", description: "All imported assignments are already in your list." });
+      return;
+    }
+    setTasks([...tasks, ...newTasks]);
+    toast({ title: "Assignments added", description: `${newTasks.length} imported assignment(s) added to your tasks.` });
   };
 
   const handleGenerate = (selectedScope: ScheduleScope) => {
@@ -304,6 +331,19 @@ export default function Create() {
               </div>
               <p className="text-muted-foreground text-lg ml-11">Add any assignments or tasks you need to complete.</p>
             </header>
+
+            {importedAssignments.length > 0 && (
+              <Card className="border border-primary/30 bg-primary/5 shadow-sm">
+                <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm">
+                    <span className="font-medium">{importedAssignments.length}</span> assignment(s) imported from Canvas / Google Classroom.
+                  </p>
+                  <Button variant="secondary" size="sm" onClick={handleAddImportedAssignments}>
+                    <Plus className="w-4 h-4 mr-2" /> Add them as tasks
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="border shadow-sm">
               <CardContent className="p-6">

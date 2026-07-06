@@ -350,3 +350,125 @@ export const GenerateScheduleResponse = zod.object({
 })
 
 
+/**
+ * @summary Connection status for school integrations (Canvas, Google Classroom)
+ */
+export const GetIntegrationsStatusQueryParams = zod.object({
+  "deviceId": zod.coerce.string()
+})
+
+export const GetIntegrationsStatusResponse = zod.object({
+  "canvasConnected": zod.boolean(),
+  "canvasBaseUrl": zod.string().nullish(),
+  "classroomConnected": zod.boolean().describe('Whether the signed-in user\'s Google account is connected (Classroom access is granted through the same connection).')
+})
+
+
+/**
+ * @summary Connect a Canvas LMS account using a personal access token
+ */
+export const ConnectCanvasBody = zod.object({
+  "deviceId": zod.string(),
+  "baseUrl": zod.string().describe('The school\'s Canvas URL, e.g. \"https:\/\/myschool.instructure.com\".'),
+  "accessToken": zod.string().describe('Canvas personal access token generated in Account → Settings → New Access Token.')
+})
+
+export const ConnectCanvasResponse = zod.object({
+  "canvasConnected": zod.boolean(),
+  "canvasBaseUrl": zod.string().nullish(),
+  "classroomConnected": zod.boolean().describe('Whether the signed-in user\'s Google account is connected (Classroom access is granted through the same connection).')
+})
+
+
+/**
+ * @summary Disconnect the Canvas LMS account
+ */
+export const DisconnectCanvasQueryParams = zod.object({
+  "deviceId": zod.coerce.string()
+})
+
+export const DisconnectCanvasResponse = zod.void()
+
+
+/**
+ * @summary Import upcoming assignments from Canvas LMS
+ */
+export const ImportCanvasAssignmentsBody = zod.object({
+  "deviceId": zod.string()
+})
+
+export const ImportCanvasAssignmentsResponse = zod.object({
+  "importedCount": zod.number().describe('Number of new assignments imported (existing ones are updated, not duplicated).'),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "deviceId": zod.string(),
+  "source": zod.enum(['canvas', 'classroom']),
+  "externalId": zod.string(),
+  "courseName": zod.string().nullish(),
+  "title": zod.string(),
+  "dueDate": zod.string().describe('ISO date or datetime when the assignment is due.'),
+  "url": zod.string().nullish().describe('Link to the assignment in the source system.'),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * Requires the signed-in user to have connected their Google account with Classroom access. Returns 409 if the Google connection is missing or needs to be re-authorized with Classroom permissions.
+ * @summary Import upcoming coursework from Google Classroom
+ */
+export const ImportClassroomAssignmentsBody = zod.object({
+  "deviceId": zod.string()
+})
+
+export const ImportClassroomAssignmentsResponse = zod.object({
+  "importedCount": zod.number().describe('Number of new assignments imported (existing ones are updated, not duplicated).'),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "deviceId": zod.string(),
+  "source": zod.enum(['canvas', 'classroom']),
+  "externalId": zod.string(),
+  "courseName": zod.string().nullish(),
+  "title": zod.string(),
+  "dueDate": zod.string().describe('ISO date or datetime when the assignment is due.'),
+  "url": zod.string().nullish().describe('Link to the assignment in the source system.'),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary List imported assignments
+ */
+export const ListAssignmentsQueryParams = zod.object({
+  "deviceId": zod.coerce.string()
+})
+
+export const ListAssignmentsResponseItem = zod.object({
+  "id": zod.string(),
+  "deviceId": zod.string(),
+  "source": zod.enum(['canvas', 'classroom']),
+  "externalId": zod.string(),
+  "courseName": zod.string().nullish(),
+  "title": zod.string(),
+  "dueDate": zod.string().describe('ISO date or datetime when the assignment is due.'),
+  "url": zod.string().nullish().describe('Link to the assignment in the source system.'),
+  "createdAt": zod.coerce.date()
+})
+export const ListAssignmentsResponse = zod.array(ListAssignmentsResponseItem)
+
+
+/**
+ * @summary Delete an imported assignment
+ */
+export const DeleteAssignmentParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeleteAssignmentQueryParams = zod.object({
+  "deviceId": zod.coerce.string()
+})
+
+export const DeleteAssignmentResponse = zod.void()
+
+

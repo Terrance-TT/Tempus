@@ -6,19 +6,29 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './assignment';
+export * from './assignmentSource';
 export * from './clarificationAnswer';
 export * from './commitment';
 export * from './commitmentType';
+export * from './connectCanvasInput';
 export * from './createCommitmentInput';
 export * from './dayOfWeek';
+export * from './deleteAssignmentParams';
 export * from './deleteCommitmentParams';
 export * from './deleteScheduleParams';
+export * from './disconnectCanvasParams';
 export * from './extractCommitmentsInput';
 export * from './generateScheduleInput';
 export * from './generateScheduleResult';
+export * from './getIntegrationsStatusParams';
 export * from './getScheduleParams';
 export * from './googleCalendarStatus';
 export * from './healthStatus';
+export * from './importAssignmentsInput';
+export * from './importAssignmentsResult';
+export * from './integrationsStatus';
+export * from './listAssignmentsParams';
 export * from './listCommitmentsParams';
 export * from './listSchedulesParams';
 export * from './reviseScheduleInput';

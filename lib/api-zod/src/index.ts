@@ -9,4 +9,5 @@ export {
   GetScheduleParams,
   DeleteScheduleParams,
   DeleteCommitmentParams,
+  DeleteAssignmentParams,
 } from "./generated/api";
