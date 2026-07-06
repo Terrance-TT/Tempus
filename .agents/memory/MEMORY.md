@@ -1,0 +1,1 @@
+- [Expo web crash: CSSStyleDeclaration indexed property](expo-web-rnw-crash-css-indexed-property.md) — react-native-keyboard-controller + react-native-screens stack transitions can crash RN Web; disable both on web.

@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: commitments
+    description: Student commitments (classes, extracurriculars, routines)
+  - name: schedules
+    description: AI-generated schedules
 paths:
   /healthz:
     get:
@@ -24,6 +28,155 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /commitments:
+    get:
+      operationId: listCommitments
+      tags: [commitments]
+      summary: List commitments for a device
+      parameters:
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of commitments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Commitment"
+    post:
+      operationId: createCommitment
+      tags: [commitments]
+      summary: Create a commitment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommitmentInput"
+      responses:
+        "201":
+          description: Created commitment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Commitment"
+  /commitments/{id}:
+    patch:
+      operationId: updateCommitment
+      tags: [commitments]
+      summary: Update a commitment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCommitmentInput"
+      responses:
+        "200":
+          description: Updated commitment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Commitment"
+    delete:
+      operationId: deleteCommitment
+      tags: [commitments]
+      summary: Delete a commitment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+  /schedules:
+    get:
+      operationId: listSchedules
+      tags: [schedules]
+      summary: List schedule history for a device
+      parameters:
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of schedule summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScheduleSummary"
+  /schedules/{id}:
+    get:
+      operationId: getSchedule
+      tags: [schedules]
+      summary: Get a schedule with its blocks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Schedule detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+    delete:
+      operationId: deleteSchedule
+      tags: [schedules]
+      summary: Delete a schedule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+  /schedules/generate:
+    post:
+      operationId: generateSchedule
+      tags: [schedules]
+      summary: Generate an AI-recommended schedule, or ask clarifying questions first
+      description: >
+        Takes a student's commitments and generates a recommended schedule.
+        If the AI needs more information (e.g. dinner time, homework load) it
+        returns status "needs_clarification" with a list of questions instead
+        of a finished schedule. Re-call with the same draftId and answers to
+        continue.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateScheduleInput"
+      responses:
+        "200":
+          description: Either a completed schedule or a request for clarification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateScheduleResult"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +186,218 @@ components:
           type: string
       required:
         - status
-
+    CommitmentType:
+      type: string
+      enum: [class, extracurricular, routine]
+    DayOfWeek:
+      type: string
+      enum: [mon, tue, wed, thu, fri, sat, sun]
+    Commitment:
+      type: object
+      properties:
+        id:
+          type: string
+        deviceId:
+          type: string
+        title:
+          type: string
+        type:
+          $ref: "#/components/schemas/CommitmentType"
+        daysOfWeek:
+          type: array
+          items:
+            $ref: "#/components/schemas/DayOfWeek"
+        startTime:
+          type: string
+          description: 24h time, "HH:mm"
+        endTime:
+          type: string
+          description: 24h time, "HH:mm"
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - deviceId
+        - title
+        - type
+        - daysOfWeek
+        - startTime
+        - endTime
+        - createdAt
+    CreateCommitmentInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        title:
+          type: string
+        type:
+          $ref: "#/components/schemas/CommitmentType"
+        daysOfWeek:
+          type: array
+          items:
+            $ref: "#/components/schemas/DayOfWeek"
+        startTime:
+          type: string
+        endTime:
+          type: string
+        notes:
+          type: string
+          nullable: true
+      required:
+        - deviceId
+        - title
+        - type
+        - daysOfWeek
+        - startTime
+        - endTime
+    UpdateCommitmentInput:
+      type: object
+      properties:
+        title:
+          type: string
+        type:
+          $ref: "#/components/schemas/CommitmentType"
+        daysOfWeek:
+          type: array
+          items:
+            $ref: "#/components/schemas/DayOfWeek"
+        startTime:
+          type: string
+        endTime:
+          type: string
+        notes:
+          type: string
+          nullable: true
+    ScheduleBlockCategory:
+      type: string
+      enum: [class, extracurricular, routine, homework, break, free]
+    ScheduleBlock:
+      type: object
+      properties:
+        id:
+          type: string
+        day:
+          $ref: "#/components/schemas/DayOfWeek"
+        startTime:
+          type: string
+        endTime:
+          type: string
+        title:
+          type: string
+        category:
+          $ref: "#/components/schemas/ScheduleBlockCategory"
+        notes:
+          type: string
+          nullable: true
+      required:
+        - id
+        - day
+        - startTime
+        - endTime
+        - title
+        - category
+    ScheduleStatus:
+      type: string
+      enum: [needs_clarification, complete]
+    ScheduleScope:
+      type: string
+      enum: [day, week]
+    ScheduleSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        deviceId:
+          type: string
+        scope:
+          $ref: "#/components/schemas/ScheduleScope"
+        status:
+          $ref: "#/components/schemas/ScheduleStatus"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - deviceId
+        - scope
+        - status
+        - createdAt
+    Schedule:
+      type: object
+      properties:
+        id:
+          type: string
+        deviceId:
+          type: string
+        scope:
+          $ref: "#/components/schemas/ScheduleScope"
+        status:
+          $ref: "#/components/schemas/ScheduleStatus"
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScheduleBlock"
+        clarifyingQuestions:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - deviceId
+        - scope
+        - status
+        - blocks
+        - clarifyingQuestions
+        - createdAt
+    ClarificationAnswer:
+      type: object
+      properties:
+        question:
+          type: string
+        answer:
+          type: string
+      required:
+        - question
+        - answer
+    GenerateScheduleInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        scope:
+          $ref: "#/components/schemas/ScheduleScope"
+        draftId:
+          type: string
+          nullable: true
+          description: Pass the id returned from a prior needs_clarification response to continue that draft
+        answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClarificationAnswer"
+      required:
+        - deviceId
+        - scope
+    GenerateScheduleResult:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          $ref: "#/components/schemas/ScheduleStatus"
+        questions:
+          type: array
+          items:
+            type: string
+        schedule:
+          $ref: "#/components/schemas/Schedule"
+      required:
+        - id
+        - status
