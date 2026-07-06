@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { and, eq } from "drizzle-orm";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import {
   db,
   schedules,
@@ -34,18 +35,82 @@ type ScheduleBlock = {
   notes?: string | null;
 };
 
-function decodeState(state: unknown): { returnTo: string } {
-  const fallback = { returnTo: "/web/" };
-  if (typeof state !== "string" || !state) return fallback;
-  try {
-    const parsed = JSON.parse(Buffer.from(state, "base64url").toString("utf8"));
-    if (parsed && typeof parsed.returnTo === "string" && parsed.returnTo.startsWith("/")) {
-      return { returnTo: parsed.returnTo };
-    }
-    return fallback;
-  } catch {
-    return fallback;
+// The OAuth `state` param must be an unguessable, tamper-proof, single-use
+// token bound to the signed-in user who initiated the connect flow. Without
+// this, an attacker can perform "login/account-link CSRF": craft their own
+// authorization code exchange and trick a victim's browser into completing
+// it, attaching the attacker's Google account to the victim's StudyFlow
+// account. We sign {userId, nonce, expiresAt, returnTo} with a server-only
+// secret and require, on callback, that the signature is valid, the state
+// hasn't expired, the nonce hasn't been used before, and the userId in the
+// state matches the currently authenticated Clerk session.
+const usedStateNonces = new Set<string>();
+
+function getStateSecret(): string {
+  const secret = process.env.CLERK_SECRET_KEY;
+  if (!secret) {
+    throw new Error("CLERK_SECRET_KEY is required to sign Google OAuth state");
   }
+  return secret;
+}
+
+function signStatePayload(payload: string): string {
+  return createHmac("sha256", getStateSecret()).update(payload).digest("base64url");
+}
+
+function encodeState(data: { userId: string; returnTo: string }): string {
+  const payload = JSON.stringify({
+    userId: data.userId,
+    returnTo: data.returnTo,
+    nonce: randomBytes(16).toString("base64url"),
+    expiresAt: Date.now() + 10 * 60 * 1000,
+  });
+  const payloadB64 = Buffer.from(payload).toString("base64url");
+  const signature = signStatePayload(payloadB64);
+  return `${payloadB64}.${signature}`;
+}
+
+function decodeAndVerifyState(
+  state: unknown,
+  currentUserId: string | null | undefined,
+): { returnTo: string } | { error: "invalid" | "expired" | "reused" | "user_mismatch" } {
+  if (typeof state !== "string" || !state) return { error: "invalid" };
+  const [payloadB64, signature] = state.split(".");
+  if (!payloadB64 || !signature) return { error: "invalid" };
+
+  const expectedSignature = signStatePayload(payloadB64);
+  const signatureBuf = Buffer.from(signature);
+  const expectedBuf = Buffer.from(expectedSignature);
+  if (
+    signatureBuf.length !== expectedBuf.length ||
+    !timingSafeEqual(signatureBuf, expectedBuf)
+  ) {
+    return { error: "invalid" };
+  }
+
+  let parsed: { userId?: unknown; returnTo?: unknown; nonce?: unknown; expiresAt?: unknown };
+  try {
+    parsed = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf8"));
+  } catch {
+    return { error: "invalid" };
+  }
+
+  if (
+    typeof parsed.userId !== "string" ||
+    typeof parsed.returnTo !== "string" ||
+    !parsed.returnTo.startsWith("/") ||
+    typeof parsed.nonce !== "string" ||
+    typeof parsed.expiresAt !== "number"
+  ) {
+    return { error: "invalid" };
+  }
+
+  if (Date.now() > parsed.expiresAt) return { error: "expired" };
+  if (usedStateNonces.has(parsed.nonce)) return { error: "reused" };
+  if (!currentUserId || parsed.userId !== currentUserId) return { error: "user_mismatch" };
+
+  usedStateNonces.add(parsed.nonce);
+  return { returnTo: parsed.returnTo };
 }
 
 router.get("/google-calendar/status", async (req, res) => {
@@ -71,19 +136,30 @@ router.get("/google-calendar/connect", async (req, res) => {
     typeof req.query.returnTo === "string" && req.query.returnTo.startsWith("/")
       ? req.query.returnTo
       : "/web/";
-  const state = Buffer.from(JSON.stringify({ returnTo })).toString("base64url");
+  const state = encodeState({ userId, returnTo });
   res.redirect(buildGoogleAuthUrl(req, state));
 });
 
 router.get("/google-calendar/callback", async (req, res) => {
-  const { returnTo } = decodeState(req.query.state);
   const userId = getAuth(req)?.userId;
+  const verified = decodeAndVerifyState(req.query.state, userId);
 
-  if (!userId) {
-    res.redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}googleCalendarError=not_signed_in`);
+  if ("error" in verified) {
+    // We can't trust any returnTo from an unverified state, so fall back to
+    // the app root rather than redirecting using attacker-controlled data.
+    const fallbackReturnTo = "/web/";
+    const errorCode = !userId ? "not_signed_in" : verified.error;
+    res.redirect(`${fallbackReturnTo}?googleCalendarError=${errorCode}`);
     return;
   }
 
+  const { returnTo } = verified;
+  if (!userId) {
+    // Unreachable in practice (decodeAndVerifyState already requires userId
+    // to match the state's userId), but keeps ownership below type-safe.
+    res.redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}googleCalendarError=not_signed_in`);
+    return;
+  }
   const code = typeof req.query.code === "string" ? req.query.code : null;
   if (!code) {
     res.redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}googleCalendarError=denied`);

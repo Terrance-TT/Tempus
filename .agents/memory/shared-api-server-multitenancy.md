@@ -66,3 +66,12 @@ Both the web (`study-flow-web`) and mobile (`study-flow`) apps share it.
   any unauthenticated request using that shape to a fresh random id instead of trusting it.
   **Why:** real anonymous device ids are generated client-side and never take the auth
   provider's id shape, so this only ever blocks spoofing attempts, never legitimate traffic.
+
+- Any OAuth `connect`/`callback` flow added on top of an existing auth session (e.g. linking
+  Google Calendar to an already-signed-in Clerk user) needs its own `state` param that is
+  signed (HMAC with a server-only secret), single-use (track/reject nonce reuse), short-lived
+  (embed + check an expiry), and bound to the initiating user (embed the userId and compare
+  against the session on callback) — not just an encoded redirect target.
+  **Why:** an unsigned/unbound state enables login or account-link CSRF, letting an attacker
+  trick a victim's browser into completing the attacker's OAuth grant and attaching the
+  attacker's external account to the victim's app account.
