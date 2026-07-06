@@ -174,6 +174,20 @@ export interface GenerateScheduleInput {
   tasks?: Task[];
 }
 
+export interface GoogleCalendarStatus {
+  connected: boolean;
+}
+
+export interface SyncScheduleGoogleCalendarInput {
+  /** IANA timezone (e.g. "America/New_York") used to place each block's start/end times on the student's Google Calendar. */
+  timeZone: string;
+}
+
+export interface SyncScheduleGoogleCalendarResult {
+  syncedCount: number;
+  calendarUrl: string;
+}
+
 export interface GenerateScheduleResult {
   id: string;
   status: ScheduleStatus;

@@ -264,6 +264,32 @@ export const ReviseScheduleResponse = zod.object({
 
 
 /**
+ * @summary Whether the signed-in user has connected Google Calendar
+ */
+export const GetGoogleCalendarStatusResponse = zod.object({
+  "connected": zod.boolean()
+})
+
+
+/**
+ * Creates or updates Google Calendar events for every block in the schedule. Re-syncing updates the previously created events instead of creating duplicates, and removes events for blocks that no longer exist.
+ * @summary Push a schedule's blocks to the signed-in user's Google Calendar
+ */
+export const SyncScheduleToGoogleCalendarParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const SyncScheduleToGoogleCalendarBody = zod.object({
+  "timeZone": zod.string().describe('IANA timezone (e.g. \"America\/New_York\") used to place each block\'s start\/end times on the student\'s Google Calendar.\n')
+})
+
+export const SyncScheduleToGoogleCalendarResponse = zod.object({
+  "syncedCount": zod.number(),
+  "calendarUrl": zod.string()
+})
+
+
+/**
  * Takes a student's commitments and generates a recommended schedule. If the AI needs more information (e.g. dinner time, homework load) it returns status "needs_clarification" with a list of questions instead of a finished schedule. Re-call with the same draftId and answers to continue.
  * @summary Generate an AI-recommended schedule, or ask clarifying questions first
  */

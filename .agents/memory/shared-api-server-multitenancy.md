@@ -38,3 +38,23 @@ Both the web (`study-flow-web`) and mobile (`study-flow`) apps share it.
   `<Operation>Params` name, colliding in the `@workspace/api-zod` barrel
   (TS2308). Resolve by explicitly re-exporting the zod versions after the star
   exports in that package's index so the schemas the server validates with win.
+
+## Migrating device-scoped ownership to real user accounts (Clerk) without breaking mobile
+
+- Add a `resolveOwnerId(req, providedDeviceId)` helper used by every route instead
+  of reading `deviceId` directly: it returns the Clerk session `userId` when signed
+  in (web), otherwise falls back to the client-supplied `deviceId` (mobile / signed-out
+  web). No DB/schema changes needed — the existing `deviceId` text column just also
+  holds Clerk user ids for signed-in rows.
+  **Why:** lets web migrate to real accounts while the mobile app's anonymous
+  deviceId flow keeps working completely untouched, and prevents a signed-in user
+  from spoofing another user's rows by tampering with the deviceId field.
+  **How to apply:** any new ownership/auth migration on a shared multi-tenant
+  backend should use this session-override pattern rather than a hard cutover.
+
+- Clerk's SDK (as installed) has no API to request additional OAuth scopes (e.g.
+  Google Calendar) beyond what's needed for login — verified by grepping node_modules
+  `.d.ts` for `additionalOAuthScopes`/`createExternalAccount`. If a feature needs an
+  extra OAuth scope Clerk doesn't expose, set up a **separate**, purpose-specific
+  OAuth app (own client id/secret, own connect/callback routes, own token storage
+  table) rather than trying to extend the Clerk connection.

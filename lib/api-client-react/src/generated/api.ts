@@ -28,12 +28,15 @@ import type {
   GenerateScheduleInput,
   GenerateScheduleResult,
   GetScheduleParams,
+  GoogleCalendarStatus,
   HealthStatus,
   ListCommitmentsParams,
   ListSchedulesParams,
   ReviseScheduleInput,
   Schedule,
   ScheduleSummary,
+  SyncScheduleGoogleCalendarInput,
+  SyncScheduleGoogleCalendarResult,
   UpdateCommitmentInput,
   UpdateScheduleInput
 } from './api.schemas';
@@ -912,6 +915,155 @@ export const useReviseSchedule = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getReviseScheduleMutationOptions(options));
+    }
+
+export const getGetGoogleCalendarStatusUrl = () => {
+
+
+
+
+  return `/api/google-calendar/status`
+}
+
+/**
+ * @summary Whether the signed-in user has connected Google Calendar
+ */
+export const getGoogleCalendarStatus = async ( options?: RequestInit): Promise<GoogleCalendarStatus> => {
+
+  return customFetch<GoogleCalendarStatus>(getGetGoogleCalendarStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGoogleCalendarStatusQueryKey = () => {
+    return [
+    `/api/google-calendar/status`
+    ] as const;
+    }
+
+
+export const getGetGoogleCalendarStatusQueryOptions = <TData = Awaited<ReturnType<typeof getGoogleCalendarStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGoogleCalendarStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGoogleCalendarStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGoogleCalendarStatus>>> = ({ signal }) => getGoogleCalendarStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGoogleCalendarStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGoogleCalendarStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getGoogleCalendarStatus>>>
+export type GetGoogleCalendarStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Whether the signed-in user has connected Google Calendar
+ */
+
+export function useGetGoogleCalendarStatus<TData = Awaited<ReturnType<typeof getGoogleCalendarStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGoogleCalendarStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGoogleCalendarStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSyncScheduleToGoogleCalendarUrl = (id: string,) => {
+
+
+
+
+  return `/api/schedules/${id}/sync-google-calendar`
+}
+
+/**
+ * Creates or updates Google Calendar events for every block in the schedule. Re-syncing updates the previously created events instead of creating duplicates, and removes events for blocks that no longer exist.
+ * @summary Push a schedule's blocks to the signed-in user's Google Calendar
+ */
+export const syncScheduleToGoogleCalendar = async (id: string,
+    syncScheduleGoogleCalendarInput: SyncScheduleGoogleCalendarInput, options?: RequestInit): Promise<SyncScheduleGoogleCalendarResult> => {
+
+  return customFetch<SyncScheduleGoogleCalendarResult>(getSyncScheduleToGoogleCalendarUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(syncScheduleGoogleCalendarInput)
+  }
+);}
+
+
+
+
+export const getSyncScheduleToGoogleCalendarMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncScheduleToGoogleCalendar>>, TError,{id: string;data: BodyType<SyncScheduleGoogleCalendarInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncScheduleToGoogleCalendar>>, TError,{id: string;data: BodyType<SyncScheduleGoogleCalendarInput>}, TContext> => {
+
+const mutationKey = ['syncScheduleToGoogleCalendar'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncScheduleToGoogleCalendar>>, {id: string;data: BodyType<SyncScheduleGoogleCalendarInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  syncScheduleToGoogleCalendar(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncScheduleToGoogleCalendarMutationResult = NonNullable<Awaited<ReturnType<typeof syncScheduleToGoogleCalendar>>>
+    export type SyncScheduleToGoogleCalendarMutationBody = BodyType<SyncScheduleGoogleCalendarInput>
+    export type SyncScheduleToGoogleCalendarMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Push a schedule's blocks to the signed-in user's Google Calendar
+ */
+export const useSyncScheduleToGoogleCalendar = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncScheduleToGoogleCalendar>>, TError,{id: string;data: BodyType<SyncScheduleGoogleCalendarInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncScheduleToGoogleCalendar>>,
+        TError,
+        {id: string;data: BodyType<SyncScheduleGoogleCalendarInput>},
+        TContext
+      > => {
+      return useMutation(getSyncScheduleToGoogleCalendarMutationOptions(options));
     }
 
 export const getGenerateScheduleUrl = () => {

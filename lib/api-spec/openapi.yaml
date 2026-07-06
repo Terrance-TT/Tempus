@@ -244,6 +244,47 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Schedule"
+  /google-calendar/status:
+    get:
+      operationId: getGoogleCalendarStatus
+      tags: [google-calendar]
+      summary: Whether the signed-in user has connected Google Calendar
+      responses:
+        "200":
+          description: Connection status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleCalendarStatus"
+  /schedules/{id}/sync-google-calendar:
+    post:
+      operationId: syncScheduleToGoogleCalendar
+      tags: [schedules, google-calendar]
+      summary: Push a schedule's blocks to the signed-in user's Google Calendar
+      description: >
+        Creates or updates Google Calendar events for every block in the
+        schedule. Re-syncing updates the previously created events instead of
+        creating duplicates, and removes events for blocks that no longer
+        exist.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncScheduleGoogleCalendarInput"
+      responses:
+        "200":
+          description: Sync result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncScheduleGoogleCalendarResult"
   /schedules/generate:
     post:
       operationId: generateSchedule
@@ -562,6 +603,33 @@ components:
       required:
         - deviceId
         - scope
+    GoogleCalendarStatus:
+      type: object
+      properties:
+        connected:
+          type: boolean
+      required:
+        - connected
+    SyncScheduleGoogleCalendarInput:
+      type: object
+      properties:
+        timeZone:
+          type: string
+          description: >
+            IANA timezone (e.g. "America/New_York") used to place each
+            block's start/end times on the student's Google Calendar.
+      required:
+        - timeZone
+    SyncScheduleGoogleCalendarResult:
+      type: object
+      properties:
+        syncedCount:
+          type: integer
+        calendarUrl:
+          type: string
+      required:
+        - syncedCount
+        - calendarUrl
     GenerateScheduleResult:
       type: object
       properties:

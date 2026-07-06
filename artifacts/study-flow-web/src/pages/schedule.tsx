@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDeviceId } from "@/hooks/use-device-id";
@@ -7,6 +7,8 @@ import {
   useDeleteSchedule,
   useUpdateSchedule,
   useReviseSchedule,
+  useGetGoogleCalendarStatus,
+  useSyncScheduleToGoogleCalendar,
   getGetScheduleQueryKey,
   getListSchedulesQueryKey,
   ScheduleBlock,
@@ -23,7 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Plus, Pencil, Loader2, Send } from "lucide-react";
+import { Trash2, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Plus, Pencil, Loader2, Send, CalendarCheck2 } from "lucide-react";
 import { format } from "date-fns";
 
 const DAYS_ORDER: DayOfWeek[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
@@ -58,6 +60,63 @@ export default function Schedule() {
   const deleteSchedule = useDeleteSchedule();
   const updateSchedule = useUpdateSchedule();
   const reviseSchedule = useReviseSchedule();
+
+  const { data: googleCalendarStatus } = useGetGoogleCalendarStatus();
+  const syncGoogleCalendar = useSyncScheduleToGoogleCalendar();
+  const autoSyncedRef = useRef(false);
+
+  const handleSyncGoogleCalendar = () => {
+    if (!id) return;
+    if (!googleCalendarStatus?.connected) {
+      const returnTo = `${window.location.pathname}?autoSync=1`;
+      window.location.href = `/api/google-calendar/connect?returnTo=${encodeURIComponent(returnTo)}`;
+      return;
+    }
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    syncGoogleCalendar.mutate(
+      { id, data: { timeZone } },
+      {
+        onSuccess: (data) => {
+          toast({ title: "Synced to Google Calendar", description: `${data.syncedCount} event(s) up to date.` });
+        },
+        onError: (err: any) => {
+          if (err?.status === 409) {
+            const returnTo = `${window.location.pathname}?autoSync=1`;
+            window.location.href = `/api/google-calendar/connect?returnTo=${encodeURIComponent(returnTo)}`;
+            return;
+          }
+          toast({ title: "Sync failed", description: err?.data?.message, variant: "destructive" });
+        }
+      }
+    );
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("googleCalendarConnected")) {
+      toast({ title: "Google Calendar connected" });
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+    if (params.has("googleCalendarError")) {
+      toast({ title: "Google Calendar connection failed", description: params.get("googleCalendarError") ?? undefined, variant: "destructive" });
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (
+      params.get("autoSync") === "1" &&
+      !autoSyncedRef.current &&
+      googleCalendarStatus?.connected &&
+      id
+    ) {
+      autoSyncedRef.current = true;
+      window.history.replaceState(null, "", window.location.pathname);
+      handleSyncGoogleCalendar();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googleCalendarStatus?.connected, id]);
 
   const handleDelete = () => {
     if (!id || !deviceId) return;
@@ -232,7 +291,22 @@ export default function Schedule() {
             <ArrowLeft className="w-4 h-4 mr-2" /> Home
           </Button>
 
-          <AlertDialog>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleSyncGoogleCalendar}
+              disabled={syncGoogleCalendar.isPending}
+              data-testid="button-sync-google-calendar"
+            >
+              {syncGoogleCalendar.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CalendarCheck2 className="w-4 h-4 mr-2" />
+              )}
+              {googleCalendarStatus?.connected ? "Sync to Google Calendar" : "Connect Google Calendar"}
+            </Button>
+
+            <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
                 <Trash2 className="w-4 h-4" />
@@ -252,7 +326,8 @@ export default function Schedule() {
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
-          </AlertDialog>
+            </AlertDialog>
+          </div>
         </div>
 
         <header className="space-y-3 pb-6 border-b">

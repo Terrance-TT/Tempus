@@ -1,1 +1,2 @@
-- [Shared api-server multitenancy](shared-api-server-multitenancy.md) — every read/write/delete route must scope by deviceId (IDOR); required new input fields break mobile/web compat; orval path+query param name-collision barrel fix.
+- [Shared api-server multitenancy](shared-api-server-multitenancy.md) — every read/write/delete route must scope by deviceId (IDOR); required new input fields break mobile/web compat; orval path+query param name-collision barrel fix; Clerk ownership migration + separate-OAuth-app pattern.
+- [Multi-artifact e2e testing](multi-artifact-e2e-testing.md) — runTest path steps aren't artifact-scoped, always prefix with the artifact's preview path; how to seed DB rows owned by a real signed-in Clerk user via an API round-trip.
