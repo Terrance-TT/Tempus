@@ -3,6 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db, commitments, schedules } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { resolveOwnerId } from "../lib/auth";
 import {
   ListSchedulesQueryParams,
   GetScheduleParams,
@@ -248,10 +249,11 @@ Rules:
 
 router.get("/schedules", async (req, res) => {
   const { deviceId } = ListSchedulesQueryParams.parse(req.query);
+  const ownerId = resolveOwnerId(req, deviceId);
   const rows = await db
     .select()
     .from(schedules)
-    .where(eq(schedules.deviceId, deviceId))
+    .where(eq(schedules.deviceId, ownerId))
     .orderBy(desc(schedules.createdAt));
   res.json(
     rows.map((row) => ({
@@ -267,10 +269,11 @@ router.get("/schedules", async (req, res) => {
 router.get("/schedules/:id", async (req, res) => {
   const { id } = GetScheduleParams.parse(req.params);
   const { deviceId } = GetScheduleQueryParams.parse(req.query);
+  const ownerId = resolveOwnerId(req, deviceId);
   const [row] = await db
     .select()
     .from(schedules)
-    .where(and(eq(schedules.id, id), eq(schedules.deviceId, deviceId)));
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, ownerId)));
   if (!row) {
     res.status(404).json({ message: "Schedule not found" });
     return;
@@ -281,11 +284,12 @@ router.get("/schedules/:id", async (req, res) => {
 router.patch("/schedules/:id", async (req, res) => {
   const { id } = UpdateScheduleParams.parse(req.params);
   const body = UpdateScheduleBody.parse(req.body);
+  const ownerId = resolveOwnerId(req, body.deviceId);
 
   const [existing] = await db
     .select()
     .from(schedules)
-    .where(and(eq(schedules.id, id), eq(schedules.deviceId, body.deviceId)));
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, ownerId)));
   if (!existing) {
     res.status(404).json({ message: "Schedule not found" });
     return;
@@ -304,7 +308,7 @@ router.patch("/schedules/:id", async (req, res) => {
   const [updated] = await db
     .update(schedules)
     .set({ blocks, status: "complete", clarifyingQuestions: [] })
-    .where(and(eq(schedules.id, id), eq(schedules.deviceId, body.deviceId)))
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, ownerId)))
     .returning();
 
   res.json(serializeSchedule(updated));
@@ -313,28 +317,30 @@ router.patch("/schedules/:id", async (req, res) => {
 router.delete("/schedules/:id", async (req, res) => {
   const { id } = DeleteScheduleParams.parse(req.params);
   const { deviceId } = DeleteScheduleQueryParams.parse(req.query);
+  const ownerId = resolveOwnerId(req, deviceId);
   const [existing] = await db
     .select()
     .from(schedules)
-    .where(and(eq(schedules.id, id), eq(schedules.deviceId, deviceId)));
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, ownerId)));
   if (!existing) {
     res.status(404).json({ message: "Schedule not found" });
     return;
   }
   await db
     .delete(schedules)
-    .where(and(eq(schedules.id, id), eq(schedules.deviceId, deviceId)));
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, ownerId)));
   res.status(204).end();
 });
 
 router.post("/schedules/:id/revise", async (req, res) => {
   const { id } = ReviseScheduleParams.parse(req.params);
   const body = ReviseScheduleBody.parse(req.body);
+  const ownerId = resolveOwnerId(req, body.deviceId);
 
   const [existing] = await db
     .select()
     .from(schedules)
-    .where(and(eq(schedules.id, id), eq(schedules.deviceId, body.deviceId)));
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, ownerId)));
   if (!existing) {
     res.status(404).json({ message: "Schedule not found" });
     return;
@@ -351,7 +357,7 @@ router.post("/schedules/:id/revise", async (req, res) => {
   const [updated] = await db
     .update(schedules)
     .set({ blocks: revised, status: "complete", clarifyingQuestions: [] })
-    .where(and(eq(schedules.id, id), eq(schedules.deviceId, body.deviceId)))
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, ownerId)))
     .returning();
 
   res.json(serializeSchedule(updated));
@@ -359,6 +365,7 @@ router.post("/schedules/:id/revise", async (req, res) => {
 
 router.post("/schedules/generate", async (req, res) => {
   const body = GenerateScheduleBody.parse(req.body);
+  const ownerId = resolveOwnerId(req, body.deviceId);
 
   let commitmentsSnapshot: CommitmentSnapshot[];
   let priorAnswers: ClarificationAnswer[];
@@ -372,7 +379,7 @@ router.post("/schedules/generate", async (req, res) => {
       .where(
         and(
           eq(schedules.id, body.draftId),
-          eq(schedules.deviceId, body.deviceId),
+          eq(schedules.deviceId, ownerId),
         ),
       );
     if (!existing) {
@@ -390,7 +397,7 @@ router.post("/schedules/generate", async (req, res) => {
     const rows = await db
       .select()
       .from(commitments)
-      .where(eq(commitments.deviceId, body.deviceId));
+      .where(eq(commitments.deviceId, ownerId));
     commitmentsSnapshot = rows.map((row) => ({
       title: row.title,
       type: row.type,
@@ -442,7 +449,7 @@ router.post("/schedules/generate", async (req, res) => {
   const [created] = await db
     .insert(schedules)
     .values({
-      deviceId: body.deviceId,
+      deviceId: ownerId,
       scope: body.scope,
       status: result.status,
       blocks: result.blocks,

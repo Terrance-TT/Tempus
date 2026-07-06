@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { and, eq } from "drizzle-orm";
 import { db, commitments } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { resolveOwnerId } from "../lib/auth";
 import {
   ListCommitmentsQueryParams,
   CreateCommitmentBody,
@@ -81,6 +82,7 @@ function toDataUrl(imageBase64: string): string {
 
 router.post("/commitments/extract-image", async (req, res) => {
   const body = ExtractCommitmentsFromImageBody.parse(req.body);
+  const ownerId = resolveOwnerId(req, body.deviceId);
 
   const systemPrompt = `You are an assistant that reads a photo of a student's weekly schedule or timetable and extracts the recurring commitments.
 
@@ -137,7 +139,7 @@ Rules:
     .insert(commitments)
     .values(
       extracted.map((c) => ({
-        deviceId: body.deviceId,
+        deviceId: ownerId,
         title: c.title,
         type: c.type,
         daysOfWeek: c.daysOfWeek,
@@ -157,10 +159,11 @@ Rules:
 
 router.get("/commitments", async (req, res) => {
   const { deviceId } = ListCommitmentsQueryParams.parse(req.query);
+  const ownerId = resolveOwnerId(req, deviceId);
   const rows = await db
     .select()
     .from(commitments)
-    .where(eq(commitments.deviceId, deviceId));
+    .where(eq(commitments.deviceId, ownerId));
   res.json(
     rows.map((row) => ({
       ...row,
@@ -171,10 +174,11 @@ router.get("/commitments", async (req, res) => {
 
 router.post("/commitments", async (req, res) => {
   const body = CreateCommitmentBody.parse(req.body);
+  const ownerId = resolveOwnerId(req, body.deviceId);
   const [row] = await db
     .insert(commitments)
     .values({
-      deviceId: body.deviceId,
+      deviceId: ownerId,
       title: body.title,
       type: body.type,
       daysOfWeek: body.daysOfWeek,
@@ -189,6 +193,7 @@ router.post("/commitments", async (req, res) => {
 router.patch("/commitments/:id", async (req, res) => {
   const { id } = UpdateCommitmentParams.parse(req.params);
   const body = UpdateCommitmentBody.parse(req.body);
+  const ownerId = resolveOwnerId(req, body.deviceId);
   const [row] = await db
     .update(commitments)
     .set({
@@ -201,7 +206,7 @@ router.patch("/commitments/:id", async (req, res) => {
       ...(body.endTime !== undefined ? { endTime: body.endTime } : {}),
       ...(body.notes !== undefined ? { notes: body.notes } : {}),
     })
-    .where(and(eq(commitments.id, id), eq(commitments.deviceId, body.deviceId)))
+    .where(and(eq(commitments.id, id), eq(commitments.deviceId, ownerId)))
     .returning();
 
   if (!row) {
@@ -215,17 +220,18 @@ router.patch("/commitments/:id", async (req, res) => {
 router.delete("/commitments/:id", async (req, res) => {
   const { id } = DeleteCommitmentParams.parse(req.params);
   const { deviceId } = DeleteCommitmentQueryParams.parse(req.query);
+  const ownerId = resolveOwnerId(req, deviceId);
   const [existing] = await db
     .select()
     .from(commitments)
-    .where(and(eq(commitments.id, id), eq(commitments.deviceId, deviceId)));
+    .where(and(eq(commitments.id, id), eq(commitments.deviceId, ownerId)));
   if (!existing) {
     res.status(404).json({ message: "Commitment not found" });
     return;
   }
   await db
     .delete(commitments)
-    .where(and(eq(commitments.id, id), eq(commitments.deviceId, deviceId)));
+    .where(and(eq(commitments.id, id), eq(commitments.deviceId, ownerId)));
   res.status(204).end();
 });
 
