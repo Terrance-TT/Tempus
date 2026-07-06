@@ -1,1 +1,1 @@
-- [Expo web crash: CSSStyleDeclaration indexed property](expo-web-rnw-crash-css-indexed-property.md) — react-native-keyboard-controller + react-native-screens stack transitions can crash RN Web; disable both on web.
+- [Shared api-server multitenancy](shared-api-server-multitenancy.md) — device-scoped write routes must check deviceId ownership; drafts use persisted scope; new input fields stay optional for mobile/web compat.

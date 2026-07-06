@@ -8,6 +8,10 @@ import {
   GetScheduleParams,
   DeleteScheduleParams,
   GenerateScheduleBody,
+  UpdateScheduleParams,
+  UpdateScheduleBody,
+  ReviseScheduleParams,
+  ReviseScheduleBody,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -32,6 +36,13 @@ type CommitmentSnapshot = {
 };
 
 type ClarificationAnswer = { question: string; answer: string };
+
+type Task = {
+  title: string;
+  dueDate: string;
+  estimatedMinutes?: number | null;
+  notes?: string | null;
+};
 
 function serializeSchedule(row: typeof schedules.$inferSelect) {
   return {
@@ -105,17 +116,20 @@ async function runScheduleGeneration(
   scope: "day" | "week",
   commitmentsSnapshot: CommitmentSnapshot[],
   answers: ClarificationAnswer[],
+  tasks: Task[],
 ): Promise<{
   status: "needs_clarification" | "complete";
   questions: string[];
   blocks: ScheduleBlock[];
 }> {
-  const systemPrompt = `You are an expert student schedule planner. Given a student's recurring commitments (classes, extracurriculars, personal routines like meals/sleep), produce a realistic, well-balanced ${scope === "day" ? "single day" : "full week (mon-sun)"} schedule.
+  const systemPrompt = `You are an expert student schedule planner. Given a student's recurring commitments (classes, extracurriculars, personal routines like meals/sleep) and a list of assignments/tasks they need to complete, produce a realistic, well-balanced ${scope === "day" ? "single day" : "full week (mon-sun)"} schedule.
 
 Rules:
 - Never overlap two blocks on the same day.
-- Fill the gaps between fixed commitments with sensible additions: homework/study blocks, breaks, and free time, respecting existing routines (e.g. don't schedule homework during dinner).
-- If you are missing information that materially changes the schedule (e.g. dinner time, homework load/subjects, wake-up or bedtime, study preferences), set status to "needs_clarification" and ask 1-4 short, specific questions. Do not ask about things already covered by existing commitments or prior answers.
+- Keep all of the student's fixed commitments in place at their given times.
+- Create dedicated homework/study blocks for the provided tasks. Prioritize tasks by their due date (soonest first) and allocate roughly the estimated time when provided. Title these blocks after the task (e.g. "Work on Biology essay").
+- Fill remaining gaps between fixed commitments with sensible additions: breaks, meals, and free time, respecting existing routines (e.g. don't schedule homework during dinner).
+- If you are missing information that materially changes the schedule (e.g. dinner time, wake-up or bedtime, study preferences, how long a task will take), set status to "needs_clarification" and ask 1-4 short, specific questions. Do not ask about things already covered by existing commitments, tasks, or prior answers.
 - Only produce status "complete" with full "blocks" once you have enough information to build a sensible schedule.
 - Keep block titles short and student-friendly (e.g. "Dinner", "Math homework", "Free time").
 - "blocks" must be empty when status is "needs_clarification", and "questions" must be empty when status is "complete".`;
@@ -123,6 +137,7 @@ Rules:
   const userPrompt = JSON.stringify({
     scope,
     commitments: commitmentsSnapshot,
+    tasks,
     priorAnswers: answers,
   });
 
@@ -164,6 +179,71 @@ Rules:
   };
 }
 
+const revisionResultSchema = {
+  type: "object",
+  properties: {
+    blocks: generationResultSchema.properties.blocks,
+  },
+  required: ["blocks"],
+  additionalProperties: false,
+} as const;
+
+async function runScheduleRevision(
+  scope: "day" | "week",
+  commitmentsSnapshot: CommitmentSnapshot[],
+  tasks: Task[],
+  currentBlocks: ScheduleBlock[],
+  instruction: string,
+): Promise<ScheduleBlock[]> {
+  const systemPrompt = `You are an expert student schedule planner revising an EXISTING ${scope === "day" ? "single day" : "full week (mon-sun)"} schedule based on the student's request.
+
+Rules:
+- Apply the requested change while keeping the rest of the schedule intact as much as possible.
+- Never overlap two blocks on the same day.
+- Keep the student's fixed commitments in place unless the instruction explicitly asks to move them.
+- Return the COMPLETE updated set of blocks (not just the changed ones).
+- Keep block titles short and student-friendly.`;
+
+  const userPrompt = JSON.stringify({
+    scope,
+    commitments: commitmentsSnapshot,
+    tasks,
+    currentSchedule: currentBlocks.map(({ id: _id, ...rest }) => rest),
+    instruction,
+  });
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.4",
+    max_completion_tokens: 4096,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "schedule_revision_result",
+        strict: true,
+        schema: revisionResultSchema,
+      },
+    },
+  });
+
+  const raw = response.choices[0]?.message?.content;
+  if (!raw) {
+    throw new Error("No content returned from schedule revision model");
+  }
+
+  const parsed = JSON.parse(raw) as {
+    blocks: Array<Omit<ScheduleBlock, "id">>;
+  };
+
+  return (parsed.blocks ?? []).map((block) => ({
+    id: randomUUID(),
+    ...block,
+  }));
+}
+
 router.get("/schedules", async (req, res) => {
   const { deviceId } = ListSchedulesQueryParams.parse(req.query);
   const rows = await db
@@ -192,10 +272,72 @@ router.get("/schedules/:id", async (req, res) => {
   res.json(serializeSchedule(row));
 });
 
+router.patch("/schedules/:id", async (req, res) => {
+  const { id } = UpdateScheduleParams.parse(req.params);
+  const body = UpdateScheduleBody.parse(req.body);
+
+  const [existing] = await db
+    .select()
+    .from(schedules)
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, body.deviceId)));
+  if (!existing) {
+    res.status(404).json({ message: "Schedule not found" });
+    return;
+  }
+
+  const blocks: ScheduleBlock[] = body.blocks.map((block) => ({
+    id: randomUUID(),
+    day: block.day,
+    startTime: block.startTime,
+    endTime: block.endTime,
+    title: block.title,
+    category: block.category,
+    notes: block.notes ?? null,
+  }));
+
+  const [updated] = await db
+    .update(schedules)
+    .set({ blocks, status: "complete", clarifyingQuestions: [] })
+    .where(eq(schedules.id, id))
+    .returning();
+
+  res.json(serializeSchedule(updated));
+});
+
 router.delete("/schedules/:id", async (req, res) => {
   const { id } = DeleteScheduleParams.parse(req.params);
   await db.delete(schedules).where(eq(schedules.id, id));
   res.status(204).end();
+});
+
+router.post("/schedules/:id/revise", async (req, res) => {
+  const { id } = ReviseScheduleParams.parse(req.params);
+  const body = ReviseScheduleBody.parse(req.body);
+
+  const [existing] = await db
+    .select()
+    .from(schedules)
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, body.deviceId)));
+  if (!existing) {
+    res.status(404).json({ message: "Schedule not found" });
+    return;
+  }
+
+  const revised = await runScheduleRevision(
+    existing.scope as "day" | "week",
+    existing.commitmentsSnapshot as CommitmentSnapshot[],
+    (existing.tasks as Task[]) ?? [],
+    existing.blocks as ScheduleBlock[],
+    body.instruction,
+  );
+
+  const [updated] = await db
+    .update(schedules)
+    .set({ blocks: revised, status: "complete", clarifyingQuestions: [] })
+    .where(eq(schedules.id, id))
+    .returning();
+
+  res.json(serializeSchedule(updated));
 });
 
 router.post("/schedules/generate", async (req, res) => {
@@ -203,6 +345,7 @@ router.post("/schedules/generate", async (req, res) => {
 
   let commitmentsSnapshot: CommitmentSnapshot[];
   let priorAnswers: ClarificationAnswer[];
+  let taskList: Task[];
   let draftRow: typeof schedules.$inferSelect | undefined;
 
   if (body.draftId) {
@@ -221,6 +364,7 @@ router.post("/schedules/generate", async (req, res) => {
     }
     draftRow = existing;
     commitmentsSnapshot = existing.commitmentsSnapshot as CommitmentSnapshot[];
+    taskList = (existing.tasks as Task[]) ?? [];
     priorAnswers = [
       ...(existing.answers as ClarificationAnswer[]),
       ...(body.answers ?? []),
@@ -238,13 +382,19 @@ router.post("/schedules/generate", async (req, res) => {
       endTime: row.endTime,
       notes: row.notes,
     }));
+    taskList = (body.tasks as Task[] | undefined) ?? [];
     priorAnswers = body.answers ?? [];
   }
 
+  const effectiveScope = draftRow
+    ? (draftRow.scope as "day" | "week")
+    : body.scope;
+
   const result = await runScheduleGeneration(
-    body.scope,
+    effectiveScope,
     commitmentsSnapshot,
     priorAnswers,
+    taskList,
   );
 
   if (draftRow) {
@@ -281,6 +431,7 @@ router.post("/schedules/generate", async (req, res) => {
       blocks: result.blocks,
       clarifyingQuestions: result.questions,
       answers: priorAnswers,
+      tasks: taskList,
       commitmentsSnapshot,
     })
     .returning();

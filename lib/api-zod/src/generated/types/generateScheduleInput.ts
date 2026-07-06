@@ -7,6 +7,7 @@
  */
 import type { ClarificationAnswer } from './clarificationAnswer';
 import type { ScheduleScope } from './scheduleScope';
+import type { Task } from './task';
 
 export interface GenerateScheduleInput {
   deviceId: string;
@@ -14,4 +15,6 @@ export interface GenerateScheduleInput {
   /** Pass the id returned from a prior needs_clarification response to continue that draft */
   draftId?: string | null;
   answers?: ClarificationAnswer[];
+  /** Assignments/tasks the student needs time for in this schedule. */
+  tasks?: Task[];
 }

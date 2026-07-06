@@ -1,15 +1,158 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, commitments } from "@workspace/db";
+import { openai } from "@workspace/integrations-openai-ai-server";
 import {
   ListCommitmentsQueryParams,
   CreateCommitmentBody,
   UpdateCommitmentParams,
   UpdateCommitmentBody,
   DeleteCommitmentParams,
+  ExtractCommitmentsFromImageBody,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
+
+const extractionResultSchema = {
+  type: "object",
+  properties: {
+    commitments: {
+      type: "array",
+      description:
+        "Every recurring commitment found in the schedule photo. One entry per distinct class/activity/routine, listing all days it repeats.",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Short name, e.g. 'Calculus'" },
+          type: {
+            type: "string",
+            enum: ["class", "extracurricular", "routine"],
+          },
+          daysOfWeek: {
+            type: "array",
+            items: {
+              type: "string",
+              enum: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+            },
+          },
+          startTime: { type: "string", description: "24h HH:mm" },
+          endTime: { type: "string", description: "24h HH:mm" },
+          notes: { type: ["string", "null"] },
+        },
+        required: [
+          "title",
+          "type",
+          "daysOfWeek",
+          "startTime",
+          "endTime",
+          "notes",
+        ],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["commitments"],
+  additionalProperties: false,
+} as const;
+
+type ExtractedCommitment = {
+  title: string;
+  type: "class" | "extracurricular" | "routine";
+  daysOfWeek: string[];
+  startTime: string;
+  endTime: string;
+  notes: string | null;
+};
+
+function detectMimeFromBase64(base64: string): string {
+  if (base64.startsWith("iVBOR")) return "image/png";
+  if (base64.startsWith("/9j/")) return "image/jpeg";
+  if (base64.startsWith("R0lG")) return "image/gif";
+  if (base64.startsWith("UklGR")) return "image/webp";
+  return "image/jpeg";
+}
+
+function toDataUrl(imageBase64: string): string {
+  return imageBase64.startsWith("data:")
+    ? imageBase64
+    : `data:${detectMimeFromBase64(imageBase64)};base64,${imageBase64}`;
+}
+
+router.post("/commitments/extract-image", async (req, res) => {
+  const body = ExtractCommitmentsFromImageBody.parse(req.body);
+
+  const systemPrompt = `You are an assistant that reads a photo of a student's weekly schedule or timetable and extracts the recurring commitments.
+
+Rules:
+- Extract every class, extracurricular activity, and routine (like a standing club, practice, or meal block) visible in the image.
+- Group repeats: if the same class occurs on multiple days at the same time, return ONE entry with all its days in daysOfWeek.
+- Classify each as "class" (academic courses/lectures/labs), "extracurricular" (sports, clubs, jobs, activities), or "routine" (personal recurring blocks like meals, gym, sleep).
+- Times must be 24-hour "HH:mm". Convert AM/PM if needed.
+- Only include what is clearly in the image. Do not invent commitments. If the image has no readable schedule, return an empty commitments array.`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.4",
+    max_completion_tokens: 4096,
+    messages: [
+      { role: "system", content: systemPrompt },
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: "Extract the recurring commitments from this schedule photo.",
+          },
+          {
+            type: "image_url",
+            image_url: { url: toDataUrl(body.imageBase64) },
+          },
+        ],
+      },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "commitment_extraction_result",
+        strict: true,
+        schema: extractionResultSchema,
+      },
+    },
+  });
+
+  const raw = response.choices[0]?.message?.content;
+  if (!raw) {
+    throw new Error("No content returned from commitment extraction model");
+  }
+
+  const parsed = JSON.parse(raw) as { commitments: ExtractedCommitment[] };
+  const extracted = parsed.commitments ?? [];
+
+  if (extracted.length === 0) {
+    res.status(201).json([]);
+    return;
+  }
+
+  const inserted = await db
+    .insert(commitments)
+    .values(
+      extracted.map((c) => ({
+        deviceId: body.deviceId,
+        title: c.title,
+        type: c.type,
+        daysOfWeek: c.daysOfWeek,
+        startTime: c.startTime,
+        endTime: c.endTime,
+        notes: c.notes ?? null,
+      })),
+    )
+    .returning();
+
+  res
+    .status(201)
+    .json(
+      inserted.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })),
+    );
+});
 
 router.get("/commitments", async (req, res) => {
   const { deviceId } = ListCommitmentsQueryParams.parse(req.query);

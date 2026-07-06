@@ -8,6 +8,7 @@ export const schedules = pgTable("schedules", {
   blocks: jsonb("blocks").notNull().default([]), // ScheduleBlock[]
   clarifyingQuestions: jsonb("clarifying_questions").notNull().default([]), // string[]
   answers: jsonb("answers").notNull().default([]), // ClarificationAnswer[] collected so far
+  tasks: jsonb("tasks").notNull().default([]), // Task[] (assignments) used to generate
   commitmentsSnapshot: jsonb("commitments_snapshot").notNull().default([]), // Commitment[] used to generate
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

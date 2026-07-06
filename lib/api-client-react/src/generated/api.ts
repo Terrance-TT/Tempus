@@ -22,14 +22,17 @@ import type {
 import type {
   Commitment,
   CreateCommitmentInput,
+  ExtractCommitmentsInput,
   GenerateScheduleInput,
   GenerateScheduleResult,
   HealthStatus,
   ListCommitmentsParams,
   ListSchedulesParams,
+  ReviseScheduleInput,
   Schedule,
   ScheduleSummary,
-  UpdateCommitmentInput
+  UpdateCommitmentInput,
+  UpdateScheduleInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -289,6 +292,77 @@ export const useCreateCommitment = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateCommitmentMutationOptions(options));
+    }
+
+export const getExtractCommitmentsFromImageUrl = () => {
+
+
+
+
+  return `/api/commitments/extract-image`
+}
+
+/**
+ * Accepts a photo of a student's timetable or schedule and uses AI vision to extract recurring commitments (classes, activities, routines). The extracted commitments are saved for the device and returned.
+ * @summary Extract recurring commitments from a photo of a schedule/timetable
+ */
+export const extractCommitmentsFromImage = async (extractCommitmentsInput: ExtractCommitmentsInput, options?: RequestInit): Promise<Commitment[]> => {
+
+  return customFetch<Commitment[]>(getExtractCommitmentsFromImageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(extractCommitmentsInput)
+  }
+);}
+
+
+
+
+export const getExtractCommitmentsFromImageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof extractCommitmentsFromImage>>, TError,{data: BodyType<ExtractCommitmentsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof extractCommitmentsFromImage>>, TError,{data: BodyType<ExtractCommitmentsInput>}, TContext> => {
+
+const mutationKey = ['extractCommitmentsFromImage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof extractCommitmentsFromImage>>, {data: BodyType<ExtractCommitmentsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  extractCommitmentsFromImage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExtractCommitmentsFromImageMutationResult = NonNullable<Awaited<ReturnType<typeof extractCommitmentsFromImage>>>
+    export type ExtractCommitmentsFromImageMutationBody = BodyType<ExtractCommitmentsInput>
+    export type ExtractCommitmentsFromImageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Extract recurring commitments from a photo of a schedule/timetable
+ */
+export const useExtractCommitmentsFromImage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof extractCommitmentsFromImage>>, TError,{data: BodyType<ExtractCommitmentsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof extractCommitmentsFromImage>>,
+        TError,
+        {data: BodyType<ExtractCommitmentsInput>},
+        TContext
+      > => {
+      return useMutation(getExtractCommitmentsFromImageMutationOptions(options));
     }
 
 export const getUpdateCommitmentUrl = (id: string,) => {
@@ -593,6 +667,78 @@ export function useGetSchedule<TData = Awaited<ReturnType<typeof getSchedule>>, 
 
 
 
+export const getUpdateScheduleUrl = (id: string,) => {
+
+
+
+
+  return `/api/schedules/${id}`
+}
+
+/**
+ * Replaces the schedule's blocks with the provided list (manual editing).
+ * @summary Manually edit a schedule's blocks
+ */
+export const updateSchedule = async (id: string,
+    updateScheduleInput: UpdateScheduleInput, options?: RequestInit): Promise<Schedule> => {
+
+  return customFetch<Schedule>(getUpdateScheduleUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateScheduleInput)
+  }
+);}
+
+
+
+
+export const getUpdateScheduleMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSchedule>>, TError,{id: string;data: BodyType<UpdateScheduleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSchedule>>, TError,{id: string;data: BodyType<UpdateScheduleInput>}, TContext> => {
+
+const mutationKey = ['updateSchedule'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSchedule>>, {id: string;data: BodyType<UpdateScheduleInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSchedule(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateScheduleMutationResult = NonNullable<Awaited<ReturnType<typeof updateSchedule>>>
+    export type UpdateScheduleMutationBody = BodyType<UpdateScheduleInput>
+    export type UpdateScheduleMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Manually edit a schedule's blocks
+ */
+export const useUpdateSchedule = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSchedule>>, TError,{id: string;data: BodyType<UpdateScheduleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSchedule>>,
+        TError,
+        {id: string;data: BodyType<UpdateScheduleInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateScheduleMutationOptions(options));
+    }
+
 export const getDeleteScheduleUrl = (id: string,) => {
 
 
@@ -661,6 +807,78 @@ export const useDeleteSchedule = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteScheduleMutationOptions(options));
+    }
+
+export const getReviseScheduleUrl = (id: string,) => {
+
+
+
+
+  return `/api/schedules/${id}/revise`
+}
+
+/**
+ * Takes an existing schedule and a free-text instruction (e.g. "move my study block later" or "add more breaks") and returns the revised schedule with updated blocks.
+ * @summary Ask AI to revise a schedule with a natural-language instruction
+ */
+export const reviseSchedule = async (id: string,
+    reviseScheduleInput: ReviseScheduleInput, options?: RequestInit): Promise<Schedule> => {
+
+  return customFetch<Schedule>(getReviseScheduleUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(reviseScheduleInput)
+  }
+);}
+
+
+
+
+export const getReviseScheduleMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviseSchedule>>, TError,{id: string;data: BodyType<ReviseScheduleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviseSchedule>>, TError,{id: string;data: BodyType<ReviseScheduleInput>}, TContext> => {
+
+const mutationKey = ['reviseSchedule'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviseSchedule>>, {id: string;data: BodyType<ReviseScheduleInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviseSchedule(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviseScheduleMutationResult = NonNullable<Awaited<ReturnType<typeof reviseSchedule>>>
+    export type ReviseScheduleMutationBody = BodyType<ReviseScheduleInput>
+    export type ReviseScheduleMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Ask AI to revise a schedule with a natural-language instruction
+ */
+export const useReviseSchedule = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviseSchedule>>, TError,{id: string;data: BodyType<ReviseScheduleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reviseSchedule>>,
+        TError,
+        {id: string;data: BodyType<ReviseScheduleInput>},
+        TContext
+      > => {
+      return useMutation(getReviseScheduleMutationOptions(options));
     }
 
 export const getGenerateScheduleUrl = () => {

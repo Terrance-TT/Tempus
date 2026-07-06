@@ -64,6 +64,24 @@ export interface UpdateCommitmentInput {
   notes?: string | null;
 }
 
+export interface ExtractCommitmentsInput {
+  deviceId: string;
+  /** The schedule photo, as a data URL (e.g. "data:image/png;base64,...") or a bare base64-encoded image string. */
+  imageBase64: string;
+}
+
+/**
+ * An assignment or task the student needs to work on.
+ */
+export interface Task {
+  title: string;
+  /** When it is due, free text (e.g. "tomorrow", "Friday", "2026-07-10"). */
+  dueDate: string;
+  /** Rough estimate of how long the task will take, in minutes. */
+  estimatedMinutes?: number | null;
+  notes?: string | null;
+}
+
 export type ScheduleBlockCategory = typeof ScheduleBlockCategory[keyof typeof ScheduleBlockCategory];
 
 
@@ -120,6 +138,26 @@ export interface Schedule {
   createdAt: string;
 }
 
+export interface ScheduleBlockInput {
+  day: DayOfWeek;
+  startTime: string;
+  endTime: string;
+  title: string;
+  category: ScheduleBlockCategory;
+  notes?: string | null;
+}
+
+export interface UpdateScheduleInput {
+  deviceId: string;
+  blocks: ScheduleBlockInput[];
+}
+
+export interface ReviseScheduleInput {
+  deviceId: string;
+  /** Natural-language description of the change the student wants. */
+  instruction: string;
+}
+
 export interface ClarificationAnswer {
   question: string;
   answer: string;
@@ -131,6 +169,8 @@ export interface GenerateScheduleInput {
   /** Pass the id returned from a prior needs_clarification response to continue that draft */
   draftId?: string | null;
   answers?: ClarificationAnswer[];
+  /** Assignments/tasks the student needs time for in this schedule. */
+  tasks?: Task[];
 }
 
 export interface GenerateScheduleResult {

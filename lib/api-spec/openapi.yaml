@@ -65,6 +65,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Commitment"
+  /commitments/extract-image:
+    post:
+      operationId: extractCommitmentsFromImage
+      tags: [commitments]
+      summary: Extract recurring commitments from a photo of a schedule/timetable
+      description: >
+        Accepts a photo of a student's timetable or schedule and uses AI vision
+        to extract recurring commitments (classes, activities, routines). The
+        extracted commitments are saved for the device and returned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExtractCommitmentsInput"
+      responses:
+        "201":
+          description: Extracted and saved commitments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Commitment"
   /commitments/{id}:
     patch:
       operationId: updateCommitment
@@ -140,6 +164,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Schedule"
+    patch:
+      operationId: updateSchedule
+      tags: [schedules]
+      summary: Manually edit a schedule's blocks
+      description: Replaces the schedule's blocks with the provided list (manual editing).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateScheduleInput"
+      responses:
+        "200":
+          description: Updated schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
     delete:
       operationId: deleteSchedule
       tags: [schedules]
@@ -153,6 +201,34 @@ paths:
       responses:
         "204":
           description: Deleted
+  /schedules/{id}/revise:
+    post:
+      operationId: reviseSchedule
+      tags: [schedules]
+      summary: Ask AI to revise a schedule with a natural-language instruction
+      description: >
+        Takes an existing schedule and a free-text instruction (e.g. "move my
+        study block later" or "add more breaks") and returns the revised
+        schedule with updated blocks.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviseScheduleInput"
+      responses:
+        "200":
+          description: Revised schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
   /schedules/generate:
     post:
       operationId: generateSchedule
@@ -273,6 +349,38 @@ components:
         notes:
           type: string
           nullable: true
+    ExtractCommitmentsInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        imageBase64:
+          type: string
+          description: >
+            The schedule photo, as a data URL (e.g. "data:image/png;base64,...")
+            or a bare base64-encoded image string.
+      required:
+        - deviceId
+        - imageBase64
+    Task:
+      type: object
+      description: An assignment or task the student needs to work on.
+      properties:
+        title:
+          type: string
+        dueDate:
+          type: string
+          description: 'When it is due, free text (e.g. "tomorrow", "Friday", "2026-07-10").'
+        estimatedMinutes:
+          type: integer
+          nullable: true
+          description: Rough estimate of how long the task will take, in minutes.
+        notes:
+          type: string
+          nullable: true
+      required:
+        - title
+        - dueDate
     ScheduleBlockCategory:
       type: string
       enum: [class, extracurricular, routine, homework, break, free]
@@ -357,6 +465,51 @@ components:
         - blocks
         - clarifyingQuestions
         - createdAt
+    ScheduleBlockInput:
+      type: object
+      properties:
+        day:
+          $ref: "#/components/schemas/DayOfWeek"
+        startTime:
+          type: string
+        endTime:
+          type: string
+        title:
+          type: string
+        category:
+          $ref: "#/components/schemas/ScheduleBlockCategory"
+        notes:
+          type: string
+          nullable: true
+      required:
+        - day
+        - startTime
+        - endTime
+        - title
+        - category
+    UpdateScheduleInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScheduleBlockInput"
+      required:
+        - deviceId
+        - blocks
+    ReviseScheduleInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        instruction:
+          type: string
+          description: Natural-language description of the change the student wants.
+      required:
+        - deviceId
+        - instruction
     ClarificationAnswer:
       type: object
       properties:
@@ -382,6 +535,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ClarificationAnswer"
+        tasks:
+          type: array
+          description: Assignments/tasks the student needs time for in this schedule.
+          items:
+            $ref: "#/components/schemas/Task"
       required:
         - deviceId
         - scope

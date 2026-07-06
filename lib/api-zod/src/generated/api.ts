@@ -65,6 +65,29 @@ export const CreateCommitmentResponse = zod.object({
 
 
 /**
+ * Accepts a photo of a student's timetable or schedule and uses AI vision to extract recurring commitments (classes, activities, routines). The extracted commitments are saved for the device and returned.
+ * @summary Extract recurring commitments from a photo of a schedule/timetable
+ */
+export const ExtractCommitmentsFromImageBody = zod.object({
+  "deviceId": zod.string(),
+  "imageBase64": zod.string().describe('The schedule photo, as a data URL (e.g. \"data:image\/png;base64,...\") or a bare base64-encoded image string.\n')
+})
+
+export const ExtractCommitmentsFromImageResponseItem = zod.object({
+  "id": zod.string(),
+  "deviceId": zod.string(),
+  "title": zod.string(),
+  "type": zod.enum(['class', 'extracurricular', 'routine']),
+  "daysOfWeek": zod.array(zod.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])),
+  "startTime": zod.string().describe('24h time, \"HH:mm\"'),
+  "endTime": zod.string().describe('24h time, \"HH:mm\"'),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ExtractCommitmentsFromImageResponse = zod.array(ExtractCommitmentsFromImageResponseItem)
+
+
+/**
  * @summary Update a commitment
  */
 export const UpdateCommitmentParams = zod.object({
@@ -147,6 +170,45 @@ export const GetScheduleResponse = zod.object({
 
 
 /**
+ * Replaces the schedule's blocks with the provided list (manual editing).
+ * @summary Manually edit a schedule's blocks
+ */
+export const UpdateScheduleParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateScheduleBody = zod.object({
+  "deviceId": zod.string(),
+  "blocks": zod.array(zod.object({
+  "day": zod.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "title": zod.string(),
+  "category": zod.enum(['class', 'extracurricular', 'routine', 'homework', 'break', 'free']),
+  "notes": zod.string().nullish()
+}))
+})
+
+export const UpdateScheduleResponse = zod.object({
+  "id": zod.string(),
+  "deviceId": zod.string(),
+  "scope": zod.enum(['day', 'week']),
+  "status": zod.enum(['needs_clarification', 'complete']),
+  "blocks": zod.array(zod.object({
+  "id": zod.string(),
+  "day": zod.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "title": zod.string(),
+  "category": zod.enum(['class', 'extracurricular', 'routine', 'homework', 'break', 'free']),
+  "notes": zod.string().nullish()
+})),
+  "clarifyingQuestions": zod.array(zod.string()),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
  * @summary Delete a schedule
  */
 export const DeleteScheduleParams = zod.object({
@@ -154,6 +216,38 @@ export const DeleteScheduleParams = zod.object({
 })
 
 export const DeleteScheduleResponse = zod.void()
+
+
+/**
+ * Takes an existing schedule and a free-text instruction (e.g. "move my study block later" or "add more breaks") and returns the revised schedule with updated blocks.
+ * @summary Ask AI to revise a schedule with a natural-language instruction
+ */
+export const ReviseScheduleParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ReviseScheduleBody = zod.object({
+  "deviceId": zod.string(),
+  "instruction": zod.string().describe('Natural-language description of the change the student wants.')
+})
+
+export const ReviseScheduleResponse = zod.object({
+  "id": zod.string(),
+  "deviceId": zod.string(),
+  "scope": zod.enum(['day', 'week']),
+  "status": zod.enum(['needs_clarification', 'complete']),
+  "blocks": zod.array(zod.object({
+  "id": zod.string(),
+  "day": zod.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "title": zod.string(),
+  "category": zod.enum(['class', 'extracurricular', 'routine', 'homework', 'break', 'free']),
+  "notes": zod.string().nullish()
+})),
+  "clarifyingQuestions": zod.array(zod.string()),
+  "createdAt": zod.coerce.date()
+})
 
 
 /**
@@ -167,7 +261,13 @@ export const GenerateScheduleBody = zod.object({
   "answers": zod.array(zod.object({
   "question": zod.string(),
   "answer": zod.string()
-})).optional()
+})).optional(),
+  "tasks": zod.array(zod.object({
+  "title": zod.string(),
+  "dueDate": zod.string().describe('When it is due, free text (e.g. \"tomorrow\", \"Friday\", \"2026-07-10\").'),
+  "estimatedMinutes": zod.number().nullish().describe('Rough estimate of how long the task will take, in minutes.'),
+  "notes": zod.string().nullish()
+}).describe('An assignment or task the student needs to work on.')).optional().describe('Assignments\/tasks the student needs time for in this schedule.')
 })
 
 export const GenerateScheduleResponse = zod.object({

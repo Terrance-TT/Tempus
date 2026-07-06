@@ -4,9 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import Home from "@/pages/home";
-import Onboarding from "@/pages/onboarding";
-import Commitments from "@/pages/commitments";
-import Generate from "@/pages/generate";
+import Create from "@/pages/create";
 import Schedule from "@/pages/schedule";
 import History from "@/pages/history";
 import NotFound from "@/pages/not-found";
@@ -17,9 +15,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/onboarding" component={Onboarding} />
-      <Route path="/commitments" component={Commitments} />
-      <Route path="/generate" component={Generate} />
+      <Route path="/create" component={Create} />
       <Route path="/schedule/:id" component={Schedule} />
       <Route path="/history" component={History} />
       <Route component={NotFound} />
