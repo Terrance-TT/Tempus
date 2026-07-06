@@ -249,6 +249,9 @@ export default function Integrations() {
                       onChange={(e) => setCanvasUrl(e.target.value)}
                       required
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Open Canvas in your browser and copy the first part of the address bar — it usually looks like https://schoolname.instructure.com or https://canvas.school.edu
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label>Access Token</Label>
