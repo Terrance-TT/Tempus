@@ -188,6 +188,12 @@ export interface SyncScheduleGoogleCalendarResult {
   calendarUrl: string;
 }
 
+export interface ScheduleCalendarSync {
+  blockId: string;
+  googleEventId: string;
+  createdAt: string;
+}
+
 export interface GenerateScheduleResult {
   id: string;
   status: ScheduleStatus;

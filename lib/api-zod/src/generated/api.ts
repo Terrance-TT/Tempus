@@ -272,6 +272,22 @@ export const GetGoogleCalendarStatusResponse = zod.object({
 
 
 /**
+ * Returns which blocks in this schedule have been synced to Google Calendar, including the Google event id for each synced block. The schedule must belong to the signed-in user.
+ * @summary List Google Calendar sync records for a schedule's blocks
+ */
+export const GetScheduleCalendarSyncsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetScheduleCalendarSyncsResponseItem = zod.object({
+  "blockId": zod.string(),
+  "googleEventId": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const GetScheduleCalendarSyncsResponse = zod.array(GetScheduleCalendarSyncsResponseItem)
+
+
+/**
  * Creates or updates Google Calendar events for every block in the schedule. Re-syncing updates the previously created events instead of creating duplicates, and removes events for blocks that no longer exist.
  * @summary Push a schedule's blocks to the signed-in user's Google Calendar
  */

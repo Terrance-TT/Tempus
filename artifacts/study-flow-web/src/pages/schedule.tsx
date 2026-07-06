@@ -9,7 +9,9 @@ import {
   useReviseSchedule,
   useGetGoogleCalendarStatus,
   useSyncScheduleToGoogleCalendar,
+  useGetScheduleCalendarSyncs,
   getGetScheduleQueryKey,
+  getGetScheduleCalendarSyncsQueryKey,
   getListSchedulesQueryKey,
   ScheduleBlock,
   ScheduleBlockInput,
@@ -63,7 +65,11 @@ export default function Schedule() {
 
   const { data: googleCalendarStatus } = useGetGoogleCalendarStatus();
   const syncGoogleCalendar = useSyncScheduleToGoogleCalendar();
+  const { data: calendarSyncs } = useGetScheduleCalendarSyncs(id || "", {
+    query: { enabled: !!id, queryKey: getGetScheduleCalendarSyncsQueryKey(id || "") }
+  });
   const autoSyncedRef = useRef(false);
+  const syncMap = new Map(calendarSyncs?.map(s => [s.blockId, s.googleEventId]) ?? []);
 
   const handleSyncGoogleCalendar = () => {
     if (!id) return;
@@ -385,7 +391,9 @@ export default function Schedule() {
                       Free day
                     </div>
                   )}
-                  {blocks.map(block => (
+                  {blocks.map(block => {
+                    const googleEventId = syncMap.get(block.id);
+                    return (
                     <div 
                       key={block.id} 
                       className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:shadow-sm group ${getCategoryColor(block.category)}`}
@@ -402,6 +410,18 @@ export default function Schedule() {
                             <Badge variant="outline" className="bg-background/50 capitalize border-current/20">
                               {block.category}
                             </Badge>
+                            {googleEventId && (
+                              <a
+                                href={`https://calendar.google.com/calendar/u/0/r/eventedit/${googleEventId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs opacity-70 hover:opacity-100 hover:underline"
+                                title="View on Google Calendar"
+                              >
+                                <CalendarCheck2 className="w-3 h-3" />
+                                <span className="hidden sm:inline">Google</span>
+                              </a>
+                            )}
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(block)}>
                                 <Pencil className="w-3 h-3" />
@@ -424,7 +444,8 @@ export default function Schedule() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );

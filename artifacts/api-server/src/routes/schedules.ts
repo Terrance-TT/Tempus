@@ -1,9 +1,15 @@
 import { Router, type IRouter } from "express";
+import { getAuth } from "@clerk/express";
 import { and, desc, eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
-import { db, commitments, schedules } from "@workspace/db";
+import { db, commitments, schedules, googleCalendarConnections, scheduleCalendarSyncs } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { resolveOwnerId } from "../lib/auth";
+import {
+  getValidAccessToken,
+  deleteCalendarEvent,
+  GoogleReauthRequiredError,
+} from "../lib/googleCalendar";
 import {
   ListSchedulesQueryParams,
   GetScheduleParams,
@@ -57,6 +63,55 @@ function serializeSchedule(row: typeof schedules.$inferSelect) {
     clarifyingQuestions: row.clarifyingQuestions as string[],
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+/**
+ * Finds and deletes Google Calendar events for any blocks that were removed
+ * from a schedule. This is called during PATCH (edit/revise) and DELETE
+ * so that deleting a block immediately cleans up its calendar event, not
+ * just on the next full sync.
+ */
+async function deleteRemovedBlockEvents(
+  scheduleId: string,
+  currentBlockIds: Set<string>,
+  userId: string,
+): Promise<void> {
+  const [connection] = await db
+    .select()
+    .from(googleCalendarConnections)
+    .where(eq(googleCalendarConnections.ownerId, userId));
+  if (!connection) return;
+
+  let accessToken: string;
+  try {
+    accessToken = await getValidAccessToken(connection);
+  } catch (err) {
+    if (err instanceof GoogleReauthRequiredError) {
+      await db
+        .delete(googleCalendarConnections)
+        .where(eq(googleCalendarConnections.id, connection.id));
+    }
+    return;
+  }
+
+  const syncs = await db
+    .select()
+    .from(scheduleCalendarSyncs)
+    .where(eq(scheduleCalendarSyncs.scheduleId, scheduleId));
+
+  for (const sync of syncs) {
+    if (!currentBlockIds.has(sync.blockId)) {
+      try {
+        await deleteCalendarEvent(accessToken, sync.googleEventId);
+      } catch (err) {
+        // Log but don't block the schedule update if the event is already gone
+        console.warn("Failed to delete calendar event for removed block", sync.blockId, err);
+      }
+      await db
+        .delete(scheduleCalendarSyncs)
+        .where(eq(scheduleCalendarSyncs.id, sync.id));
+    }
+  }
 }
 
 const generationResultSchema = {
@@ -305,6 +360,11 @@ router.patch("/schedules/:id", async (req, res) => {
     notes: block.notes ?? null,
   }));
 
+  const userId = getAuth(req)?.userId;
+  if (userId) {
+    await deleteRemovedBlockEvents(id, new Set(blocks.map((b) => b.id)), userId);
+  }
+
   const [updated] = await db
     .update(schedules)
     .set({ blocks, status: "complete", clarifyingQuestions: [] })
@@ -326,6 +386,13 @@ router.delete("/schedules/:id", async (req, res) => {
     res.status(404).json({ message: "Schedule not found" });
     return;
   }
+
+  const userId = getAuth(req)?.userId;
+  if (userId) {
+    // Delete all Google Calendar events for this schedule before removing the schedule.
+    await deleteRemovedBlockEvents(id, new Set(), userId);
+  }
+
   await db
     .delete(schedules)
     .where(and(eq(schedules.id, id), eq(schedules.deviceId, ownerId)));
@@ -353,6 +420,11 @@ router.post("/schedules/:id/revise", async (req, res) => {
     existing.blocks as ScheduleBlock[],
     body.instruction,
   );
+
+  const userId = getAuth(req)?.userId;
+  if (userId) {
+    await deleteRemovedBlockEvents(id, new Set(revised.map((b) => b.id)), userId);
+  }
 
   const [updated] = await db
     .update(schedules)

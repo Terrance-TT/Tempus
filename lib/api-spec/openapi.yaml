@@ -256,6 +256,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GoogleCalendarStatus"
+  /schedules/{id}/calendar-syncs:
+    get:
+      operationId: getScheduleCalendarSyncs
+      tags: [schedules, google-calendar]
+      summary: List Google Calendar sync records for a schedule's blocks
+      description: >
+        Returns which blocks in this schedule have been synced to Google
+        Calendar, including the Google event id for each synced block.
+        The schedule must belong to the signed-in user.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of sync records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScheduleCalendarSync"
   /schedules/{id}/sync-google-calendar:
     post:
       operationId: syncScheduleToGoogleCalendar
@@ -630,6 +654,20 @@ components:
       required:
         - syncedCount
         - calendarUrl
+    ScheduleCalendarSync:
+      type: object
+      properties:
+        blockId:
+          type: string
+        googleEventId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - blockId
+        - googleEventId
+        - createdAt
     GenerateScheduleResult:
       type: object
       properties:

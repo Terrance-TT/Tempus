@@ -34,6 +34,7 @@ import type {
   ListSchedulesParams,
   ReviseScheduleInput,
   Schedule,
+  ScheduleCalendarSync,
   ScheduleSummary,
   SyncScheduleGoogleCalendarInput,
   SyncScheduleGoogleCalendarResult,
@@ -982,6 +983,84 @@ export function useGetGoogleCalendarStatus<TData = Awaited<ReturnType<typeof get
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetGoogleCalendarStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetScheduleCalendarSyncsUrl = (id: string,) => {
+
+
+
+
+  return `/api/schedules/${id}/calendar-syncs`
+}
+
+/**
+ * Returns which blocks in this schedule have been synced to Google Calendar, including the Google event id for each synced block. The schedule must belong to the signed-in user.
+ * @summary List Google Calendar sync records for a schedule's blocks
+ */
+export const getScheduleCalendarSyncs = async (id: string, options?: RequestInit): Promise<ScheduleCalendarSync[]> => {
+
+  return customFetch<ScheduleCalendarSync[]>(getGetScheduleCalendarSyncsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetScheduleCalendarSyncsQueryKey = (id: string,) => {
+    return [
+    `/api/schedules/${id}/calendar-syncs`
+    ] as const;
+    }
+
+
+export const getGetScheduleCalendarSyncsQueryOptions = <TData = Awaited<ReturnType<typeof getScheduleCalendarSyncs>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getScheduleCalendarSyncs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetScheduleCalendarSyncsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getScheduleCalendarSyncs>>> = ({ signal }) => getScheduleCalendarSyncs(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getScheduleCalendarSyncs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetScheduleCalendarSyncsQueryResult = NonNullable<Awaited<ReturnType<typeof getScheduleCalendarSyncs>>>
+export type GetScheduleCalendarSyncsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List Google Calendar sync records for a schedule's blocks
+ */
+
+export function useGetScheduleCalendarSyncs<TData = Awaited<ReturnType<typeof getScheduleCalendarSyncs>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getScheduleCalendarSyncs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetScheduleCalendarSyncsQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

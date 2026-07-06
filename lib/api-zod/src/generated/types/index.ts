@@ -26,6 +26,7 @@ export * from './schedule';
 export * from './scheduleBlock';
 export * from './scheduleBlockCategory';
 export * from './scheduleBlockInput';
+export * from './scheduleCalendarSync';
 export * from './scheduleScope';
 export * from './scheduleStatus';
 export * from './scheduleSummary';

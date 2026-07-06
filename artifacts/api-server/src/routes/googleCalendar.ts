@@ -203,6 +203,34 @@ router.get("/google-calendar/callback", async (req, res) => {
   }
 });
 
+router.get("/schedules/:id/calendar-syncs", async (req, res) => {
+  const userId = getAuth(req)?.userId;
+  if (!userId) {
+    res.status(401).json({ message: "Sign in required" });
+    return;
+  }
+  const { id } = SyncScheduleToGoogleCalendarParams.parse(req.params);
+  const [schedule] = await db
+    .select()
+    .from(schedules)
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, userId)));
+  if (!schedule) {
+    res.status(404).json({ message: "Schedule not found" });
+    return;
+  }
+  const syncs = await db
+    .select()
+    .from(scheduleCalendarSyncs)
+    .where(eq(scheduleCalendarSyncs.scheduleId, id));
+  res.json(
+    syncs.map((s) => ({
+      blockId: s.blockId,
+      googleEventId: s.googleEventId,
+      createdAt: s.createdAt.toISOString(),
+    })),
+  );
+});
+
 router.post("/schedules/:id/sync-google-calendar", async (req, res) => {
   const userId = getAuth(req)?.userId;
   if (!userId) {
