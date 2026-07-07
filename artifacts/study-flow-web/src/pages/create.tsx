@@ -481,12 +481,12 @@ export default function Create() {
               <p className="text-muted-foreground text-lg">Snap a photo of your timetable — or just describe your week in words. Our AI will suggest which assignment to tackle when, so you stay on track.</p>
             </header>
 
-            <div className="grid grid-cols-2 gap-2 p-1 bg-secondary/40 rounded-xl" data-testid="tabs-input-mode">
+            <div className="grid grid-cols-2 gap-2 p-1.5 bg-secondary/40 rounded-xl border border-border" data-testid="tabs-input-mode">
               <button
                 type="button"
                 onClick={() => setInputMode("photo")}
                 data-testid="tab-photo"
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${inputMode === "photo" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all border ${inputMode === "photo" ? "bg-background shadow-sm text-foreground border-border" : "text-muted-foreground hover:text-foreground border-transparent hover:border-border/50"}`}
               >
                 <Camera className="w-4 h-4" /> Snap a photo
               </button>
@@ -494,7 +494,7 @@ export default function Create() {
                 type="button"
                 onClick={() => setInputMode("describe")}
                 data-testid="tab-describe"
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${inputMode === "describe" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all border ${inputMode === "describe" ? "bg-background shadow-sm text-foreground border-border" : "text-muted-foreground hover:text-foreground border-transparent hover:border-border/50"}`}
               >
                 <MessageSquareText className="w-4 h-4" /> Describe it
               </button>
