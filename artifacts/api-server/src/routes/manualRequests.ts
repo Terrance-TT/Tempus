@@ -5,14 +5,11 @@ import { eq, desc } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-// Create a manual schedule request (signed-in users only)
+// Create a manual schedule request.
+// Signed-in users are identified by their Clerk userId.
+// Guests may submit with an ownerEmail (stored as ownerUserId = "email:<addr>").
 router.post("/manual-requests", async (req, res) => {
   const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Sign in required to request a human-crafted schedule" });
-    return;
-  }
-
   const { timetableDescription, assignments, preferences, ownerEmail } =
     req.body as {
       timetableDescription?: string;
@@ -21,11 +18,19 @@ router.post("/manual-requests", async (req, res) => {
       ownerEmail?: string;
     };
 
+  // Require either a Clerk session or an email address
+  if (!userId && !ownerEmail?.trim()) {
+    res.status(401).json({ error: "Sign in or provide an email address to request a human-crafted schedule" });
+    return;
+  }
+
+  const effectiveUserId = userId ?? `email:${ownerEmail!.trim().toLowerCase()}`;
+
   const [row] = await db
     .insert(manualRequests)
     .values({
-      ownerUserId: userId,
-      ownerEmail: ownerEmail ?? null,
+      ownerUserId: effectiveUserId,
+      ownerEmail: ownerEmail?.trim() ?? null,
       timetableDescription: timetableDescription ?? null,
       assignments: assignments ?? null,
       preferences: preferences ?? null,

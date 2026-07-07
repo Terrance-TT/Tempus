@@ -19,6 +19,7 @@ import TabLayout from "./(tabs)/_layout";
 import OnboardingScreen from "./onboarding";
 import GenerateScreen from "./generate";
 import ScheduleScreen from "./schedule/[id]";
+import RequestScreen from "./request/[id]";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -56,6 +57,9 @@ function WebRootLayout() {
   if (pathname.startsWith("/schedule/")) {
     return <ScheduleScreen />;
   }
+  if (pathname.startsWith("/request/")) {
+    return <RequestScreen />;
+  }
   return <TabLayout />;
 }
 
@@ -83,6 +87,10 @@ export default function RootLayout() {
       <Stack.Screen
         name="schedule/[id]"
         options={{ presentation: "card", headerShown: true, title: "Schedule" }}
+      />
+      <Stack.Screen
+        name="request/[id]"
+        options={{ presentation: "card", headerShown: false }}
       />
     </Stack>
   );

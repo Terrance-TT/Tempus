@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 
-const DEVICE_ID_KEY = "studyflow_device_id";
+const DEVICE_ID_KEY = "tempus_device_id";
 
 function generateId() {
   return (

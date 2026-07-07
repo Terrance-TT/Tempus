@@ -15,14 +15,16 @@ import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useDeviceId } from "@/hooks/useDeviceId";
 import { useGenerateSchedule, ScheduleScope } from "@workspace/api-client-react";
+import { useCreateManualRequest } from "@/hooks/useManualRequests";
 
-type Step = "scope" | "loading" | "questions" | "error";
+type Step = "scope" | "loading" | "questions" | "error" | "expert_form" | "expert_submitted";
 
 export default function GenerateScreen() {
   const colors = useColors();
   const router = useRouter();
   const { deviceId } = useDeviceId();
   const generateSchedule = useGenerateSchedule();
+  const createManualRequest = useCreateManualRequest();
 
   const [step, setStep] = useState<Step>("scope");
   const [scope, setScope] = useState<ScheduleScope>(ScheduleScope.day);
@@ -30,6 +32,9 @@ export default function GenerateScreen() {
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [errorMessage, setErrorMessage] = useState("");
+  const [expertEmail, setExpertEmail] = useState("");
+  const [expertDescription, setExpertDescription] = useState("");
+  const [expertRequestId, setExpertRequestId] = useState<string | null>(null);
 
   const runGenerate = (payload: {
     draftId?: string;
@@ -125,6 +130,147 @@ export default function GenerateScreen() {
                 Generate schedule
               </Text>
               <Feather name="arrow-right" size={18} color={colors.primaryForeground} />
+            </Pressable>
+
+            <View style={styles.dividerRow}>
+              <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+              <Text style={[styles.dividerText, { color: colors.mutedForeground }]}>or</Text>
+              <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            </View>
+
+            <Pressable
+              style={[styles.expertButton, { borderColor: colors.border, backgroundColor: colors.card }]}
+              onPress={() => setStep("expert_form")}
+            >
+              <Feather name="user" size={18} color={colors.foreground} />
+              <Text style={[styles.expertButtonText, { color: colors.foreground }]}>
+                Request expert plan
+              </Text>
+            </Pressable>
+            <Text style={[styles.expertHint, { color: colors.mutedForeground }]}>
+              A human coach will craft a personalised schedule for you.
+            </Text>
+          </View>
+        )}
+
+        {step === "expert_form" && (
+          <View style={styles.section}>
+            <Text style={[styles.eyebrow, { color: colors.primary }]}>Expert plan</Text>
+            <Text style={[styles.title, { color: colors.foreground }]}>
+              Tell us about your week
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+              A coach will review your commitments and send back a hand-crafted schedule.
+            </Text>
+
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Your email *</Text>
+              <TextInput
+                style={[
+                  styles.questionInput,
+                  { backgroundColor: colors.card, color: colors.foreground, borderColor: colors.border },
+                ]}
+                placeholder="you@example.com"
+                placeholderTextColor={colors.mutedForeground}
+                value={expertEmail}
+                onChangeText={setExpertEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
+                Anything specific you want? (optional)
+              </Text>
+              <TextInput
+                style={[
+                  styles.questionInput,
+                  styles.multilineInput,
+                  { backgroundColor: colors.card, color: colors.foreground, borderColor: colors.border },
+                ]}
+                placeholder="e.g. I have exams next week, prefer mornings..."
+                placeholderTextColor={colors.mutedForeground}
+                value={expertDescription}
+                onChangeText={setExpertDescription}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+
+            <Pressable
+              style={[
+                styles.primaryButton,
+                { backgroundColor: expertEmail.trim() ? colors.primary : colors.border },
+              ]}
+              onPress={() => {
+                if (!expertEmail.trim()) return;
+                createManualRequest.mutate(
+                  {
+                    ownerEmail: expertEmail.trim(),
+                    timetableDescription: expertDescription.trim() || undefined,
+                  },
+                  {
+                    onSuccess: (result) => {
+                      setExpertRequestId(result.data.id);
+                      setStep("expert_submitted");
+                    },
+                    onError: () => {
+                      setErrorMessage("Couldn't submit your request. Please try again.");
+                      setStep("error");
+                    },
+                  }
+                );
+              }}
+              disabled={createManualRequest.isPending || !expertEmail.trim()}
+            >
+              {createManualRequest.isPending ? (
+                <ActivityIndicator size="small" color={colors.primaryForeground} />
+              ) : (
+                <>
+                  <Text style={[styles.primaryButtonText, { color: colors.primaryForeground }]}>
+                    Submit request
+                  </Text>
+                  <Feather name="send" size={18} color={colors.primaryForeground} />
+                </>
+              )}
+            </Pressable>
+
+            <Pressable onPress={() => setStep("scope")} style={styles.backLink}>
+              <Text style={[styles.backLinkText, { color: colors.mutedForeground }]}>
+                ← Back
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
+        {step === "expert_submitted" && (
+          <View style={[styles.section, styles.centred]}>
+            <View style={[styles.successCircle, { backgroundColor: `${colors.primary}18` }]}>
+              <Feather name="check-circle" size={40} color={colors.primary} />
+            </View>
+            <Text style={[styles.title, { color: colors.foreground }]}>Request sent!</Text>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground, textAlign: "center" }]}>
+              We'll craft your schedule and send it to {expertEmail.trim()}.
+              Check the status below.
+            </Text>
+            {expertRequestId ? (
+              <Pressable
+                style={[styles.primaryButton, { backgroundColor: colors.primary, marginTop: 8 }]}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onPress={() => router.replace(`/request/${expertRequestId}` as any)}
+              >
+                <Text style={[styles.primaryButtonText, { color: colors.primaryForeground }]}>
+                  Check status
+                </Text>
+                <Feather name="arrow-right" size={18} color={colors.primaryForeground} />
+              </Pressable>
+            ) : null}
+            <Pressable onPress={() => router.back()} style={styles.backLink}>
+              <Text style={[styles.backLinkText, { color: colors.mutedForeground }]}>
+                Done
+              </Text>
             </Pressable>
           </View>
         )}
@@ -417,5 +563,68 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginVertical: 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  expertButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  expertButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  expertHint: {
+    fontSize: 13,
+    textAlign: "center",
+    marginTop: -4,
+  },
+  fieldGroup: {
+    gap: 6,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  multilineInput: {
+    height: 100,
+    paddingTop: 12,
+  },
+  backLink: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  backLinkText: {
+    fontSize: 14,
+  },
+  centred: {
+    alignItems: "center",
+    gap: 14,
+    paddingTop: 20,
+  },
+  successCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
   },
 });
