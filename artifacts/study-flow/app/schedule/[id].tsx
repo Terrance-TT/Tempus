@@ -1,10 +1,20 @@
 import React from "react";
-import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator, Platform } from "react-native";
+import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator, Platform, Alert, Linking } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { useColors } from "@/hooks/useColors";
 import { useDeviceId } from "@/hooks/useDeviceId";
-import { useGetSchedule, DayOfWeek, ScheduleBlockCategory } from "@workspace/api-client-react";
+import {
+  useGetSchedule,
+  useUpdateSchedule,
+  useGetGoogleCalendarStatus,
+  useGetScheduleCalendarSyncs,
+  getGetScheduleQueryKey,
+  getGetScheduleCalendarSyncsQueryKey,
+  DayOfWeek,
+  ScheduleBlockCategory,
+} from "@workspace/api-client-react";
 
 const DAY_ORDER: DayOfWeek[] = [
   DayOfWeek.mon,
@@ -57,6 +67,7 @@ export default function ScheduleScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { deviceId } = useDeviceId();
+  const queryClient = useQueryClient();
 
   const { data: schedule, isLoading } = useGetSchedule(
     id ?? "",
@@ -65,6 +76,73 @@ export default function ScheduleScreen() {
       query: { enabled: !!id && !!deviceId } as any,
     },
   );
+
+  // The calendar-syncs endpoint requires a signed-in (Clerk) session, which
+  // only exists once mobile has Google sign-in. Gating on the connection
+  // status (which safely returns { connected: false } for anonymous devices)
+  // avoids pointless 401s while still lighting up automatically once the
+  // user is signed in with Google Calendar connected.
+  const { data: googleCalendarStatus } = useGetGoogleCalendarStatus();
+  const { data: calendarSyncs } = useGetScheduleCalendarSyncs(id ?? "", {
+    query: {
+      enabled: !!id && googleCalendarStatus?.connected === true,
+      queryKey: getGetScheduleCalendarSyncsQueryKey(id ?? ""),
+    } as any,
+  });
+  const syncMap = new Map(
+    calendarSyncs?.map((s) => [s.blockId, s.googleEventId]) ?? [],
+  );
+
+  const updateSchedule = useUpdateSchedule();
+
+  const deleteBlock = (blockId: string) => {
+    if (!schedule || !id || !deviceId) return;
+    const newBlocks = schedule.blocks
+      .filter((b) => b.id !== blockId)
+      .map((b) => ({
+        id: b.id,
+        day: b.day,
+        startTime: b.startTime,
+        endTime: b.endTime,
+        title: b.title,
+        category: b.category,
+        notes: b.notes,
+      }));
+    updateSchedule.mutate(
+      { id, data: { deviceId, blocks: newBlocks } },
+      {
+        onSuccess: (data) => {
+          queryClient.setQueryData(
+            getGetScheduleQueryKey(id, { deviceId }),
+            data,
+          );
+          // Deleting a block also removes its Google Calendar event
+          // server-side (when signed in), so refresh the sync records.
+          queryClient.invalidateQueries({
+            queryKey: getGetScheduleCalendarSyncsQueryKey(id),
+          });
+        },
+      },
+    );
+  };
+
+  const confirmDeleteBlock = (blockId: string, title: string) => {
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && window.confirm(`Remove "${title}" from your schedule?`)) {
+        deleteBlock(blockId);
+      }
+      return;
+    }
+    Alert.alert("Remove block", `Remove "${title}" from your schedule?`, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Remove", style: "destructive", onPress: () => deleteBlock(blockId) },
+    ]);
+  };
+
+  const openGoogleEvent = (googleEventId: string) => {
+    const url = `https://calendar.google.com/calendar/u/0/r/eventedit/${googleEventId}`;
+    Linking.openURL(url).catch(() => {});
+  };
 
   if (isLoading || !schedule) {
     return (
@@ -110,7 +188,9 @@ export default function ScheduleScreen() {
                 {DAY_LABEL[day] ?? day}
               </Text>
               <View style={styles.blockList}>
-                {blocks.map((block) => (
+                {blocks.map((block) => {
+                  const googleEventId = syncMap.get(block.id);
+                  return (
                   <View
                     key={block.id}
                     style={[
@@ -133,22 +213,51 @@ export default function ScheduleScreen() {
                           {block.startTime}–{block.endTime}
                         </Text>
                       </View>
-                      <Text
-                        style={[
-                          styles.blockCategory,
-                          { color: categoryColor(colors, block.category) },
-                        ]}
-                      >
-                        {CATEGORY_LABEL[block.category] ?? block.category}
-                      </Text>
+                      <View style={styles.blockMetaRow}>
+                        <Text
+                          style={[
+                            styles.blockCategory,
+                            { color: categoryColor(colors, block.category) },
+                          ]}
+                        >
+                          {CATEGORY_LABEL[block.category] ?? block.category}
+                        </Text>
+                        {googleEventId ? (
+                          <Pressable
+                            onPress={() => openGoogleEvent(googleEventId)}
+                            style={styles.syncBadge}
+                            accessibilityRole="link"
+                            accessibilityLabel="View on Google Calendar"
+                            hitSlop={8}
+                            testID={`link-google-event-${block.id}`}
+                          >
+                            <Feather name="calendar" size={11} color={colors.primary} />
+                            <Text style={[styles.syncBadgeText, { color: colors.primary }]}>
+                              Google
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
                       {block.notes ? (
                         <Text style={[styles.blockNotes, { color: colors.mutedForeground }]}>
                           {block.notes}
                         </Text>
                       ) : null}
                     </View>
+                    <Pressable
+                      onPress={() => confirmDeleteBlock(block.id, block.title)}
+                      disabled={updateSchedule.isPending}
+                      style={styles.deleteButton}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${block.title}`}
+                      hitSlop={8}
+                      testID={`button-delete-block-${block.id}`}
+                    >
+                      <Feather name="trash-2" size={15} color={colors.mutedForeground} />
+                    </Pressable>
                   </View>
-                ))}
+                  );
+                })}
               </View>
             </View>
           );
@@ -284,12 +393,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
+  blockMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+  },
   blockCategory: {
     fontSize: 12,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.4,
-    paddingHorizontal: 14,
+  },
+  syncBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  syncBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  deleteButton: {
+    width: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
   blockNotes: {
     fontSize: 13,
