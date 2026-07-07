@@ -151,7 +151,7 @@ export default function Landing() {
                   </div>
                   <div>
                     <h4 className="font-bold text-lg mb-1">Mandatory breaks</h4>
-                    <p className="text-muted-foreground">Focus blocks are automatically broken up with adequate rest and meal times.</p>
+                    <p className="text-muted-foreground">Focus blocks are automatically broken up with adequate rest and meal times. It also keeps your social life in mind.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
