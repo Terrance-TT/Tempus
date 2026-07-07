@@ -37,11 +37,6 @@ export default function Landing() {
 
         <div className="container mx-auto px-4 md:px-8 relative z-10">
           <div className="max-w-3xl mx-auto text-center space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/80 border border-secondary-border text-sm font-medium text-secondary-foreground mb-4">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span>Breathe. We've got your week covered.</span>
-            </div>
-            
             <h1 className="text-5xl md:text-7xl font-heading font-bold text-foreground leading-[1.1] tracking-tight">
               Turn your chaotic <br className="hidden md:block" />
               <span className="text-muted-foreground line-through decoration-primary/40 decoration-4">timetable</span> into a plan.
