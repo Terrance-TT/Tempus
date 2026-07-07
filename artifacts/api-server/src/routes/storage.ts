@@ -1,11 +1,25 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Readable } from "stream";
-import {
-  RequestUploadUrlBody,
-  RequestUploadUrlResponse,
-} from "@workspace/api-zod";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
 import { ObjectPermission } from "../lib/objectAcl";
+
+type RequestUploadUrlBodyType = { name: string; size?: number; contentType?: string };
+const parseRequestUploadUrlBody = (body: unknown): RequestUploadUrlBodyType | null => {
+  if (typeof body !== "object" || body === null) return null;
+  const b = body as Record<string, unknown>;
+  if (typeof b.name !== "string") return null;
+  return {
+    name: b.name,
+    size: typeof b.size === "number" ? b.size : undefined,
+    contentType: typeof b.contentType === "string" ? b.contentType : undefined,
+  };
+};
+const RequestUploadUrlBody = { safeParse: (body: unknown) => {
+  const data = parseRequestUploadUrlBody(body);
+  if (!data) return { success: false as const };
+  return { success: true as const, data };
+}};
+const RequestUploadUrlResponse = { parse: (v: unknown) => v };
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();

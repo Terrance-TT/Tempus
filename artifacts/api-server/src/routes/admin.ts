@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth, clerkClient } from "@clerk/express";
 import { db, staffRoles, manualRequests, manualResponses } from "@workspace/db";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, sql } from "drizzle-orm";
 import { requireAdmin, getUserRole } from "../lib/staffAuth";
 
 const router: IRouter = Router();
@@ -31,16 +31,15 @@ router.get("/admin/users/search", requireAdmin, async (req, res) => {
     return;
   }
   try {
-    const client = await clerkClient();
-    const { data: users } = await client.users.getUserList({
+    const { data: users } = await clerkClient.users.getUserList({
       emailAddress: [email],
       limit: 5,
     });
     res.json({
-      data: users.map((u) => ({
+      data: users.map((u: any) => ({
         id: u.id,
         email:
-          u.emailAddresses.find((e) => e.id === u.primaryEmailAddressId)
+          u.emailAddresses.find((e: any) => e.id === u.primaryEmailAddressId)
             ?.emailAddress ?? "",
         firstName: u.firstName,
         lastName: u.lastName,
@@ -72,7 +71,8 @@ router.post("/admin/staff", requireAdmin, async (req, res) => {
 
 // Revoke staff role
 router.delete("/admin/staff/:userId", requireAdmin, async (req, res) => {
-  await db.delete(staffRoles).where(eq(staffRoles.userId, req.params.userId));
+  const uid = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
+  await db.delete(staffRoles).where(eq(staffRoles.userId, uid));
   res.json({ success: true });
 });
 

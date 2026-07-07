@@ -18,11 +18,10 @@ export async function getUserRole(
   if (!userId) return null;
 
   // Check against ADMIN_EMAIL env var first
-  const client = await clerkClient();
   try {
-    const user = await client.users.getUser(userId);
+    const user = await clerkClient.users.getUser(userId);
     const email =
-      user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)
+      user.emailAddresses.find((e: any) => e.id === user.primaryEmailAddressId)
         ?.emailAddress ?? "";
     if (getAdminEmails().includes(email.toLowerCase())) return "admin";
   } catch {
