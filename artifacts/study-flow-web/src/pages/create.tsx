@@ -873,11 +873,6 @@ export default function Create() {
                           <CardTitle className="text-lg">Daily Plan</CardTitle>
                           <CardDescription className="mt-1">Plan out today in detail.</CardDescription>
                         </div>
-                        {!subStatus?.isPro && (
-                          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                            <Clock className="w-3 h-3" /> Includes a 5s ad
-                          </p>
-                        )}
                       </CardContent>
                     </Card>
 
@@ -888,11 +883,6 @@ export default function Create() {
                           <CardTitle className="text-lg">Weekly Plan</CardTitle>
                           <CardDescription className="mt-1">Structure your entire week.</CardDescription>
                         </div>
-                        {!subStatus?.isPro && (
-                          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                            <Clock className="w-3 h-3" /> Includes a 5s ad
-                          </p>
-                        )}
                       </CardContent>
                     </Card>
                   </div>
