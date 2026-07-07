@@ -236,7 +236,10 @@ export default function Create() {
       {
         onSuccess: (newCommitments) => {
           onExtractionSuccess(newCommitments.length);
-          if (newCommitments.length > 0) setDescribeText("");
+          if (newCommitments.length > 0) {
+            setDescribeText("");
+            setStep(2);
+          }
         },
         onError: () => {
           setIsExtracting(false);
@@ -788,10 +791,7 @@ export default function Create() {
               </div>
             )}
 
-            <div className="flex justify-between pt-6 border-t">
-              <Button variant="ghost" onClick={() => setStep(3)} className="text-muted-foreground">
-                Skip for now
-              </Button>
+            <div className="flex justify-end pt-6 border-t">
               <Button size="lg" onClick={() => setStep(3)} className="rounded-xl shadow-sm" data-testid="button-continue-step2">
                 Continue <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
