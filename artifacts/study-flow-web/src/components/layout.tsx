@@ -1,14 +1,20 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, PlusCircle, History, Plug } from "lucide-react";
+import { Calendar, PlusCircle, History, Plug, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useClerk } from "@clerk/react";
+import { useIsSignedIn } from "@/hooks/use-device-id";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { signOut } = useClerk();
+  const isSignedIn = useIsSignedIn();
+
+  const handleSignOut = () => signOut(() => setLocation("/"));
 
   const navItems = [
     { href: "/", label: "Today", icon: Calendar },
@@ -52,6 +58,16 @@ export function Layout({ children }: LayoutProps) {
             );
           })}
         </nav>
+
+        {isSignedIn && (
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground w-full mt-2"
+          >
+            <LogOut className="w-5 h-5" />
+            Sign out
+          </button>
+        )}
       </aside>
 
       {/* Main Content */}
@@ -82,6 +98,15 @@ export function Layout({ children }: LayoutProps) {
               </Link>
             );
           })}
+          {isSignedIn && (
+            <button
+              onClick={handleSignOut}
+              className="flex flex-col items-center justify-center p-2 rounded-lg min-w-[4rem] transition-all duration-200 text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="w-5 h-5 mb-1" />
+              <span className="text-[10px] font-medium">Sign out</span>
+            </button>
+          )}
         </div>
       </nav>
     </div>
