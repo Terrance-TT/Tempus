@@ -62,11 +62,14 @@ router.post("/checkout", async (req, res) => {
   const proto = host?.includes("localhost") ? "http" : "https";
   const appBase = `${proto}://${host}/study-flow-web`;
 
+  const couponId = await stripeService.resolveIntroCoupon();
+
   const session = await stripeService.createCheckoutSession(
     customerId,
     priceId,
     `${appBase}/checkout/success`,
     `${appBase}/checkout/cancel`,
+    { couponId },
   );
 
   res.json({ url: session.url });

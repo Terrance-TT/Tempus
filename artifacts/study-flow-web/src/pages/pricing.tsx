@@ -4,7 +4,7 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Zap, ArrowLeft, Loader2 } from "lucide-react";
+import { Check, Zap, ArrowLeft, Loader2, Gift, Tag } from "lucide-react";
 import { useSubscriptionStatus, useCreateCheckout, useManageSubscription, useProProducts } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
 
@@ -60,6 +60,19 @@ export default function Pricing() {
           </div>
         </div>
 
+        {!status?.isPro && (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 px-5 py-4 flex items-start gap-3">
+            <Gift className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold text-foreground">Limited-time offer</p>
+              <p className="text-muted-foreground mt-0.5">
+                Start with a <strong className="text-foreground">14-day free trial</strong>, then get{" "}
+                <strong className="text-foreground">50% off your first month</strong> — just $5 instead of $10.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid sm:grid-cols-2 gap-6">
           <Card className="border border-border">
             <CardHeader className="pb-4">
@@ -107,9 +120,27 @@ export default function Pricing() {
                 {status?.isPro && <Badge>Current plan</Badge>}
               </div>
               <CardDescription>For serious students</CardDescription>
-              <div className="pt-2">
-                <span className="text-4xl font-bold">$10</span>
-                <span className="text-muted-foreground">/month</span>
+              <div className="pt-2 space-y-1">
+                {!status?.isPro ? (
+                  <>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-bold">Free</span>
+                      <span className="text-muted-foreground text-sm">for 14 days</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="flex items-center gap-1 text-sm font-medium text-primary">
+                        <Tag className="w-3.5 h-3.5" />
+                        Then $5 for month 1
+                      </span>
+                      <span className="text-xs text-muted-foreground">(50% off), then $10/mo</span>
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <span className="text-4xl font-bold">$10</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -147,14 +178,19 @@ export default function Pricing() {
                   Manage subscription
                 </Button>
               ) : (
-                <Button
-                  className="w-full"
-                  onClick={handleUpgrade}
-                  disabled={createCheckout.isPending}
-                >
-                  {createCheckout.isPending && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
-                  Upgrade to Pro
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    className="w-full"
+                    onClick={handleUpgrade}
+                    disabled={createCheckout.isPending}
+                  >
+                    {createCheckout.isPending && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+                    Start free trial
+                  </Button>
+                  <p className="text-center text-xs text-muted-foreground">
+                    No credit card charged for 14 days
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>

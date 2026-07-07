@@ -1,5 +1,7 @@
 import { getUncachableStripeClient } from "./stripeClient.js";
 
+const COUPON_ID = "studyflow-first-month-50off";
+
 async function createProducts() {
   try {
     const stripe = await getUncachableStripeClient();
@@ -9,31 +11,59 @@ async function createProducts() {
       query: "name:'StudyFlow Pro' AND active:'true'",
     });
 
+    let productId: string;
+
     if (existing.data.length > 0) {
-      console.log("StudyFlow Pro already exists. Skipping.");
-      console.log(`Product ID: ${existing.data[0].id}`);
-      const prices = await stripe.prices.list({ product: existing.data[0].id, active: true });
+      console.log("StudyFlow Pro already exists. Skipping product creation.");
+      productId = existing.data[0].id;
+      const prices = await stripe.prices.list({ product: productId, active: true });
       for (const p of prices.data) {
         console.log(`  Price: ${p.id} — $${((p.unit_amount ?? 0) / 100).toFixed(2)}/${(p.recurring as any)?.interval ?? "one-time"}`);
       }
-      return;
+    } else {
+      const product = await stripe.products.create({
+        name: "StudyFlow Pro",
+        description: "Unlimited AI schedule generations, no ads.",
+      });
+      productId = product.id;
+      console.log(`Created product: ${product.name} (${product.id})`);
+
+      const price = await stripe.prices.create({
+        product: productId,
+        unit_amount: 1000,
+        currency: "usd",
+        recurring: { interval: "month" },
+      });
+      console.log(`Created price: $10.00/month (${price.id})`);
     }
 
-    const product = await stripe.products.create({
-      name: "StudyFlow Pro",
-      description: "Unlimited AI schedule generations, no ads.",
-    });
-    console.log(`Created product: ${product.name} (${product.id})`);
+    // Create or update the first-month-50%-off coupon
+    let couponExists = false;
+    try {
+      const existing = await stripe.coupons.retrieve(COUPON_ID);
+      if (existing.valid) {
+        console.log(`Coupon '${COUPON_ID}' already exists and is valid.`);
+        couponExists = true;
+      } else {
+        console.log(`Coupon '${COUPON_ID}' exists but is no longer valid.`);
+      }
+    } catch {
+      // Not found — create it
+    }
 
-    const price = await stripe.prices.create({
-      product: product.id,
-      unit_amount: 1000,
-      currency: "usd",
-      recurring: { interval: "month" },
-    });
-    console.log(`Created price: $10.00/month (${price.id})`);
+    if (!couponExists) {
+      const coupon = await stripe.coupons.create({
+        id: COUPON_ID,
+        percent_off: 50,
+        duration: "once",
+        name: "50% off your first month",
+        max_redemptions: undefined, // unlimited
+      });
+      console.log(`Created coupon: ${coupon.name} (${coupon.id})`);
+    }
 
-    console.log("\nDone! Webhooks will sync this to your database automatically.");
+    console.log("\nDone! Run this script once after connecting Stripe.");
+    console.log("Webhooks will sync product/price data to your database automatically.");
   } catch (err: any) {
     console.error("Error:", err.message);
     process.exit(1);
