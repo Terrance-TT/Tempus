@@ -17,9 +17,10 @@ import { useColors } from "@/hooks/useColors";
 export type ErrorFallbackProps = {
   error: Error;
   resetError: () => void;
+  componentStack?: string;
 };
 
-export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
+export function ErrorFallback({ error, resetError, componentStack }: ErrorFallbackProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
 
@@ -37,7 +38,10 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   const formatErrorDetails = (): string => {
     let details = `Error: ${error.message}\n\n`;
     if (error.stack) {
-      details += `Stack Trace:\n${error.stack}`;
+      details += `Stack Trace:\n${error.stack}\n\n`;
+    }
+    if (componentStack) {
+      details += `Component Stack:\n${componentStack}`;
     }
     return details;
   };

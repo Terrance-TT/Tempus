@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
@@ -69,6 +69,7 @@ export default function ScheduleScreen() {
   if (isLoading || !schedule) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
+        {Platform.OS === "web" ? <WebHeader colors={colors} onBack={() => router.back()} /> : null}
         <ActivityIndicator color={colors.primary} style={{ marginTop: 80 }} />
       </View>
     );
@@ -80,6 +81,7 @@ export default function ScheduleScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {Platform.OS === "web" ? <WebHeader colors={colors} onBack={() => router.back()} /> : null}
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={[styles.eyebrow, { color: colors.primary }]}>
@@ -165,6 +167,60 @@ export default function ScheduleScreen() {
     </View>
   );
 }
+
+function WebHeader({
+  colors,
+  onBack,
+}: {
+  colors: ReturnType<typeof useColors>;
+  onBack: () => void;
+}) {
+  return (
+    <View
+      style={[
+        webHeaderStyles.container,
+        { backgroundColor: colors.background, borderBottomColor: colors.border },
+      ]}
+    >
+      <Pressable
+        onPress={onBack}
+        style={webHeaderStyles.backButton}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+      >
+        <Feather name="arrow-left" size={20} color={colors.foreground} />
+      </Pressable>
+      <Text style={[webHeaderStyles.title, { color: colors.foreground }]}>Schedule</Text>
+      <View style={webHeaderStyles.spacer} />
+    </View>
+  );
+}
+
+const webHeaderStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 56,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: "600",
+    textAlign: "center",
+    marginRight: 40,
+  },
+  spacer: {
+    width: 40,
+  },
+});
 
 const styles = StyleSheet.create({
   container: {
