@@ -5,6 +5,7 @@ import schedulesRouter from "./schedules";
 import googleCalendarRouter from "./googleCalendar";
 import integrationsRouter from "./integrations";
 import preferencesRouter from "./preferences";
+import stripeRouter from "./stripe";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(schedulesRouter);
 router.use(googleCalendarRouter);
 router.use(integrationsRouter);
 router.use(preferencesRouter);
+router.use(stripeRouter);
 
 export default router;

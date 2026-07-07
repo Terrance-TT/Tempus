@@ -21,6 +21,8 @@ import Create from "@/pages/create";
 import Schedule from "@/pages/schedule";
 import History from "@/pages/history";
 import Integrations from "@/pages/integrations";
+import Pricing from "@/pages/pricing";
+import CheckoutSuccess from "@/pages/checkout-success";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -270,6 +272,8 @@ function ClerkProviderWithRoutes() {
             <Route path="/integrations">
               <AuthedRoute component={Integrations} />
             </Route>
+            <Route path="/pricing" component={Pricing} />
+            <Route path="/checkout/success" component={CheckoutSuccess} />
             <Route component={NotFound} />
           </Switch>
           <Toaster />

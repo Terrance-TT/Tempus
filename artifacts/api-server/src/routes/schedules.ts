@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db, commitments, schedules, googleCalendarConnections, scheduleCalendarSyncs } from "@workspace/db";
+import { checkIsProSubscriber, FREE_TIER_SCHEDULE_LIMIT } from "../lib/subscription";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { resolveOwnerId } from "../lib/auth";
 import {
@@ -441,6 +442,26 @@ router.post("/schedules/:id/revise", async (req, res) => {
 router.post("/schedules/generate", async (req, res) => {
   const body = GenerateScheduleBody.parse(req.body);
   const ownerId = resolveOwnerId(req, body.deviceId);
+
+  // Free tier limit: only check on fresh generations (not draft clarification continuations)
+  if (!body.draftId) {
+    const userId = getAuth(req)?.userId ?? null;
+    const isPro = await checkIsProSubscriber(userId);
+    if (!isPro) {
+      const countResult = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(schedules)
+        .where(eq(schedules.deviceId, ownerId));
+      const scheduleCount = countResult[0]?.count ?? 0;
+      if (scheduleCount >= FREE_TIER_SCHEDULE_LIMIT) {
+        res.status(402).json({
+          message: `You've reached the free limit of ${FREE_TIER_SCHEDULE_LIMIT} schedules. Upgrade to Pro for unlimited.`,
+          code: "LIMIT_REACHED",
+        });
+        return;
+      }
+    }
+  }
 
   let commitmentsSnapshot: CommitmentSnapshot[];
   let priorAnswers: ClarificationAnswer[];

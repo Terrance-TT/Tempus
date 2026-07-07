@@ -1,0 +1,169 @@
+import { useLocation } from "wouter";
+import { useUser } from "@clerk/react";
+import { Layout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Check, Zap, ArrowLeft, Loader2 } from "lucide-react";
+import { useSubscriptionStatus, useCreateCheckout, useManageSubscription, useProProducts } from "@/hooks/use-subscription";
+import { useToast } from "@/hooks/use-toast";
+
+export default function Pricing() {
+  const [, setLocation] = useLocation();
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const { data: status } = useSubscriptionStatus();
+  const { data: products = [] } = useProProducts();
+  const createCheckout = useCreateCheckout();
+  const manageSubscription = useManageSubscription();
+
+  const proProduct = products.find((p) => p.name === "StudyFlow Pro");
+  const proPrice = proProduct?.prices.find((p) => p.recurring?.interval === "month");
+
+  const handleUpgrade = async () => {
+    if (!user) {
+      setLocation("/sign-in");
+      return;
+    }
+    if (!proPrice) {
+      toast({ title: "Plan not available", description: "Please try again shortly.", variant: "destructive" });
+      return;
+    }
+    try {
+      const { url } = await createCheckout.mutateAsync(proPrice.id);
+      window.location.href = url;
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleManage = async () => {
+    try {
+      const { url } = await manageSubscription.mutateAsync();
+      window.location.href = url;
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="max-w-3xl mx-auto pt-6 pb-16 space-y-10">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => setLocation("/")}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-heading font-bold">Plans</h1>
+            <p className="text-muted-foreground">Simple, transparent pricing.</p>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-6">
+          <Card className="border border-border">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">Free</CardTitle>
+                {!status?.isPro && <Badge variant="secondary">Current plan</Badge>}
+              </div>
+              <CardDescription>Get started for free</CardDescription>
+              <div className="pt-2">
+                <span className="text-4xl font-bold">$0</span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                  <span>2 AI schedule generations</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                  <span>Photo & text timetable input</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                  <span>Google Calendar sync</span>
+                </li>
+                <li className="flex items-start gap-2 text-muted-foreground">
+                  <span className="w-4 h-4 shrink-0 mt-0.5 text-center text-xs">~</span>
+                  <span>30-second ad during generation</span>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-primary shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-bl-lg">
+              RECOMMENDED
+            </div>
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-primary" /> Pro
+                </CardTitle>
+                {status?.isPro && <Badge>Current plan</Badge>}
+              </div>
+              <CardDescription>For serious students</CardDescription>
+              <div className="pt-2">
+                <span className="text-4xl font-bold">$10</span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                  <span className="font-medium">Unlimited schedule generations</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                  <span className="font-medium">No ads — instant generation</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                  <span>Photo & text timetable input</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                  <span>Google Calendar sync</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                  <span>AI schedule revisions</span>
+                </li>
+              </ul>
+
+              {status?.isPro ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleManage}
+                  disabled={manageSubscription.isPending}
+                >
+                  {manageSubscription.isPending && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+                  Manage subscription
+                </Button>
+              ) : (
+                <Button
+                  className="w-full"
+                  onClick={handleUpgrade}
+                  disabled={createCheckout.isPending}
+                >
+                  {createCheckout.isPending && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+                  Upgrade to Pro
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <p className="text-center text-sm text-muted-foreground">
+          Cancel anytime. Payments are securely processed by Stripe.
+        </p>
+      </div>
+    </Layout>
+  );
+}

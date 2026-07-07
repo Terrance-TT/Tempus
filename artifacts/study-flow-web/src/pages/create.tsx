@@ -6,6 +6,7 @@ import {
   useIsSignedIn,
   setPendingScheduleId,
 } from "@/hooks/use-device-id";
+import { useSubscriptionStatus } from "@/hooks/use-subscription";
 import {
   useExtractCommitmentsFromImage,
   useExtractCommitmentsFromText,
@@ -52,6 +53,7 @@ import {
   Sun,
   UtensilsCrossed,
   Link2,
+  Zap,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -85,6 +87,11 @@ export default function Create() {
   const [draftId, setDraftId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [lockedScheduleId, setLockedScheduleId] = useState<string | null>(null);
+
+  // Ad + subscription state
+  const { data: subStatus } = useSubscriptionStatus();
+  const [adCountdown, setAdCountdown] = useState<number | null>(null);
+  const [pendingNavScheduleId, setPendingNavScheduleId] = useState<string | null>(null);
 
   // Preferences (persisted per user)
   const [wakeTime, setWakeTime] = useState("");
@@ -286,6 +293,24 @@ export default function Create() {
     notes: prefNotes.trim() || null,
   });
 
+  // Ad countdown tick
+  useEffect(() => {
+    if (adCountdown === null || adCountdown <= 0) return;
+    const t = setTimeout(() => setAdCountdown((c) => (c !== null ? c - 1 : null)), 1000);
+    return () => clearTimeout(t);
+  }, [adCountdown]);
+
+  // When ad finishes, navigate if result is already waiting
+  useEffect(() => {
+    if (adCountdown === 0 && pendingNavScheduleId) {
+      const id = pendingNavScheduleId;
+      setPendingNavScheduleId(null);
+      setAdCountdown(null);
+      onGenerateComplete(id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adCountdown, pendingNavScheduleId]);
+
   const onGenerateComplete = (scheduleId: string) => {
     if (isSignedIn) {
       toast({ title: "Schedule generated!" });
@@ -298,11 +323,19 @@ export default function Create() {
     }
   };
 
+  const startAdIfNeeded = () => {
+    if (!subStatus?.isPro) {
+      setAdCountdown(30);
+    }
+  };
+
   const handleGenerate = (selectedScope: ScheduleScope) => {
     if (!deviceId) return;
     setScope(selectedScope);
     setIsGenerating(true);
     setClarifyingQuestions([]);
+    setPendingNavScheduleId(null);
+    startAdIfNeeded();
 
     const preferences = buildPreferences();
 
@@ -317,13 +350,27 @@ export default function Create() {
             setDraftId(result.id);
             setClarifyingQuestions(result.questions);
             setIsGenerating(false);
+            setAdCountdown(null);
           } else if (result.status === "complete" && result.schedule) {
-            onGenerateComplete(result.schedule.id);
+            setIsGenerating(false);
+            // If the ad is still running, hold the result until it finishes
+            if (adCountdown !== null && adCountdown > 0) {
+              setPendingNavScheduleId(result.schedule.id);
+            } else {
+              setAdCountdown(null);
+              onGenerateComplete(result.schedule.id);
+            }
           }
         },
         onError: (err: any) => {
-          toast({ title: "Error generating schedule", description: err?.data?.message, variant: "destructive" });
+          const isLimit = (err?.data as any)?.code === "LIMIT_REACHED";
+          setAdCountdown(null);
           setIsGenerating(false);
+          if (isLimit) {
+            toast({ title: "Upgrade to Pro", description: "You've used your 2 free schedules. Upgrade to generate more.", variant: "destructive" });
+          } else {
+            toast({ title: "Error generating schedule", description: err?.data?.message, variant: "destructive" });
+          }
         }
       }
     );
@@ -339,6 +386,8 @@ export default function Create() {
     }));
 
     setIsGenerating(true);
+    setPendingNavScheduleId(null);
+    startAdIfNeeded();
 
     generateSchedule.mutate(
       { data: { deviceId, scope, draftId, answers: formattedAnswers, tasks, preferences: buildPreferences() } },
@@ -348,11 +397,19 @@ export default function Create() {
             setDraftId(result.id);
             setClarifyingQuestions(result.questions);
             setIsGenerating(false);
+            setAdCountdown(null);
           } else if (result.status === "complete" && result.schedule) {
-            onGenerateComplete(result.schedule.id);
+            setIsGenerating(false);
+            if (adCountdown !== null && adCountdown > 0) {
+              setPendingNavScheduleId(result.schedule.id);
+            } else {
+              setAdCountdown(null);
+              onGenerateComplete(result.schedule.id);
+            }
           }
         },
         onError: (err: any) => {
+          setAdCountdown(null);
           toast({ title: "Error", description: err?.data?.message, variant: "destructive" });
           setIsGenerating(false);
         }
@@ -749,27 +806,57 @@ export default function Create() {
                   </CardContent>
                 </Card>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Card className="cursor-pointer hover:border-primary hover:shadow-md transition-all text-center p-6 bg-card" onClick={() => handleGenerate("day")} data-testid="card-generate-day">
-                    <CardContent className="p-0 space-y-3">
-                      <CalendarDays className="w-8 h-8 mx-auto text-primary" />
-                      <div>
-                        <CardTitle className="text-lg">Daily Plan</CardTitle>
-                        <CardDescription className="mt-1">Plan out today in detail.</CardDescription>
-                      </div>
-                    </CardContent>
+                {subStatus && !subStatus.isPro && subStatus.scheduleCount >= subStatus.scheduleLimit ? (
+                  <Card className="border-2 border-primary/40 bg-primary/5 text-center p-8 space-y-4">
+                    <div className="w-14 h-14 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto">
+                      <Zap className="w-7 h-7" />
+                    </div>
+                    <div className="space-y-1">
+                      <h2 className="text-xl font-heading font-semibold">You've used your 2 free schedules</h2>
+                      <p className="text-muted-foreground text-sm">Upgrade to Pro for unlimited AI schedule generations and no ads.</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                      <Button size="lg" className="rounded-xl" onClick={() => setLocation("/pricing")}>
+                        <Zap className="mr-2 w-4 h-4" /> Upgrade to Pro — $10/mo
+                      </Button>
+                      <Button size="lg" variant="outline" className="rounded-xl" onClick={() => setLocation("/sign-in")}>
+                        Already subscribed? Sign in
+                      </Button>
+                    </div>
                   </Card>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Card className="cursor-pointer hover:border-primary hover:shadow-md transition-all text-center p-6 bg-card" onClick={() => handleGenerate("day")} data-testid="card-generate-day">
+                      <CardContent className="p-0 space-y-3">
+                        <CalendarDays className="w-8 h-8 mx-auto text-primary" />
+                        <div>
+                          <CardTitle className="text-lg">Daily Plan</CardTitle>
+                          <CardDescription className="mt-1">Plan out today in detail.</CardDescription>
+                        </div>
+                        {!subStatus?.isPro && (
+                          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                            <Clock className="w-3 h-3" /> Includes a 30s ad
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
 
-                  <Card className="cursor-pointer hover:border-primary hover:shadow-md transition-all text-center p-6 bg-card" onClick={() => handleGenerate("week")} data-testid="card-generate-week">
-                    <CardContent className="p-0 space-y-3">
-                      <CalendarDays className="w-8 h-8 mx-auto text-primary" />
-                      <div>
-                        <CardTitle className="text-lg">Weekly Plan</CardTitle>
-                        <CardDescription className="mt-1">Structure your entire week.</CardDescription>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                    <Card className="cursor-pointer hover:border-primary hover:shadow-md transition-all text-center p-6 bg-card" onClick={() => handleGenerate("week")} data-testid="card-generate-week">
+                      <CardContent className="p-0 space-y-3">
+                        <CalendarDays className="w-8 h-8 mx-auto text-primary" />
+                        <div>
+                          <CardTitle className="text-lg">Weekly Plan</CardTitle>
+                          <CardDescription className="mt-1">Structure your entire week.</CardDescription>
+                        </div>
+                        {!subStatus?.isPro && (
+                          <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                            <Clock className="w-3 h-3" /> Includes a 30s ad
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
               </div>
             )}
 
@@ -851,6 +938,60 @@ export default function Create() {
           </div>
         )}
       </div>
+
+      {/* 30-second ad overlay for free tier users */}
+      {adCountdown !== null && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm px-6">
+          <div className="w-full max-w-md space-y-6 text-center">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Free plan — sponsored message</p>
+              <h2 className="text-2xl font-heading font-bold">Stay on track with StudyFlow Pro</h2>
+            </div>
+
+            <div className="rounded-2xl border bg-card p-8 shadow-lg space-y-4">
+              <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto">
+                <Zap className="w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <p className="font-semibold text-lg">Unlimited schedules, no ads</p>
+                <p className="text-muted-foreground text-sm">
+                  Pro members generate as many schedules as they need — instantly, with no wait.
+                </p>
+              </div>
+              <Button className="w-full rounded-xl" onClick={() => setLocation("/pricing")}>
+                <Zap className="mr-2 w-4 h-4" /> Upgrade to Pro — $10/month
+              </Button>
+            </div>
+
+            <div className="flex flex-col items-center gap-2">
+              {adCountdown > 0 ? (
+                <>
+                  <div className="relative w-14 h-14">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="hsl(var(--secondary))" strokeWidth="3" />
+                      <circle
+                        cx="18" cy="18" r="15.9" fill="none"
+                        stroke="hsl(var(--primary))" strokeWidth="3"
+                        strokeDasharray={`${((30 - adCountdown) / 30) * 100} 100`}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-sm font-bold tabular-nums">
+                      {adCountdown}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Your schedule is generating — continue in {adCountdown}s</p>
+                </>
+              ) : (
+                <>
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <p className="text-xs text-muted-foreground">Almost ready…</p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
