@@ -792,12 +792,20 @@ export default function Create() {
             )}
 
             <div className="flex justify-end pt-6 border-t">
-              <Button size="lg" onClick={() => setStep(3)} disabled={tasks.length === 0} className="rounded-xl shadow-sm" data-testid="button-continue-step2">
+              <Button
+                size="lg"
+                onClick={() => {
+                  if (tasks.length === 0) {
+                    toast({ title: "Add at least one task to continue.", duration: 3000 });
+                    return;
+                  }
+                  setStep(3);
+                }}
+                className="rounded-xl shadow-sm"
+                data-testid="button-continue-step2"
+              >
                 Continue <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
-              {tasks.length === 0 && (
-                <p className="text-sm text-muted-foreground text-right mt-2">Add at least one task to continue.</p>
-              )}
             </div>
           </div>
         )}
