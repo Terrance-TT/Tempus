@@ -31,6 +31,18 @@ import { Trash2, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Plus, Pen
 import { format } from "date-fns";
 
 const DAYS_ORDER: DayOfWeek[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+const JS_DAY_TO_KEY: DayOfWeek[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+function todayKey(): DayOfWeek { return JS_DAY_TO_KEY[new Date().getDay()]; }
+function nowMinutes(): number { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
+
+/** Reorder days so today comes first, then the rest in calendar order. */
+function orderedDays(): DayOfWeek[] {
+  const today = todayKey();
+  const idx = DAYS_ORDER.indexOf(today);
+  if (idx === -1) return DAYS_ORDER;
+  return [...DAYS_ORDER.slice(idx), ...DAYS_ORDER.slice(0, idx)];
+}
 const DAY_NAMES: Record<DayOfWeek, string> = {
   mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday", fri: "Friday", sat: "Saturday", sun: "Sunday"
 };
@@ -429,15 +441,35 @@ export default function Schedule() {
 
         {viewMode === "list" && (
         <div className="space-y-10">
-          {DAYS_ORDER.map(day => {
+          {orderedDays().map(day => {
             const blocks = groupedBlocks[day] || [];
             if (schedule.scope === "day" && blocks.length === 0) return null;
+
+            const isToday = day === todayKey();
+            const now = nowMinutes();
+
+            // For today: split into upcoming (endTime >= now) and past blocks.
+            // Show upcoming first so the current moment is always at the top.
+            let displayBlocks = blocks;
+            let pastBlocks: typeof blocks = [];
+            let showNowDivider = false;
+            if (isToday && blocks.length > 0) {
+              const upcoming = blocks.filter(b => timeToMinutes(b.endTime) > now);
+              pastBlocks = blocks.filter(b => timeToMinutes(b.endTime) <= now);
+              displayBlocks = upcoming;
+              showNowDivider = pastBlocks.length > 0;
+            }
 
             return (
               <div key={day} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm py-2 z-10">
-                  <h2 className="text-xl font-semibold border-l-4 border-primary pl-3">
+                  <h2 className="text-xl font-semibold border-l-4 border-primary pl-3 flex items-center gap-2">
                     {DAY_NAMES[day]}
+                    {isToday && (
+                      <span className="text-xs font-medium bg-primary text-primary-foreground rounded-full px-2 py-0.5">
+                        Today
+                      </span>
+                    )}
                   </h2>
                   <Button variant="ghost" size="sm" onClick={() => openAdd(day)} className="text-muted-foreground">
                     <Plus className="w-4 h-4 mr-1" /> Add Block
@@ -450,7 +482,7 @@ export default function Schedule() {
                       Free day
                     </div>
                   )}
-                  {blocks.map(block => {
+                  {displayBlocks.map(block => {
                     const googleEventId = syncMap.get(block.id);
                     return (
                     <div 
@@ -505,6 +537,54 @@ export default function Schedule() {
                     </div>
                     );
                   })}
+
+                  {/* Earlier today — already-passed blocks, dimmed */}
+                  {showNowDivider && (
+                    <>
+                      <div className="flex items-center gap-3 py-1">
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-xs text-muted-foreground font-medium">Earlier today</span>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
+                      {pastBlocks.map(block => {
+                        const googleEventId = syncMap.get(block.id);
+                        return (
+                          <div
+                            key={block.id}
+                            className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:shadow-sm group opacity-45 ${getCategoryColor(block.category)}`}
+                          >
+                            <div className="flex items-center gap-2 sm:w-32 shrink-0 font-medium">
+                              <Clock className="w-4 h-4 opacity-70" />
+                              <span>{block.startTime}</span>
+                            </div>
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <h3 className="font-semibold text-lg leading-tight">{block.title}</h3>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="bg-background/50 capitalize border-current/20">
+                                    {block.category}
+                                  </Badge>
+                                  {googleEventId && (
+                                    <a href={`https://calendar.google.com/calendar/u/0/r/eventedit/${googleEventId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs opacity-70 hover:opacity-100 hover:underline" title="View on Google Calendar">
+                                      <CalendarCheck2 className="w-3 h-3" />
+                                    </a>
+                                  )}
+                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(block)}><Pencil className="w-3 h-3" /></Button>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10" onClick={() => handleDeleteBlock(block.id)}><Trash2 className="w-3 h-3" /></Button>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-sm opacity-80 flex items-center gap-2">
+                                <span>Ends at {block.endTime}</span>
+                                {block.notes && (<><span className="w-1 h-1 rounded-full bg-current opacity-50" /><span className="truncate max-w-[200px] sm:max-w-xs">{block.notes}</span></>)}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
                 </div>
               </div>
             );
@@ -547,9 +627,21 @@ export default function Schedule() {
                       {formatHourLabel(m)}
                     </span>
                   ))}
+                  {/* "Now" time label on the axis */}
+                  {nowMinutes() >= minStart && nowMinutes() <= minStart + total && (
+                    <span
+                      className="absolute right-1.5 -translate-y-1/2 text-[9px] tabular-nums text-primary font-semibold"
+                      style={{ top: `${((nowMinutes() - minStart) / total) * 100}%` }}
+                    >
+                      now
+                    </span>
+                  )}
                 </div>
                 {DAYS_ORDER.map(day => {
                   const blocks = groupedBlocks[day] || [];
+                  const isToday = day === todayKey();
+                  const nowPct = ((nowMinutes() - minStart) / total) * 100;
+                  const showNowLine = isToday && nowMinutes() >= minStart && nowMinutes() <= minStart + total;
                   return (
                     <div key={day} className="relative border-l">
                       {hourMarks.map(m => (
@@ -559,6 +651,16 @@ export default function Schedule() {
                           style={{ top: `${((m - minStart) / total) * 100}%` }}
                         />
                       ))}
+                      {/* Red "now" line across today's column */}
+                      {showNowLine && (
+                        <div
+                          className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
+                          style={{ top: `${nowPct}%` }}
+                        >
+                          <div className="w-2 h-2 rounded-full bg-primary shrink-0 -ml-1" />
+                          <div className="h-[2px] flex-1 bg-primary opacity-80" />
+                        </div>
+                      )}
                       {blocks.map(block => {
                         const s = timeToMinutes(block.startTime);
                         let e = timeToMinutes(block.endTime);
