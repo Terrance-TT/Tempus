@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <div class="logo">⏳</div>
+      <div>
+        <h1>Tempus Focus Guard</h1>
+        <p class="subtitle">Distractions off during study time</p>
+      </div>
+    </header>
+
+    <div id="view-disconnected" class="view" hidden>
+      <p class="hint">
+        Paste your connection code from the Tempus website
+        (<strong>Integrations &rarr; Focus Guard</strong>).
+      </p>
+      <textarea id="code-input" rows="3" placeholder="Paste connection code here"></textarea>
+      <button id="connect-btn">Connect to Tempus</button>
+      <p id="connect-error" class="error" hidden></p>
+    </div>
+
+    <div id="view-connected" class="view" hidden>
+      <div id="status-card" class="status">
+        <div id="status-title">Checking your schedule…</div>
+        <div id="status-detail"></div>
+      </div>
+
+      <section>
+        <h2>Blocked sites</h2>
+        <p class="hint" id="edit-hint"></p>
+        <ul id="site-list"></ul>
+        <div class="add-row">
+          <input id="site-input" type="text" placeholder="e.g. 9gag.com" />
+          <button id="add-btn">Add</button>
+        </div>
+      </section>
+
+      <p class="strict-note">
+        🔒 Strict mode: there is no off switch. To stop blocking, remove the
+        extension from Chrome.
+      </p>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

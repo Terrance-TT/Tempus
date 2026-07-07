@@ -15,7 +15,7 @@ const router: IRouter = Router();
  * other schedules endpoint uses.
  */
 router.post("/extension/token", async (req, res) => {
-  const { deviceId } = CreateExtensionTokenBody.parse(req.body);
+  const { deviceId, rotate } = CreateExtensionTokenBody.parse(req.body);
   const ownerId = resolveOwnerId(req, deviceId);
 
   const [existing] = await db
@@ -24,13 +24,22 @@ router.post("/extension/token", async (req, res) => {
     .where(eq(extensionTokens.ownerId, ownerId))
     .limit(1);
 
-  if (existing) {
+  // Without `rotate`, this is get-or-create. With `rotate`, the old token is
+  // invalidated and a fresh one issued (revocation path for leaked codes).
+  if (existing && !rotate) {
     res.json({ token: existing.token });
     return;
   }
 
   const token = `tfx_${randomBytes(24).toString("base64url")}`;
-  await db.insert(extensionTokens).values({ token, ownerId });
+  if (existing) {
+    await db
+      .update(extensionTokens)
+      .set({ token })
+      .where(eq(extensionTokens.ownerId, ownerId));
+  } else {
+    await db.insert(extensionTokens).values({ token, ownerId });
+  }
   res.json({ token });
 });
 

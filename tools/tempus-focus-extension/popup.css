@@ -1,0 +1,153 @@
+body {
+  width: 320px;
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #1d3a2e;
+  background: #fafaf7;
+}
+header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #e4e7e2;
+}
+.logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #e3efe8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+h1 {
+  font-size: 15px;
+  margin: 0;
+}
+.subtitle {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #6b7d73;
+}
+.view {
+  padding: 14px 16px 16px;
+}
+.hint {
+  font-size: 12px;
+  color: #6b7d73;
+  margin: 0 0 10px;
+}
+textarea,
+input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cfd8d2;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 12px;
+  font-family: inherit;
+  background: #fff;
+}
+button {
+  margin-top: 8px;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #4d8a6a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+button:hover {
+  background: #427a5c;
+}
+button:disabled {
+  background: #a9c4b5;
+  cursor: default;
+}
+.error {
+  color: #b3372f;
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+.status {
+  border: 1px solid #d7e3db;
+  background: #eef5f0;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+.status.active {
+  background: #e0efe6;
+  border-color: #4d8a6a;
+}
+#status-title {
+  font-weight: 700;
+  font-size: 13px;
+}
+#status-detail {
+  font-size: 12px;
+  color: #55685d;
+  margin-top: 3px;
+}
+h2 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #55685d;
+  margin: 0 0 6px;
+}
+#site-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  max-height: 160px;
+  overflow-y: auto;
+}
+#site-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  font-size: 12px;
+  background: #fff;
+  border: 1px solid #e4e7e2;
+  border-radius: 7px;
+  margin-bottom: 4px;
+}
+#site-list button {
+  width: auto;
+  margin: 0;
+  background: transparent;
+  color: #a05252;
+  font-size: 14px;
+  padding: 0 4px;
+  font-weight: 400;
+}
+#site-list button:disabled {
+  color: #c9cfc9;
+}
+.add-row {
+  display: flex;
+  gap: 6px;
+}
+.add-row input {
+  flex: 1;
+}
+.add-row button {
+  width: auto;
+  margin: 0;
+  padding: 8px 14px;
+}
+.strict-note {
+  margin: 14px 0 0;
+  font-size: 11px;
+  color: #6b7d73;
+  background: #f2f0e9;
+  border-radius: 8px;
+  padding: 8px 10px;
+}

@@ -148,7 +148,8 @@ export const UpdatePreferencesResponse = zod.object({
  * @summary Create (or return) the focus-extension connection token for a user/device
  */
 export const CreateExtensionTokenBody = zod.object({
-  "deviceId": zod.string()
+  "deviceId": zod.string(),
+  "rotate": zod.boolean().optional().describe('When true, invalidates any existing token and issues a new one.')
 })
 
 export const CreateExtensionTokenResponse = zod.object({

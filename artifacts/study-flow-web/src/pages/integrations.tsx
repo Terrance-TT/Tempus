@@ -12,6 +12,7 @@ import {
   useListAssignments,
   getListAssignmentsQueryKey,
   useDeleteAssignment,
+  useCreateExtensionToken,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,10 @@ import {
   Plug,
   Sparkles,
   ArrowRight,
+  ShieldCheck,
+  Download,
+  Copy,
+  Check,
 } from "lucide-react";
 
 function formatDue(dueDate: string): string {
@@ -53,6 +58,42 @@ export default function Integrations() {
   const [canvasUrl, setCanvasUrl] = useState("");
   const [canvasToken, setCanvasToken] = useState("");
   const autoImportTriggered = useRef(false);
+
+  const [connectionCode, setConnectionCode] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const createExtensionToken = useCreateExtensionToken();
+
+  const handleGenerateCode = () => {
+    if (!deviceId) return;
+    // First click fetches the existing code; clicking again rotates the
+    // token so a leaked code can be invalidated.
+    const rotate = connectionCode !== null;
+    createExtensionToken.mutate(
+      { data: { deviceId, rotate } },
+      {
+        onSuccess: ({ token }) => {
+          const apiUrl = `${window.location.origin}/api`;
+          setConnectionCode(btoa(JSON.stringify({ apiUrl, token })));
+          setCodeCopied(false);
+        },
+        onError: () => {
+          toast({
+            title: "Couldn't generate code",
+            description: "Please try again.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  const handleCopyCode = async () => {
+    if (!connectionCode) return;
+    await navigator.clipboard.writeText(connectionCode);
+    setCodeCopied(true);
+    toast({ title: "Connection code copied" });
+    setTimeout(() => setCodeCopied(false), 2500);
+  };
 
   const { data: status, isLoading: isLoadingStatus } = useGetIntegrationsStatus(
     { deviceId: deviceId || "" },
@@ -318,6 +359,70 @@ export default function Integrations() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Focus Guard extension */}
+        <Card className="border shadow-sm" data-testid="card-focus-guard">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+              Tempus Focus Guard
+              <Badge variant="outline" className="ml-auto">Chrome extension</Badge>
+            </CardTitle>
+            <CardDescription>
+              Automatically blocks YouTube, Instagram, Snapchat and other distracting sites
+              during the work blocks on your schedule. Strict mode: there's no off switch —
+              the only way out is removing the extension.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+              <li>Download the extension and unzip it.</li>
+              <li>
+                In Chrome, open <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">chrome://extensions</span>,
+                turn on <strong>Developer mode</strong>, click <strong>Load unpacked</strong> and pick the unzipped folder.
+              </li>
+              <li>Generate your connection code below and paste it into the extension popup.</li>
+            </ol>
+            <div className="flex flex-wrap gap-3">
+              <a href={`${import.meta.env.BASE_URL}tempus-focus-guard.zip`} download>
+                <Button variant="outline" data-testid="button-download-extension">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download extension
+                </Button>
+              </a>
+              <Button
+                onClick={handleGenerateCode}
+                disabled={createExtensionToken.isPending || !deviceId}
+                data-testid="button-generate-code"
+              >
+                {createExtensionToken.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {connectionCode ? "Regenerate connection code" : "Get connection code"}
+              </Button>
+            </div>
+            {connectionCode && (
+              <div className="space-y-2">
+                <Label>Your connection code</Label>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={connectionCode}
+                    className="font-mono text-xs"
+                    onFocus={(e) => e.currentTarget.select()}
+                    data-testid="input-connection-code"
+                  />
+                  <Button variant="outline" size="icon" onClick={handleCopyCode} data-testid="button-copy-code">
+                    {codeCopied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Paste this into the Tempus Focus Guard popup in Chrome. Keep it private — it
+                  lets the extension read your schedule. Regenerating invalidates the old code,
+                  so a connected extension will ask for the new one.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Imported assignments */}
         <section className="space-y-3">

@@ -98,6 +98,8 @@ export interface UpdatePreferencesInput {
 
 export interface CreateExtensionTokenInput {
   deviceId: string;
+  /** When true, invalidates any existing token and issues a new one. */
+  rotate?: boolean;
 }
 
 export interface ExtensionTokenResult {

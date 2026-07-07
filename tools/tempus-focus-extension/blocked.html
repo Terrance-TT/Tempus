@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Focus time — Tempus</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(160deg, #eef5f0, #fafaf7);
+        color: #1d3a2e;
+      }
+      .card {
+        text-align: center;
+        max-width: 420px;
+        padding: 48px 40px;
+        background: #fff;
+        border: 1px solid #e0e7e2;
+        border-radius: 24px;
+        box-shadow: 0 10px 40px rgba(29, 58, 46, 0.08);
+      }
+      .emoji {
+        font-size: 52px;
+      }
+      h1 {
+        font-size: 24px;
+        margin: 16px 0 8px;
+      }
+      p {
+        color: #55685d;
+        font-size: 15px;
+        line-height: 1.5;
+        margin: 0;
+      }
+      .until {
+        margin-top: 18px;
+        display: inline-block;
+        background: #e3efe8;
+        color: #2f6a4d;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 8px 18px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="emoji">🌱</div>
+      <h1>It's focus time</h1>
+      <p id="message">
+        This site is blocked while you have a work block on your Tempus
+        schedule. Back to it — future you says thanks.
+      </p>
+      <div class="until" id="until" hidden></div>
+    </div>
+    <script src="blocked.js"></script>
+  </body>
+</html>

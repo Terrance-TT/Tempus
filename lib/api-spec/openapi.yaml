@@ -731,6 +731,9 @@ components:
       properties:
         deviceId:
           type: string
+        rotate:
+          type: boolean
+          description: When true, invalidates any existing token and issues a new one.
       required:
         - deviceId
     ExtensionTokenResult:
