@@ -100,6 +100,8 @@ export default function Schedule() {
     query: { enabled: !!id, queryKey: getGetScheduleCalendarSyncsQueryKey(id || "") }
   });
   const autoSyncedRef = useRef(false);
+  // Capture URL params at mount before any effect clears them.
+  const mountParamsRef = useRef(new URLSearchParams(window.location.search));
   const syncMap = new Map(calendarSyncs?.map(s => [s.blockId, s.googleEventId]) ?? []);
 
   // Week schedules open in the all-days-at-a-glance grid by default.
@@ -149,7 +151,7 @@ export default function Schedule() {
   };
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = mountParamsRef.current;
     if (params.has("googleCalendarConnected")) {
       toast({ title: "Google Calendar connected" });
       window.history.replaceState(null, "", window.location.pathname);
@@ -161,7 +163,7 @@ export default function Schedule() {
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = mountParamsRef.current;
     if (
       params.get("autoSync") === "1" &&
       !autoSyncedRef.current &&

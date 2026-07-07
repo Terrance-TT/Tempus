@@ -25,7 +25,11 @@ function requireEnv(name: string): string {
 
 export function getRedirectUri(req: Request): string {
   const protocol = req.headers["x-forwarded-proto"]?.toString().split(",")[0] ?? req.protocol;
-  const host = req.get("host");
+  // Replit (and most reverse proxies) set X-Forwarded-Host for the public hostname;
+  // fall back to the Host header if not present.
+  const host =
+    req.headers["x-forwarded-host"]?.toString().split(",")[0] ??
+    req.get("host");
   return `${protocol}://${host}/api/google-calendar/callback`;
 }
 
