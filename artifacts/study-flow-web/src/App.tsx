@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ComponentType } from "react";
 import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
@@ -178,29 +178,15 @@ function GuestDataClaimer() {
 }
 
 function HomeRedirect() {
-  return (
-    <>
-      <Show when="signed-in">
-        <Home />
-      </Show>
-      <Show when="signed-out">
-        <Landing />
-      </Show>
-    </>
-  );
+  const { user, isLoaded } = useUser();
+  if (!isLoaded) return null;
+  return user ? <Home /> : <Landing />;
 }
 
 function AuthedRoute({ component: Component }: { component: ComponentType }) {
-  return (
-    <>
-      <Show when="signed-in">
-        <Component />
-      </Show>
-      <Show when="signed-out">
-        <Landing />
-      </Show>
-    </>
-  );
+  const { user, isLoaded } = useUser();
+  if (!isLoaded) return null;
+  return user ? <Component /> : <Landing />;
 }
 
 function ClerkProviderWithRoutes() {
