@@ -325,7 +325,7 @@ export default function Create() {
 
   const startAdIfNeeded = () => {
     if (!subStatus?.isPro) {
-      setAdCountdown(45);
+      setAdCountdown(5);
     }
   };
 
@@ -835,7 +835,7 @@ export default function Create() {
                         </div>
                         {!subStatus?.isPro && (
                           <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                            <Clock className="w-3 h-3" /> Includes a 45s ad
+                            <Clock className="w-3 h-3" /> Includes a 5s ad
                           </p>
                         )}
                       </CardContent>
@@ -850,7 +850,7 @@ export default function Create() {
                         </div>
                         {!subStatus?.isPro && (
                           <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                            <Clock className="w-3 h-3" /> Includes a 45s ad
+                            <Clock className="w-3 h-3" /> Includes a 5s ad
                           </p>
                         )}
                       </CardContent>
@@ -939,7 +939,7 @@ export default function Create() {
         )}
       </div>
 
-      {/* 45-second ad overlay for free tier users */}
+      {/* 5-second ad overlay for free tier users */}
       {adCountdown !== null && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm px-6">
           <div className="w-full max-w-md space-y-6 text-center">
@@ -972,7 +972,7 @@ export default function Create() {
                       <circle
                         cx="18" cy="18" r="15.9" fill="none"
                         stroke="hsl(var(--primary))" strokeWidth="3"
-                        strokeDasharray={`${((45 - adCountdown) / 45) * 100} 100`}
+                        strokeDasharray={`${((5 - adCountdown) / 5) * 100} 100`}
                         strokeLinecap="round"
                       />
                     </svg>
