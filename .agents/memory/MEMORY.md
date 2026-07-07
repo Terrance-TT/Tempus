@@ -1,4 +1,3 @@
 - [Shared api-server multitenancy](shared-api-server-multitenancy.md) — deviceId scoping/IDOR rules, Clerk ownership migration, auth-id spoofing fix, OAuth state CSRF binding, and orval path+query param name-collision barrel fix.
 - [User-supplied base URLs SSRF](user-supplied-base-urls-ssrf.md) — server-side fetches of user-provided URLs need HTTPS-only + public-host DNS checks; deterministic import counts; no auto-redirect loops after OAuth callback.
 - [Multi-artifact e2e testing](multi-artifact-e2e-testing.md) — runTest path steps aren't artifact-scoped, always prefix with the artifact's preview path; how to seed DB rows owned by a real signed-in Clerk user via an API round-trip.
-- [RNW CSSStyleDeclaration crash fix](rnw-cssstyledeclaration-crash.md) — transient RNW Animated DOM error survived two navigator bypasses; fixed in ErrorBoundary with web-only auto-recover guard.

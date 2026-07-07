@@ -1,9 +1,10 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, PlusCircle, History, Plug, LogOut } from "lucide-react";
+import { Calendar, CalendarDays, PlusCircle, History, Plug, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
-import { useIsSignedIn } from "@/hooks/use-device-id";
+import { useIsSignedIn, useDeviceId } from "@/hooks/use-device-id";
+import { useListSchedules, getListSchedulesQueryKey } from "@workspace/api-client-react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -13,11 +14,20 @@ export function Layout({ children }: LayoutProps) {
   const [location, setLocation] = useLocation();
   const { signOut } = useClerk();
   const isSignedIn = useIsSignedIn();
+  const deviceId = useDeviceId();
+
+  const { data: schedules } = useListSchedules(
+    { deviceId: deviceId || "" },
+    { query: { enabled: !!deviceId, queryKey: getListSchedulesQueryKey({ deviceId: deviceId || "" }) } }
+  );
+  const hasGeneratedSchedule = !!schedules?.some((s) => s.status === "complete");
 
   const handleSignOut = () => signOut(() => setLocation("/"));
 
   const navItems = [
-    { href: "/", label: "Today", icon: Calendar },
+    hasGeneratedSchedule
+      ? { href: "/", label: "Today", icon: Calendar }
+      : { href: "/", label: "Plans", icon: CalendarDays },
     { href: "/create", label: "New Plan", icon: PlusCircle },
     { href: "/history", label: "History", icon: History },
     { href: "/integrations", label: "Integrations", icon: Plug },

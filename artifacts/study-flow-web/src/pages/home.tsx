@@ -1,24 +1,63 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDeviceId } from "@/hooks/use-device-id";
-import { useListSchedules, getListSchedulesQueryKey } from "@workspace/api-client-react";
+import {
+  useListSchedules,
+  useDeleteSchedule,
+  getListSchedulesQueryKey,
+} from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, PlusCircle, ArrowRight, BookOpen, Sparkles } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Calendar, PlusCircle, ArrowRight, Sparkles, Trash2, CalendarDays, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 export default function Home() {
   const deviceId = useDeviceId();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const { data: schedules, isLoading } = useListSchedules(
     { deviceId: deviceId || "" },
     { query: { enabled: !!deviceId, queryKey: getListSchedulesQueryKey({ deviceId: deviceId || "" }) } }
   );
 
+  const deleteSchedule = useDeleteSchedule({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListSchedulesQueryKey({ deviceId: deviceId || "" }) });
+        toast({ title: "Plan deleted", description: "The plan has been removed." });
+      },
+      onError: (err: any) => {
+        toast({ title: "Couldn't delete plan", description: err?.message || "Please try again.", variant: "destructive" });
+      },
+      onSettled: () => setPendingDeleteId(null),
+    },
+  });
+
   const activeSchedule = schedules?.find(s => s.status === "complete");
+  const currentPlans = schedules ?? [];
+
+  const confirmDelete = () => {
+    if (!pendingDeleteId || !deviceId) return;
+    deleteSchedule.mutate({ id: pendingDeleteId, params: { deviceId } });
+  };
 
   if (!deviceId || isLoading) {
     return (
@@ -35,7 +74,9 @@ export default function Home() {
     <Layout>
       <div className="max-w-3xl mx-auto space-y-8 pt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <header className="space-y-2">
-          <h1 className="text-3xl font-heading font-bold text-foreground">Welcome to Tempus</h1>
+          <h1 className="text-3xl font-heading font-bold text-foreground">
+            {activeSchedule ? "Today" : "Welcome to Tempus"}
+          </h1>
           <p className="text-muted-foreground text-lg">Your AI-powered study planner.</p>
         </header>
 
@@ -90,6 +131,79 @@ export default function Home() {
             </div>
           </Card>
         )}
+
+        {currentPlans.length > 0 && (
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-heading font-semibold text-foreground">Current plans</h2>
+              <span className="text-sm text-muted-foreground">
+                {currentPlans.length} {currentPlans.length === 1 ? "plan" : "plans"}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {currentPlans.map((plan) => {
+                const isDeleting = deleteSchedule.isPending && pendingDeleteId === plan.id;
+                return (
+                  <Card key={plan.id} className="group hover:border-primary/40 transition-colors">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <CalendarDays className="w-5 h-5" />
+                      </div>
+                      <button
+                        className="flex-1 min-w-0 text-left cursor-pointer"
+                        onClick={() => setLocation(`/schedule/${plan.id}`)}
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-foreground">
+                            {plan.scope === "week" ? "Weekly plan" : "Daily plan"}
+                          </span>
+                          {plan.status === "complete" ? (
+                            <Badge variant="secondary" className="text-xs">Ready</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">Needs details</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">
+                          Created {format(new Date(plan.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                        </p>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive shrink-0"
+                        aria-label="Delete plan"
+                        disabled={isDeleting}
+                        onClick={() => setPendingDeleteId(plan.id)}
+                      >
+                        {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this plan?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently remove the plan and any calendar events it created. This can't be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={confirmDelete}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
