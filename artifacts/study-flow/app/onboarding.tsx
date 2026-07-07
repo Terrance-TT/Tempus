@@ -101,8 +101,8 @@ export default function OnboardingScreen() {
             What fills your week?
           </Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Add your classes, activities, and routines. Tempus will build
-            the rest around them.
+            Add your classes, activities, and routines. Tempus's AI will
+            suggest which assignment to do when, keeping you on track.
           </Text>
         </View>
 

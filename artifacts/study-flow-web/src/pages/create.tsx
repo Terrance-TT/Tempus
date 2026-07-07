@@ -478,7 +478,7 @@ export default function Create() {
           <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
             <header className="space-y-2">
               <h1 className="text-3xl font-heading font-semibold text-foreground">Tell us your week</h1>
-              <p className="text-muted-foreground text-lg">Snap a photo of your timetable — or just describe your week in words.</p>
+              <p className="text-muted-foreground text-lg">Snap a photo of your timetable — or just describe your week in words. Our AI will suggest which assignment to tackle when, so you stay on track.</p>
             </header>
 
             <div className="grid grid-cols-2 gap-2 p-1 bg-secondary/40 rounded-xl" data-testid="tabs-input-mode">
