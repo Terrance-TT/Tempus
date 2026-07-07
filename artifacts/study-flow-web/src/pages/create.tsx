@@ -174,7 +174,13 @@ export default function Create() {
     setIsExtracting(true);
     setExtractionError(false);
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
+      // Clear any previously saved commitments so the new upload starts fresh.
+      for (const c of commitments) {
+        await new Promise<void>((resolve) => {
+          deleteCommitment.mutate({ id: c.id, params: { deviceId } }, { onSettled: () => resolve() });
+        });
+      }
       const base64 = event.target?.result as string;
       extractCommitments.mutate(
         { data: { deviceId, imageBase64: base64 } },
@@ -214,11 +220,17 @@ export default function Create() {
     else toast({ title: "Please drop an image file", variant: "destructive" });
   };
 
-  const handleDescribeSubmit = (e: React.FormEvent) => {
+  const handleDescribeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!deviceId || !describeText.trim()) return;
     setIsExtracting(true);
     setExtractionError(false);
+    // Clear any previously saved commitments so the new description starts fresh.
+    for (const c of commitments) {
+      await new Promise<void>((resolve) => {
+        deleteCommitment.mutate({ id: c.id, params: { deviceId } }, { onSettled: () => resolve() });
+      });
+    }
     extractFromText.mutate(
       { data: { deviceId, description: describeText.trim() } },
       {
@@ -245,6 +257,17 @@ export default function Create() {
         }
       }
     );
+  };
+
+  const handleClearAllCommitments = async () => {
+    if (!deviceId) return;
+    for (const c of commitments) {
+      await new Promise<void>((resolve) => {
+        deleteCommitment.mutate({ id: c.id, params: { deviceId } }, { onSettled: () => resolve() });
+      });
+    }
+    queryClient.invalidateQueries({ queryKey: getListCommitmentsQueryKey({ deviceId }) });
+    setLastExtractedCount(null);
   };
 
   const handleAddTask = (e: React.FormEvent) => {
@@ -582,19 +605,30 @@ export default function Create() {
                         </p>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowCommitmentDetails(v => !v)}
-                      className="text-muted-foreground"
-                      data-testid="button-toggle-commitments"
-                    >
-                      {showCommitmentDetails ? (
-                        <>Hide details <ChevronUp className="ml-1 w-4 h-4" /></>
-                      ) : (
-                        <>Review & edit <ChevronDown className="ml-1 w-4 h-4" /></>
-                      )}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClearAllCommitments}
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        data-testid="button-clear-commitments"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Start fresh
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowCommitmentDetails(v => !v)}
+                        className="text-muted-foreground"
+                        data-testid="button-toggle-commitments"
+                      >
+                        {showCommitmentDetails ? (
+                          <>Hide details <ChevronUp className="ml-1 w-4 h-4" /></>
+                        ) : (
+                          <>Review & edit <ChevronDown className="ml-1 w-4 h-4" /></>
+                        )}
+                      </Button>
+                    </div>
                   </div>
 
                   {showCommitmentDetails && (
