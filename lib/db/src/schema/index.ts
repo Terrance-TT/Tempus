@@ -23,3 +23,5 @@ export * from "./googleCalendar";
 export * from "./integrations";
 export * from "./preferences";
 export * from "./users";
+export * from "./staffRoles";
+export * from "./manualRequests";

@@ -6,6 +6,9 @@ import googleCalendarRouter from "./googleCalendar";
 import integrationsRouter from "./integrations";
 import preferencesRouter from "./preferences";
 import stripeRouter from "./stripe";
+import adminRouter from "./admin";
+import staffRouter from "./staff";
+import manualRequestsRouter from "./manualRequests";
 
 const router: IRouter = Router();
 
@@ -16,5 +19,8 @@ router.use(googleCalendarRouter);
 router.use(integrationsRouter);
 router.use(preferencesRouter);
 router.use(stripeRouter);
+router.use(adminRouter);
+router.use(staffRouter);
+router.use(manualRequestsRouter);
 
 export default router;

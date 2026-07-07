@@ -54,8 +54,10 @@ import {
   UtensilsCrossed,
   Link2,
   Zap,
+  Users,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { useCreateManualRequest } from "@/hooks/use-manual-requests";
 
 export default function Create() {
   const deviceId = useDeviceId();
@@ -92,6 +94,10 @@ export default function Create() {
   const { data: subStatus } = useSubscriptionStatus();
   const [adCountdown, setAdCountdown] = useState<number | null>(null);
   const [pendingNavScheduleId, setPendingNavScheduleId] = useState<string | null>(null);
+
+  // Expert review state
+  const createManualRequest = useCreateManualRequest();
+  const [expertRequestId, setExpertRequestId] = useState<string | null>(null);
 
   // Preferences (persisted per user)
   const [wakeTime, setWakeTime] = useState("");
@@ -326,6 +332,29 @@ export default function Create() {
   const startAdIfNeeded = () => {
     if (!subStatus?.isPro) {
       setAdCountdown(5);
+    }
+  };
+
+  const handleRequestExpert = async () => {
+    if (!isSignedIn) {
+      setLocation("/sign-in");
+      return;
+    }
+    try {
+      const commitmentText = [describeText].filter(Boolean).join("\n");
+      const result = await createManualRequest.mutateAsync({
+        timetableDescription: commitmentText || undefined,
+        assignments: tasks.length > 0 ? tasks : undefined,
+        preferences: {
+          wakeTime: wakeTime || undefined,
+          bedTime: bedTime || undefined,
+          mealTimes: mealTimes || undefined,
+          notes: prefNotes || undefined,
+        },
+      });
+      setExpertRequestId(result.data.id);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   };
 
@@ -856,6 +885,58 @@ export default function Create() {
                       </CardContent>
                     </Card>
                   </div>
+                )}
+
+                {/* Expert plan request */}
+                {!expertRequestId ? (
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                      <div className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="bg-background px-3 text-muted-foreground">or</span>
+                    </div>
+                  </div>
+                ) : null}
+
+                {expertRequestId ? (
+                  <Card className="border-primary/30 bg-primary/5 text-center p-8 space-y-4">
+                    <div className="w-14 h-14 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="w-7 h-7" />
+                    </div>
+                    <div className="space-y-1">
+                      <h2 className="text-xl font-heading font-semibold">Request submitted!</h2>
+                      <p className="text-muted-foreground text-sm">
+                        Our team will put together a personalised plan and send it back to you shortly.
+                      </p>
+                    </div>
+                    <Button variant="outline" onClick={() => setLocation(`/request/${expertRequestId}`)}>
+                      Check status
+                    </Button>
+                  </Card>
+                ) : (
+                  <Card
+                    className="cursor-pointer hover:border-primary hover:shadow-md transition-all text-center p-6 bg-card border-dashed"
+                    onClick={handleRequestExpert}
+                  >
+                    <CardContent className="p-0 space-y-3">
+                      {createManualRequest.isPending ? (
+                        <Loader2 className="w-8 h-8 mx-auto text-primary animate-spin" />
+                      ) : (
+                        <Users className="w-8 h-8 mx-auto text-primary" />
+                      )}
+                      <div>
+                        <CardTitle className="text-lg">Request an expert plan</CardTitle>
+                        <CardDescription className="mt-1">
+                          A human will review your info and craft a personalised schedule for you.
+                          {!isSignedIn && (
+                            <span className="block mt-1 text-primary font-medium">Sign in required</span>
+                          )}
+                        </CardDescription>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Free · Usually within 24 hours</p>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
             )}
