@@ -33,7 +33,7 @@ export function Layout({ children }: LayoutProps) {
               <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                 <Calendar className="w-5 h-5" />
               </span>
-              StudyFlow
+              Tempus
             </h1>
           </Link>
         </div>

@@ -243,7 +243,7 @@ function ClerkProviderWithRoutes() {
         signIn: {
           start: {
             title: "Welcome back",
-            subtitle: "Sign in to StudyFlow with Google to see your schedule",
+            subtitle: "Sign in to Tempus with Google to see your schedule",
           },
         },
         signUp: {

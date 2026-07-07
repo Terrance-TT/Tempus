@@ -18,7 +18,7 @@ export default function Pricing() {
   const createCheckout = useCreateCheckout();
   const manageSubscription = useManageSubscription();
 
-  const proProduct = products.find((p) => p.name === "StudyFlow Pro");
+  const proProduct = products.find((p) => p.name === "Tempus Pro");
   const proPrice = proProduct?.prices.find((p) => p.recurring?.interval === "month");
 
   const handleUpgrade = async () => {

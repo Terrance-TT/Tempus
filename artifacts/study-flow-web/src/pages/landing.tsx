@@ -15,7 +15,7 @@ export default function Landing() {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
               <Calendar className="w-4 h-4" />
             </div>
-            <span className="font-heading font-bold text-xl tracking-tight text-foreground">StudyFlow</span>
+            <span className="font-heading font-bold text-xl tracking-tight text-foreground">Tempus</span>
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => setLocation("/sign-in")} className="hidden sm:flex">
@@ -142,7 +142,7 @@ export default function Landing() {
                   </div>
                   <div>
                     <h4 className="font-bold text-lg mb-1">Protects your sleep</h4>
-                    <p className="text-muted-foreground">StudyFlow refuses to schedule assignments during your designated sleep hours. No more accidental all-nighters.</p>
+                    <p className="text-muted-foreground">Tempus refuses to schedule assignments during your designated sleep hours. No more accidental all-nighters.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -239,7 +239,7 @@ export default function Landing() {
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="w-4 h-4" />
-            <span className="font-heading font-medium">StudyFlow</span>
+            <span className="font-heading font-medium">Tempus</span>
           </div>
           <div className="text-sm text-muted-foreground flex gap-6">
             <button onClick={() => setLocation("/sign-in")} className="hover:text-foreground transition-colors">Sign in</button>

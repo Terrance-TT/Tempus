@@ -95,7 +95,7 @@ export default function OnboardingScreen() {
             What fills your week?
           </Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Add your classes, activities, and routines. StudyFlow will build
+            Add your classes, activities, and routines. Tempus will build
             the rest around them.
           </Text>
         </View>

@@ -39,7 +39,7 @@ type ScheduleBlock = {
 // token bound to the signed-in user who initiated the connect flow. Without
 // this, an attacker can perform "login/account-link CSRF": craft their own
 // authorization code exchange and trick a victim's browser into completing
-// it, attaching the attacker's Google account to the victim's StudyFlow
+// it, attaching the attacker's Google account to the victim's Tempus
 // account. We sign {userId, nonce, expiresAt, returnTo} with a server-only
 // secret and require, on callback, that the signature is valid, the state
 // hasn't expired, the nonce hasn't been used before, and the userId in the

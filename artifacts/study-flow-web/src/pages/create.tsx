@@ -1026,7 +1026,7 @@ export default function Create() {
           <div className="w-full max-w-md space-y-6 text-center">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Free plan — sponsored message</p>
-              <h2 className="text-2xl font-heading font-bold">Stay on track with StudyFlow Pro</h2>
+              <h2 className="text-2xl font-heading font-bold">Stay on track with Tempus Pro</h2>
             </div>
 
             <div className="rounded-2xl border bg-card p-8 shadow-lg space-y-4">

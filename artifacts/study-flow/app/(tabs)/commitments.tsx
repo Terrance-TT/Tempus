@@ -92,7 +92,7 @@ export default function CommitmentsScreen() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.foreground }]}>Commitments</Text>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          Everything StudyFlow builds around
+          Everything Tempus builds around
         </Text>
       </View>
 

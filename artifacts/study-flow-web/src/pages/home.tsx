@@ -35,7 +35,7 @@ export default function Home() {
     <Layout>
       <div className="max-w-3xl mx-auto space-y-8 pt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <header className="space-y-2">
-          <h1 className="text-3xl font-heading font-bold text-foreground">Welcome to StudyFlow</h1>
+          <h1 className="text-3xl font-heading font-bold text-foreground">Welcome to Tempus</h1>
           <p className="text-muted-foreground text-lg">Your AI-powered study planner.</p>
         </header>
 

@@ -21,7 +21,7 @@ export default function CheckoutSuccess() {
       </div>
       <div className="space-y-2">
         <h1 className="text-2xl font-heading font-bold">You're Pro!</h1>
-        <p className="text-muted-foreground">Welcome to StudyFlow Pro — enjoy unlimited schedules and no ads.</p>
+        <p className="text-muted-foreground">Welcome to Tempus Pro — enjoy unlimited schedules and no ads.</p>
       </div>
       <Button onClick={() => setLocation("/create")}>Start generating</Button>
       <p className="text-xs text-muted-foreground">Redirecting you home in a moment…</p>

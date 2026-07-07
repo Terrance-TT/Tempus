@@ -96,7 +96,7 @@ export default function GenerateScreen() {
               How far ahead should we plan?
             </Text>
             <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-              StudyFlow will fit study time, breaks, and routines around what
+              Tempus will fit study time, breaks, and routines around what
               you've already told it.
             </Text>
 

@@ -3,7 +3,7 @@ import { getUncachableStripeClient } from "./stripeClient";
 import type Stripe from "stripe";
 
 export const TRIAL_DAYS = 14;
-export const INTRO_COUPON_ID = "studyflow-first-month-50off";
+export const INTRO_COUPON_ID = "tempus-first-month-50off";
 
 export class StripeService {
   async createCustomer(email: string, userId: string) {

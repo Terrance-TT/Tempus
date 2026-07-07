@@ -1,20 +1,20 @@
 import { getUncachableStripeClient } from "./stripeClient.js";
 
-const COUPON_ID = "studyflow-first-month-50off";
+const COUPON_ID = "tempus-first-month-50off";
 
 async function createProducts() {
   try {
     const stripe = await getUncachableStripeClient();
-    console.log("Checking for existing StudyFlow Pro product...");
+    console.log("Checking for existing Tempus Pro product...");
 
     const existing = await stripe.products.search({
-      query: "name:'StudyFlow Pro' AND active:'true'",
+      query: "name:'Tempus Pro' AND active:'true'",
     });
 
     let productId: string;
 
     if (existing.data.length > 0) {
-      console.log("StudyFlow Pro already exists. Skipping product creation.");
+      console.log("Tempus Pro already exists. Skipping product creation.");
       productId = existing.data[0].id;
       const prices = await stripe.prices.list({ product: productId, active: true });
       for (const p of prices.data) {
@@ -22,7 +22,7 @@ async function createProducts() {
       }
     } else {
       const product = await stripe.products.create({
-        name: "StudyFlow Pro",
+        name: "Tempus Pro",
         description: "Unlimited AI schedule generations, no ads.",
       });
       productId = product.id;
