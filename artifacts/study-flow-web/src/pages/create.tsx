@@ -51,6 +51,7 @@ import {
   Moon,
   Sun,
   UtensilsCrossed,
+  Link2,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -66,6 +67,7 @@ export default function Create() {
   const [inputMode, setInputMode] = useState<"photo" | "describe">("photo");
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionError, setExtractionError] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [describeText, setDescribeText] = useState("");
   const [showCommitmentDetails, setShowCommitmentDetails] = useState(false);
   const [lastExtractedCount, setLastExtractedCount] = useState<number | null>(null);
@@ -160,13 +162,10 @@ export default function Create() {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !deviceId) return;
-
+  const processFile = (file: File) => {
+    if (!deviceId) return;
     setIsExtracting(true);
     setExtractionError(false);
-
     const reader = new FileReader();
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
@@ -178,12 +177,34 @@ export default function Create() {
             setIsExtracting(false);
             setExtractionError(true);
             toast({ title: "Extraction failed", description: "Could not read the image.", variant: "destructive" });
-          }
+          },
         }
       );
     };
     reader.readAsDataURL(file);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) processFile(file);
+    else toast({ title: "Please drop an image file", variant: "destructive" });
   };
 
   const handleDescribeSubmit = (e: React.FormEvent) => {
@@ -394,7 +415,14 @@ export default function Create() {
             </div>
 
             {inputMode === "photo" && (
-              <Card className="border-dashed bg-secondary/20 hover:bg-secondary/40 transition-colors">
+              <Card
+                className={`border-dashed transition-colors cursor-default ${isDragging ? "border-primary bg-primary/10 scale-[1.01]" : "bg-secondary/20 hover:bg-secondary/30"}`}
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                data-testid="card-photo-dropzone"
+              >
                 <CardContent className="p-8 text-center space-y-6">
                   <input
                     type="file"
@@ -410,19 +438,27 @@ export default function Create() {
                       <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
                       <p className="text-primary font-medium animate-pulse">Reading your schedule...</p>
                     </div>
+                  ) : isDragging ? (
+                    <div className="py-8 space-y-3 pointer-events-none">
+                      <div className="w-20 h-20 bg-primary/15 rounded-full flex items-center justify-center mx-auto text-primary">
+                        <Upload className="w-10 h-10" />
+                      </div>
+                      <p className="text-primary font-semibold text-lg">Drop it here!</p>
+                    </div>
                   ) : (
                     <>
                       <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
                         <Camera className="w-10 h-10" />
                       </div>
 
-                      <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-muted-foreground text-sm">Drag your timetable photo here, or</p>
                         <div className="flex flex-col sm:flex-row gap-3 justify-center">
                           <Button size="lg" onClick={() => fileInputRef.current?.click()} className="rounded-xl shadow-sm" data-testid="button-take-photo">
                             <Camera className="mr-2 w-5 h-5" /> Take Photo
                           </Button>
                           <Button size="lg" variant="outline" onClick={() => fileInputRef.current?.click()} className="rounded-xl bg-background" data-testid="button-upload-image">
-                            <Upload className="mr-2 w-5 h-5" /> Upload Image
+                            <Upload className="mr-2 w-5 h-5" /> Browse File
                           </Button>
                         </div>
 
@@ -577,6 +613,61 @@ export default function Create() {
                     <Plus className="w-4 h-4 mr-2" /> Add Task
                   </Button>
                 </form>
+
+                <div className="mt-4 pt-4 border-t border-dashed">
+                  <p className="text-xs text-muted-foreground mb-3 uppercase tracking-wider font-medium">Or import from</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full text-xs gap-1.5 h-8"
+                      onClick={() => {
+                        if (importedAssignments.length > 0) {
+                          handleAddImportedAssignments();
+                        } else {
+                          setLocation("/integrations");
+                        }
+                      }}
+                      data-testid="button-import-canvas"
+                    >
+                      <Link2 className="w-3.5 h-3.5" />
+                      Canvas
+                      {importedAssignments.length > 0 && (
+                        <span className="bg-primary/15 text-primary rounded-full px-1.5 py-0 text-[10px] font-semibold ml-0.5">
+                          {importedAssignments.length}
+                        </span>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full text-xs gap-1.5 h-8"
+                      onClick={() => {
+                        if (importedAssignments.length > 0) {
+                          handleAddImportedAssignments();
+                        } else {
+                          setLocation("/integrations");
+                        }
+                      }}
+                      data-testid="button-import-classroom"
+                    >
+                      <Link2 className="w-3.5 h-3.5" />
+                      Google Classroom
+                      {importedAssignments.length > 0 && (
+                        <span className="bg-primary/15 text-primary rounded-full px-1.5 py-0 text-[10px] font-semibold ml-0.5">
+                          {importedAssignments.length}
+                        </span>
+                      )}
+                    </Button>
+                  </div>
+                  {importedAssignments.length === 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Not connected yet — clicking will take you to Integrations to set it up.
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
