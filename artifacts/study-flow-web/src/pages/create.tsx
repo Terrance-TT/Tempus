@@ -568,9 +568,14 @@ export default function Create() {
                     </div>
                   ) : (
                     <form onSubmit={handleDescribeSubmit} className="space-y-4">
-                      <Label className="text-base">Describe your regular week</Label>
+                      <div className="space-y-1.5">
+                        <Label className="text-base">Describe your regular week</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Include days and times — e.g. <span className="italic">"School 8am–3pm Monday to Friday, soccer practice Tuesdays and Thursdays 4–5:30, piano lesson Wednesday at 6"</span>
+                        </p>
+                      </div>
                       <Textarea
-                        placeholder='e.g. "School 8am-3pm Monday to Friday, soccer practice Tuesdays and Thursdays 4-5:30, piano lesson Wednesday at 6"'
+                        placeholder="Start typing your week..."
                         value={describeText}
                         onChange={(e) => setDescribeText(e.target.value)}
                         className="min-h-[140px] text-base"
