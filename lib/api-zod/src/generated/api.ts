@@ -145,6 +145,18 @@ export const UpdatePreferencesResponse = zod.object({
 
 
 /**
+ * @summary Create (or return) the focus-extension connection token for a user/device
+ */
+export const CreateExtensionTokenBody = zod.object({
+  "deviceId": zod.string()
+})
+
+export const CreateExtensionTokenResponse = zod.object({
+  "token": zod.string()
+})
+
+
+/**
  * After a guest signs in, transfers commitments, schedules, assignments and preferences owned by the anonymous guest device id to the signed-in user's account. Requires an authenticated session.
  * @summary Reassign data created as a signed-out guest to the signed-in user
  */

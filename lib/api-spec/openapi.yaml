@@ -149,6 +149,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserPreferences"
+  /extension/token:
+    post:
+      operationId: createExtensionToken
+      tags: [extension]
+      summary: Create (or return) the focus-extension connection token for a user/device
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExtensionTokenInput"
+      responses:
+        "200":
+          description: Extension connection token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtensionTokenResult"
   /claim-guest-data:
     post:
       operationId: claimGuestData
@@ -708,6 +726,20 @@ components:
           nullable: true
       required:
         - deviceId
+    CreateExtensionTokenInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+      required:
+        - deviceId
+    ExtensionTokenResult:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
     ClaimGuestDataInput:
       type: object
       properties:

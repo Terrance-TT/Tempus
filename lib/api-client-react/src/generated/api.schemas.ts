@@ -96,6 +96,14 @@ export interface UpdatePreferencesInput {
   notes?: string | null;
 }
 
+export interface CreateExtensionTokenInput {
+  deviceId: string;
+}
+
+export interface ExtensionTokenResult {
+  token: string;
+}
+
 export interface ClaimGuestDataInput {
   /** The anonymous device id whose data should be claimed. */
   guestDeviceId: string;

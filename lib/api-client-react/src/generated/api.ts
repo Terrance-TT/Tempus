@@ -26,10 +26,12 @@ import type {
   Commitment,
   ConnectCanvasInput,
   CreateCommitmentInput,
+  CreateExtensionTokenInput,
   DeleteAssignmentParams,
   DeleteCommitmentParams,
   DeleteScheduleParams,
   DisconnectCanvasParams,
+  ExtensionTokenResult,
   ExtractCommitmentsInput,
   ExtractCommitmentsTextInput,
   GenerateScheduleInput,
@@ -610,6 +612,76 @@ export const useUpdatePreferences = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdatePreferencesMutationOptions(options));
+    }
+
+export const getCreateExtensionTokenUrl = () => {
+
+
+
+
+  return `/api/extension/token`
+}
+
+/**
+ * @summary Create (or return) the focus-extension connection token for a user/device
+ */
+export const createExtensionToken = async (createExtensionTokenInput: CreateExtensionTokenInput, options?: RequestInit): Promise<ExtensionTokenResult> => {
+
+  return customFetch<ExtensionTokenResult>(getCreateExtensionTokenUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createExtensionTokenInput)
+  }
+);}
+
+
+
+
+export const getCreateExtensionTokenMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExtensionToken>>, TError,{data: BodyType<CreateExtensionTokenInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createExtensionToken>>, TError,{data: BodyType<CreateExtensionTokenInput>}, TContext> => {
+
+const mutationKey = ['createExtensionToken'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createExtensionToken>>, {data: BodyType<CreateExtensionTokenInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createExtensionToken(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateExtensionTokenMutationResult = NonNullable<Awaited<ReturnType<typeof createExtensionToken>>>
+    export type CreateExtensionTokenMutationBody = BodyType<CreateExtensionTokenInput>
+    export type CreateExtensionTokenMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create (or return) the focus-extension connection token for a user/device
+ */
+export const useCreateExtensionToken = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExtensionToken>>, TError,{data: BodyType<CreateExtensionTokenInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createExtensionToken>>,
+        TError,
+        {data: BodyType<CreateExtensionTokenInput>},
+        TContext
+      > => {
+      return useMutation(getCreateExtensionTokenMutationOptions(options));
     }
 
 export const getClaimGuestDataUrl = () => {
