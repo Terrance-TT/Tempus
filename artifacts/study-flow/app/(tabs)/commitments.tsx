@@ -252,18 +252,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 80,
+    paddingTop: 72,
     paddingHorizontal: 24,
     paddingBottom: 20,
     gap: 4,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "700",
-    letterSpacing: -0.5,
+    fontSize: 34,
+    fontWeight: "800",
+    letterSpacing: -0.8,
+    lineHeight: 40,
   },
   subtitle: {
     fontSize: 15,
+    marginTop: 2,
   },
   content: {
     paddingHorizontal: 24,
@@ -307,7 +309,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,

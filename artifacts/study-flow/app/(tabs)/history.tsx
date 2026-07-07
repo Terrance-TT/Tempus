@@ -25,7 +25,7 @@ export default function HistoryScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           {schedules?.map((s) => (
             <Link key={s.id} href={`/schedule/${s.id}`} asChild>
-              <Pressable style={[styles.card, { backgroundColor: colors.card }]}>
+              <Pressable style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Text style={[styles.cardTitle, { color: colors.cardForeground }]}>
                   {s.scope} schedule
                 </Text>
@@ -67,9 +67,8 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
   },
   cardTitle: {
     fontSize: 16,

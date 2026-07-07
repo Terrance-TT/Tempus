@@ -88,6 +88,12 @@ export default function OnboardingScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
+          <View style={styles.brandRow}>
+            <View style={[styles.brandIcon, { backgroundColor: colors.primary }]}>
+              <Feather name="calendar" size={16} color={colors.primaryForeground} />
+            </View>
+            <Text style={[styles.brandName, { color: colors.foreground }]}>Tempus</Text>
+          </View>
           <Text style={[styles.eyebrow, { color: colors.primary }]}>
             Let's get started
           </Text>
@@ -240,22 +246,42 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   header: {
-    gap: 10,
+    gap: 6,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  brandIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  brandName: {
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: -0.3,
   },
   eyebrow: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
-    letterSpacing: 1.2,
+    letterSpacing: 1.4,
     textTransform: "uppercase",
   },
   title: {
-    fontSize: 30,
-    fontWeight: "700",
-    letterSpacing: -0.5,
+    fontSize: 34,
+    fontWeight: "800",
+    letterSpacing: -0.8,
+    lineHeight: 40,
   },
   subtitle: {
-    fontSize: 16,
-    lineHeight: 23,
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 2,
   },
   addedList: {
     gap: 10,
@@ -296,7 +322,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     paddingVertical: 16,
-    borderRadius: 14,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -308,8 +334,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     paddingVertical: 16,
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 999,
+    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
   },

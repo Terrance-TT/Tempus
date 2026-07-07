@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     paddingVertical: 16,
-    borderRadius: 14,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 999,
     borderWidth: 1.5,
   },
   expertButtonText: {

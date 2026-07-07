@@ -1,59 +1,72 @@
+// Color tokens mirrored from the web app's CSS variables so both surfaces
+// share the same visual language.
+//
+// Web source (index.css, light):
+//   --background:       40  20% 97%  → #f8f7f3  warm cream
+//   --foreground:       160 30% 20%  → #24423a  dark forest green
+//   --primary:          155 30% 45%  → #4d8265  vibrant green
+//   --secondary:        40  20% 92%  → #ece9e3  warm light
+//   --muted:            155 15% 92%  → #e4ece8
+//   --muted-foreground: 160 15% 45%  → #5f7870
+//   --border:           155 15% 85%  → #ccd8d3
+//   --card:             0   0%  100% → #ffffff
+
 const colors = {
   light: {
-    text: "#2c362f",
-    tint: "#4a5d4e",
+    text: "#24423a",
+    tint: "#4d8265",
 
-    background: "#f7f8f5",
-    foreground: "#2c362f",
+    background: "#f8f7f3",
+    foreground: "#24423a",
 
     card: "#ffffff",
-    cardForeground: "#2c362f",
+    cardForeground: "#24423a",
 
-    primary: "#4a5d4e",
+    primary: "#4d8265",
     primaryForeground: "#ffffff",
 
-    secondary: "#e2e6e0",
-    secondaryForeground: "#4a5d4e",
+    secondary: "#ece9e3",
+    secondaryForeground: "#24423a",
 
-    muted: "#e2e6e0",
-    mutedForeground: "#78877a",
+    muted: "#e4ece8",
+    mutedForeground: "#5f7870",
 
-    accent: "#d6ddd7",
-    accentForeground: "#2c362f",
+    accent: "#e8a835",
+    accentForeground: "#3a2200",
 
-    destructive: "#b35b5b",
+    destructive: "#cc3333",
     destructiveForeground: "#ffffff",
 
-    border: "#d6ddd7",
-    input: "#d6ddd7",
+    border: "#ccd8d3",
+    input: "#ccd8d3",
   },
   dark: {
-    text: "#f7f8f5",
-    tint: "#a3b8a8",
+    text: "#e8ede9",
+    tint: "#7cb89a",
 
-    background: "#1c221e",
-    foreground: "#f7f8f5",
+    background: "#1a2420",
+    foreground: "#e8ede9",
 
-    card: "#2c362f",
-    cardForeground: "#f7f8f5",
+    card: "#233029",
+    cardForeground: "#e8ede9",
 
-    primary: "#a3b8a8",
-    primaryForeground: "#1c221e",
+    primary: "#7cb89a",
+    primaryForeground: "#1a2420",
 
-    secondary: "#3a473d",
-    secondaryForeground: "#a3b8a8",
+    secondary: "#2e3f38",
+    secondaryForeground: "#7cb89a",
 
-    muted: "#3a473d",
-    mutedForeground: "#8a9a8d",
+    muted: "#2e3f38",
+    mutedForeground: "#7a9b8e",
 
-    accent: "#4a5d4e",
-    accentForeground: "#f7f8f5",
+    accent: "#c48c25",
+    accentForeground: "#fffbe8",
 
-    destructive: "#d97777",
+    destructive: "#e06060",
     destructiveForeground: "#ffffff",
 
-    border: "#4a5d4e",
-    input: "#4a5d4e",
+    border: "#3a5049",
+    input: "#3a5049",
   },
 
   radius: 16,

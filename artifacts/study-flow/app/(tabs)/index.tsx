@@ -8,7 +8,7 @@ import { useListCommitments, useListSchedules } from "@workspace/api-client-reac
 export default function HomeScreen() {
   const colors = useColors();
   const { deviceId, isLoading: deviceLoading } = useDeviceId();
-  
+
   const { data: commitments, isLoading: commitmentsLoading } = useListCommitments(
     { deviceId: deviceId || "" },
     { query: { enabled: !!deviceId } as any }
@@ -36,18 +36,36 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
+        <View style={styles.brandRow}>
+          <View style={[styles.brandIcon, { backgroundColor: colors.primary }]}>
+            <Feather name="calendar" size={16} color={colors.primaryForeground} />
+          </View>
+          <Text style={[styles.brandName, { color: colors.foreground }]}>Tempus</Text>
+        </View>
         <Text style={[styles.title, { color: colors.foreground }]}>Your Schedule</Text>
+        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+          Your plan for the week, built around your life.
+        </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         {latestSchedule ? (
-          <View style={styles.card}>
-            <Text style={{ color: colors.foreground, fontSize: 16, marginBottom: 12 }}>
-              Active {latestSchedule.scope} schedule
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.cardBadge, { backgroundColor: `${colors.primary}18` }]}>
+              <Feather name="check-circle" size={14} color={colors.primary} />
+              <Text style={[styles.cardBadgeText, { color: colors.primary }]}>
+                Active {latestSchedule.scope} plan
+              </Text>
+            </View>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>
+              Ready to view
             </Text>
             <Link href={`/schedule/${latestSchedule.id}`} asChild>
               <Pressable style={[styles.button, { backgroundColor: colors.primary }]}>
-                <Text style={{ color: colors.primaryForeground, fontWeight: "600" }}>View Schedule</Text>
+                <Text style={{ color: colors.primaryForeground, fontWeight: "600", fontSize: 15 }}>
+                  View Schedule
+                </Text>
+                <Feather name="arrow-right" size={16} color={colors.primaryForeground} />
               </Pressable>
             </Link>
           </View>
@@ -62,7 +80,10 @@ export default function HomeScreen() {
             </Text>
             <Link href="/generate" asChild>
               <Pressable style={[styles.button, { backgroundColor: colors.primary, marginTop: 16 }]}>
-                <Text style={{ color: colors.primaryForeground, fontWeight: "600" }}>Generate Schedule</Text>
+                <Text style={{ color: colors.primaryForeground, fontWeight: "600", fontSize: 15 }}>
+                  Generate Schedule
+                </Text>
+                <Feather name="arrow-right" size={16} color={colors.primaryForeground} />
               </Pressable>
             </Link>
           </View>
@@ -77,14 +98,39 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 80,
+    paddingTop: 72,
     paddingHorizontal: 24,
     paddingBottom: 24,
+    gap: 4,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  brandIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  brandName: {
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: -0.3,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "700",
-    letterSpacing: -0.5,
+    fontSize: 34,
+    fontWeight: "800",
+    letterSpacing: -0.8,
+    lineHeight: 40,
+  },
+  subtitle: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 4,
   },
   content: {
     paddingHorizontal: 24,
@@ -93,8 +139,28 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: 20,
-    borderRadius: 16,
-    backgroundColor: "rgba(0,0,0,0.03)",
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 10,
+  },
+  cardBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+  },
+  cardBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: -0.3,
   },
   emptyState: {
     alignItems: "center",
@@ -113,16 +179,20 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: "600",
+    fontWeight: "700",
+    letterSpacing: -0.3,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: "center",
+    lineHeight: 22,
   },
   button: {
+    flexDirection: "row",
+    gap: 8,
     paddingVertical: 14,
     paddingHorizontal: 24,
-    borderRadius: 12,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
   },
