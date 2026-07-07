@@ -23,6 +23,7 @@ import {
   ScheduleScope,
   ClarificationAnswer,
   UserPreferences,
+  ScheduleBlock,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -92,6 +93,15 @@ export default function Create() {
   const { data: subStatus } = useSubscriptionStatus();
   const [adCountdown, setAdCountdown] = useState<number | null>(null);
   const [pendingNavScheduleId, setPendingNavScheduleId] = useState<string | null>(null);
+  const [pendingRevealBlocks, setPendingRevealBlocks] = useState<ScheduleBlock[] | null>(null);
+
+  // Reveal screen: shown after generation for signed-in users
+  const [revealData, setRevealData] = useState<{ scheduleId: string; blocks: ScheduleBlock[] } | null>(null);
+
+  // Step 3 study-style preferences
+  const [studyPref, setStudyPref] = useState<string[]>([]);
+  const [focusLength, setFocusLength] = useState<string | null>(null);
+  const [showRoutineDetails, setShowRoutineDetails] = useState(false);
 
   // Preferences (persisted per user)
   const [wakeTime, setWakeTime] = useState("");
@@ -312,12 +322,18 @@ export default function Create() {
     toast({ title: "Assignments added", description: `${newTasks.length} imported assignment(s) added to your tasks.` });
   };
 
-  const buildPreferences = (): UserPreferences => ({
-    wakeTime: wakeTime.trim() || null,
-    bedTime: bedTime.trim() || null,
-    mealTimes: mealTimes.trim() || null,
-    notes: prefNotes.trim() || null,
-  });
+  const buildPreferences = (): UserPreferences => {
+    const hints: string[] = [];
+    if (studyPref.length > 0) hints.push(`Preferred study time: ${studyPref.join(", ")}`);
+    if (focusLength) hints.push(`Focus session length: ${focusLength} minutes`);
+    const combinedNotes = [prefNotes.trim(), ...hints].filter(Boolean).join(". ");
+    return {
+      wakeTime: wakeTime.trim() || null,
+      bedTime: bedTime.trim() || null,
+      mealTimes: mealTimes.trim() || null,
+      notes: combinedNotes || null,
+    };
+  };
 
   // Ad countdown tick
   useEffect(() => {
@@ -330,17 +346,26 @@ export default function Create() {
   useEffect(() => {
     if (adCountdown === 0 && pendingNavScheduleId) {
       const id = pendingNavScheduleId;
+      const blocks = pendingRevealBlocks;
       setPendingNavScheduleId(null);
+      setPendingRevealBlocks(null);
       setAdCountdown(null);
-      onGenerateComplete(id);
+      onGenerateComplete(id, blocks ?? undefined);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adCountdown, pendingNavScheduleId]);
 
-  const onGenerateComplete = (scheduleId: string) => {
+  const onGenerateComplete = (scheduleId: string, blocks?: ScheduleBlock[]) => {
     if (isSignedIn) {
-      toast({ title: "Schedule generated!" });
-      setLocation(`/schedule/${scheduleId}`);
+      const interestingBlocks = (blocks ?? []).filter(b =>
+        ["homework", "study", "review", "assignment"].includes(b.category)
+      );
+      if (interestingBlocks.length > 0) {
+        setRevealData({ scheduleId, blocks: interestingBlocks });
+      } else {
+        toast({ title: "Schedule generated!" });
+        setLocation(`/schedule/${scheduleId}`);
+      }
     } else {
       // Guests must sign in to view the result.
       setPendingScheduleId(scheduleId);
@@ -382,9 +407,10 @@ export default function Create() {
             // If the ad is still running, hold the result until it finishes
             if (adCountdown !== null && adCountdown > 0) {
               setPendingNavScheduleId(result.schedule.id);
+              setPendingRevealBlocks(result.schedule.blocks ?? null);
             } else {
               setAdCountdown(null);
-              onGenerateComplete(result.schedule.id);
+              onGenerateComplete(result.schedule.id, result.schedule.blocks ?? undefined);
             }
           }
         },
@@ -428,9 +454,10 @@ export default function Create() {
             setIsGenerating(false);
             if (adCountdown !== null && adCountdown > 0) {
               setPendingNavScheduleId(result.schedule.id);
+              setPendingRevealBlocks(result.schedule.blocks ?? null);
             } else {
               setAdCountdown(null);
-              onGenerateComplete(result.schedule.id);
+              onGenerateComplete(result.schedule.id, result.schedule.blocks ?? undefined);
             }
           }
         },
@@ -826,50 +853,147 @@ export default function Create() {
 
         {step === 3 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
-            {!lockedScheduleId && (
+
+            {/* ── Reveal screen: shown after generation for signed-in users ── */}
+            {revealData && !isGenerating && (
+              <div className="space-y-6">
+                <header className="text-center space-y-3">
+                  <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h1 className="text-2xl font-heading font-semibold">Here's what we found time for</h1>
+                  <p className="text-muted-foreground">Your homework and study sessions, freshly scheduled.</p>
+                </header>
+                <div className="space-y-3">
+                  {revealData.blocks.map((block, i) => (
+                    <div
+                      key={block.id}
+                      className="flex items-center gap-4 p-4 rounded-xl border bg-card animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both"
+                      style={{ animationDelay: `${i * 90}ms` }}
+                    >
+                      <div className="text-xs font-semibold uppercase tracking-wide text-primary bg-primary/10 px-2.5 py-1.5 rounded-lg shrink-0 min-w-[3rem] text-center">
+                        {block.day.charAt(0).toUpperCase() + block.day.slice(1, 3)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{block.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{block.startTime} – {block.endTime}</p>
+                      </div>
+                      <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  size="lg"
+                  className="w-full rounded-xl"
+                  onClick={() => setLocation(`/schedule/${revealData.scheduleId}?reveal=1`)}
+                >
+                  Add to my schedule <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </div>
+            )}
+
+            {!revealData && !lockedScheduleId && (
               <header className="space-y-2 text-center mb-6">
                 <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <Sparkles className="w-8 h-8" />
                 </div>
-                <h1 className="text-3xl font-heading font-semibold text-foreground">Almost there</h1>
-                <p className="text-muted-foreground text-lg">A few preferences so your plan fits your life.</p>
+                <h1 className="text-3xl font-heading font-semibold text-foreground">One last thing</h1>
+                <p className="text-muted-foreground text-lg">How do you like to study?</p>
               </header>
             )}
 
-            {!isGenerating && !lockedScheduleId && clarifyingQuestions.length === 0 && (
+            {!isGenerating && !lockedScheduleId && !revealData && clarifyingQuestions.length === 0 && (
               <div className="space-y-6">
-                <Card className="border shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Your routine</CardTitle>
-                    <CardDescription>We'll remember these for next time.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4 pt-2">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2"><Sun className="w-4 h-4 text-primary" /> Wake-up time</Label>
-                        <Input placeholder="e.g. 7:00 AM" value={wakeTime} onChange={e => setWakeTime(e.target.value)} data-testid="input-wake-time" />
+                {/* Study time preference */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">When do you prefer to study?</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: "morning", label: "🌅 Morning", sub: "before noon" },
+                      { value: "afternoon", label: "☀️ Afternoon", sub: "noon – 5 pm" },
+                      { value: "evening", label: "🌙 Evening", sub: "after 5 pm" },
+                    ].map(opt => {
+                      const on = studyPref.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setStudyPref(prev => on ? prev.filter(v => v !== opt.value) : [...prev, opt.value])}
+                          className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-all flex flex-col items-center gap-0.5 min-w-[90px] ${on ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-foreground hover:border-primary/50"}`}
+                        >
+                          <span>{opt.label}</span>
+                          <span className="text-xs font-normal opacity-60">{opt.sub}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Focus session length */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">How long can you focus at a stretch?</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: "25", label: "25 min" },
+                      { value: "45", label: "45 min" },
+                      { value: "60", label: "1 hour" },
+                      { value: "90", label: "90 min" },
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setFocusLength(prev => prev === opt.value ? null : opt.value)}
+                        className={`px-5 py-2.5 rounded-xl border text-sm font-medium transition-all ${focusLength === opt.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-foreground hover:border-primary/50"}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Optional notes */}
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Anything else? <span className="font-normal">(optional)</span></Label>
+                  <Textarea
+                    placeholder="e.g. keep Sundays light, no back-to-back sessions..."
+                    value={prefNotes}
+                    onChange={e => setPrefNotes(e.target.value)}
+                    className="min-h-[72px] text-sm"
+                    data-testid="input-pref-notes"
+                  />
+                </div>
+
+                {/* Collapsible routine details */}
+                <div className="rounded-xl border overflow-hidden">
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowRoutineDetails(v => !v)}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Sun className="w-4 h-4" /> Sleep &amp; meal times <span className="text-xs opacity-60">(optional)</span>
+                    </span>
+                    {showRoutineDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                  {showRoutineDetails && (
+                    <div className="px-4 pb-4 space-y-3 border-t bg-muted/30">
+                      <div className="grid gap-3 sm:grid-cols-2 pt-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs flex items-center gap-1.5"><Sun className="w-3.5 h-3.5 text-primary" /> Wake-up time</Label>
+                          <Input placeholder="e.g. 7:00 AM" value={wakeTime} onChange={e => setWakeTime(e.target.value)} data-testid="input-wake-time" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs flex items-center gap-1.5"><Moon className="w-3.5 h-3.5 text-primary" /> Bedtime</Label>
+                          <Input placeholder="e.g. 10:30 PM" value={bedTime} onChange={e => setBedTime(e.target.value)} data-testid="input-bed-time" />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2"><Moon className="w-4 h-4 text-primary" /> Bedtime</Label>
-                        <Input placeholder="e.g. 10:30 PM" value={bedTime} onChange={e => setBedTime(e.target.value)} data-testid="input-bed-time" />
+                      <div className="space-y-1.5">
+                        <Label className="text-xs flex items-center gap-1.5"><UtensilsCrossed className="w-3.5 h-3.5 text-primary" /> Meal times</Label>
+                        <Input placeholder='e.g. breakfast 7:30, lunch 12, dinner 6:30' value={mealTimes} onChange={e => setMealTimes(e.target.value)} data-testid="input-meal-times" />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-2"><UtensilsCrossed className="w-4 h-4 text-primary" /> Meal times</Label>
-                      <Input placeholder='e.g. "breakfast 7:30, lunch 12, dinner 6:30"' value={mealTimes} onChange={e => setMealTimes(e.target.value)} data-testid="input-meal-times" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Anything else we should know?</Label>
-                      <Textarea
-                        placeholder="e.g. I focus best in the morning, keep Sundays light..."
-                        value={prefNotes}
-                        onChange={e => setPrefNotes(e.target.value)}
-                        className="min-h-[80px]"
-                        data-testid="input-pref-notes"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                  )}
+                </div>
 
                 {subStatus && !subStatus.isPro && subStatus.scheduleCount >= subStatus.scheduleLimit ? (
                   <Card className="border-2 border-primary/40 bg-primary/5 text-center p-8 space-y-4">

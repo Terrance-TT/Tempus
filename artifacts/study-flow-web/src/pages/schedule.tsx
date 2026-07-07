@@ -74,6 +74,7 @@ export default function Schedule() {
   const [aiInstruction, setAiInstruction] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "week">("list");
   const [editingBlock, setEditingBlock] = useState<ScheduleBlock | null>(null);
+  const [isRevealing, setIsRevealing] = useState(false);
   const [addingForDay, setAddingForDay] = useState<DayOfWeek | null>(null);
   
   // Local edit states
@@ -109,6 +110,16 @@ export default function Schedule() {
       if (schedule.scope === "week") setViewMode("week");
     }
   }, [schedule]);
+
+  // Detect ?reveal=1 from the create flow and trigger staggered block animation.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reveal") !== "1") return;
+    setIsRevealing(true);
+    window.history.replaceState({}, "", window.location.pathname);
+    const t = setTimeout(() => setIsRevealing(false), 3000);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleSyncGoogleCalendar = () => {
     if (!id) return;
@@ -441,7 +452,7 @@ export default function Schedule() {
 
         {viewMode === "list" && (
         <div className="space-y-10">
-          {orderedDays().map(day => {
+          {(() => { let revealIdx = 0; return orderedDays().map(day => {
             const blocks = groupedBlocks[day] || [];
             if (schedule.scope === "day" && blocks.length === 0) return null;
 
@@ -484,10 +495,12 @@ export default function Schedule() {
                   )}
                   {displayBlocks.map(block => {
                     const googleEventId = syncMap.get(block.id);
+                    const rIdx = revealIdx++;
                     return (
                     <div 
                       key={block.id} 
-                      className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:shadow-sm group ${getCategoryColor(block.category)}`}
+                      className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:shadow-sm group ${getCategoryColor(block.category)}${isRevealing ? " animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both" : ""}`}
+                      style={isRevealing ? { animationDelay: `${rIdx * 70}ms` } : undefined}
                     >
                       <div className="flex items-center gap-2 sm:w-32 shrink-0 font-medium">
                         <Clock className="w-4 h-4 opacity-70" />
@@ -548,10 +561,12 @@ export default function Schedule() {
                       </div>
                       {pastBlocks.map(block => {
                         const googleEventId = syncMap.get(block.id);
+                        const rIdx = revealIdx++;
                         return (
                           <div
                             key={block.id}
-                            className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:shadow-sm group opacity-45 ${getCategoryColor(block.category)}`}
+                            className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:shadow-sm group opacity-45 ${getCategoryColor(block.category)}${isRevealing ? " animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both" : ""}`}
+                            style={isRevealing ? { animationDelay: `${rIdx * 70}ms` } : undefined}
                           >
                             <div className="flex items-center gap-2 sm:w-32 shrink-0 font-medium">
                               <Clock className="w-4 h-4 opacity-70" />
@@ -588,7 +603,8 @@ export default function Schedule() {
                 </div>
               </div>
             );
-          })}
+          })
+        })()}
         </div>
         )}
 
