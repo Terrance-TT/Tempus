@@ -795,7 +795,21 @@ export default function Create() {
               <Button
                 size="lg"
                 onClick={() => {
-                  if (tasks.length === 0) {
+                  // Auto-add a partially filled task so nothing is lost.
+                  let finalTasks = tasks;
+                  if (newTaskTitle.trim() && newTaskDueDate.trim()) {
+                    const pending = {
+                      title: newTaskTitle.trim(),
+                      dueDate: newTaskDueDate.trim(),
+                      estimatedMinutes: newTaskMinutes ? parseInt(newTaskMinutes, 10) : null,
+                    };
+                    finalTasks = [...tasks, pending];
+                    setTasks(finalTasks);
+                    setNewTaskTitle("");
+                    setNewTaskDueDate("");
+                    setNewTaskMinutes("");
+                  }
+                  if (finalTasks.length === 0) {
                     toast({ title: "Add at least one task to continue.", duration: 3000 });
                     return;
                   }
