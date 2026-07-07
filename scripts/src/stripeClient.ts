@@ -2,6 +2,14 @@ import Stripe from "stripe";
 import { StripeSync } from "stripe-replit-sync";
 
 async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecret?: string }> {
+  // Fallback: plain environment variable secrets
+  if (process.env.STRIPE_SECRET_KEY) {
+    return {
+      secretKey: process.env.STRIPE_SECRET_KEY,
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    };
+  }
+
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? "repl " + process.env.REPL_IDENTITY
@@ -11,8 +19,7 @@ async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecre
 
   if (!hostname || !xReplitToken) {
     throw new Error(
-      "Missing Replit environment variables. " +
-      "Ensure the Stripe integration is connected via the Integrations tab.",
+      "Stripe not configured. Set STRIPE_SECRET_KEY as a secret, or connect Stripe via the Integrations tab.",
     );
   }
 
@@ -33,8 +40,7 @@ async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecre
 
   if (!settings?.secret_key) {
     throw new Error(
-      "Stripe integration not connected or missing secret key. " +
-      "Connect Stripe via the Integrations tab first.",
+      "Stripe integration not connected. Set STRIPE_SECRET_KEY as a secret, or connect Stripe via the Integrations tab.",
     );
   }
 
