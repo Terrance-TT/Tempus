@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ComponentType } from "react";
 import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
+import { ArrowLeft, UserCircle } from "lucide-react";
 import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
@@ -101,17 +102,51 @@ const clerkAppearance = {
 };
 
 function SignInPage() {
+  const [, setLocation] = useLocation();
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 relative">
+      <button
+        onClick={() => setLocation("/")}
+        className="absolute top-6 left-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back
+      </button>
+      <div className="w-full max-w-[440px] space-y-6">
+        <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+        <div className="text-center">
+          <button
+            onClick={() => setLocation("/create")}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <UserCircle className="w-4 h-4" /> Continue as guest
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
 function SignUpPage() {
+  const [, setLocation] = useLocation();
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 relative">
+      <button
+        onClick={() => setLocation("/")}
+        className="absolute top-6 left-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back
+      </button>
+      <div className="w-full max-w-[440px] space-y-6">
+        <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+        <div className="text-center">
+          <button
+            onClick={() => setLocation("/create")}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <UserCircle className="w-4 h-4" /> Continue as guest
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
