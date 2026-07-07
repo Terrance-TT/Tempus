@@ -21,6 +21,8 @@ import type {
 
 import type {
   Assignment,
+  ClaimGuestDataInput,
+  ClaimGuestDataResult,
   Commitment,
   ConnectCanvasInput,
   CreateCommitmentInput,
@@ -29,9 +31,11 @@ import type {
   DeleteScheduleParams,
   DisconnectCanvasParams,
   ExtractCommitmentsInput,
+  ExtractCommitmentsTextInput,
   GenerateScheduleInput,
   GenerateScheduleResult,
   GetIntegrationsStatusParams,
+  GetPreferencesParams,
   GetScheduleParams,
   GoogleCalendarStatus,
   HealthStatus,
@@ -48,7 +52,9 @@ import type {
   SyncScheduleGoogleCalendarInput,
   SyncScheduleGoogleCalendarResult,
   UpdateCommitmentInput,
-  UpdateScheduleInput
+  UpdatePreferencesInput,
+  UpdateScheduleInput,
+  UserPreferences
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -379,6 +385,302 @@ export const useExtractCommitmentsFromImage = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getExtractCommitmentsFromImageMutationOptions(options));
+    }
+
+export const getExtractCommitmentsFromTextUrl = () => {
+
+
+
+
+  return `/api/commitments/extract-text`
+}
+
+/**
+ * Accepts a free-text description of a student's weekly schedule (e.g. "I have school 8-3, soccer practice 4-5 on Tuesdays") and uses AI to extract recurring commitments. The extracted commitments are saved for the device and returned.
+ * @summary Extract recurring commitments from a plain-text description
+ */
+export const extractCommitmentsFromText = async (extractCommitmentsTextInput: ExtractCommitmentsTextInput, options?: RequestInit): Promise<Commitment[]> => {
+
+  return customFetch<Commitment[]>(getExtractCommitmentsFromTextUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(extractCommitmentsTextInput)
+  }
+);}
+
+
+
+
+export const getExtractCommitmentsFromTextMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof extractCommitmentsFromText>>, TError,{data: BodyType<ExtractCommitmentsTextInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof extractCommitmentsFromText>>, TError,{data: BodyType<ExtractCommitmentsTextInput>}, TContext> => {
+
+const mutationKey = ['extractCommitmentsFromText'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof extractCommitmentsFromText>>, {data: BodyType<ExtractCommitmentsTextInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  extractCommitmentsFromText(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExtractCommitmentsFromTextMutationResult = NonNullable<Awaited<ReturnType<typeof extractCommitmentsFromText>>>
+    export type ExtractCommitmentsFromTextMutationBody = BodyType<ExtractCommitmentsTextInput>
+    export type ExtractCommitmentsFromTextMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Extract recurring commitments from a plain-text description
+ */
+export const useExtractCommitmentsFromText = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof extractCommitmentsFromText>>, TError,{data: BodyType<ExtractCommitmentsTextInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof extractCommitmentsFromText>>,
+        TError,
+        {data: BodyType<ExtractCommitmentsTextInput>},
+        TContext
+      > => {
+      return useMutation(getExtractCommitmentsFromTextMutationOptions(options));
+    }
+
+export const getGetPreferencesUrl = (params: GetPreferencesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/preferences?${stringifiedParams}` : `/api/preferences`
+}
+
+/**
+ * @summary Get the saved scheduling preferences for a user/device
+ */
+export const getPreferences = async (params: GetPreferencesParams, options?: RequestInit): Promise<UserPreferences> => {
+
+  return customFetch<UserPreferences>(getGetPreferencesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPreferencesQueryKey = (params?: GetPreferencesParams,) => {
+    return [
+    `/api/preferences`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPreferencesQueryOptions = <TData = Awaited<ReturnType<typeof getPreferences>>, TError = ErrorType<unknown>>(params: GetPreferencesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPreferencesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPreferences>>> = ({ signal }) => getPreferences(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPreferences>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPreferencesQueryResult = NonNullable<Awaited<ReturnType<typeof getPreferences>>>
+export type GetPreferencesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the saved scheduling preferences for a user/device
+ */
+
+export function useGetPreferences<TData = Awaited<ReturnType<typeof getPreferences>>, TError = ErrorType<unknown>>(
+ params: GetPreferencesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPreferencesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdatePreferencesUrl = () => {
+
+
+
+
+  return `/api/preferences`
+}
+
+/**
+ * @summary Save scheduling preferences for a user/device
+ */
+export const updatePreferences = async (updatePreferencesInput: UpdatePreferencesInput, options?: RequestInit): Promise<UserPreferences> => {
+
+  return customFetch<UserPreferences>(getUpdatePreferencesUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updatePreferencesInput)
+  }
+);}
+
+
+
+
+export const getUpdatePreferencesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePreferences>>, TError,{data: BodyType<UpdatePreferencesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePreferences>>, TError,{data: BodyType<UpdatePreferencesInput>}, TContext> => {
+
+const mutationKey = ['updatePreferences'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePreferences>>, {data: BodyType<UpdatePreferencesInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updatePreferences(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof updatePreferences>>>
+    export type UpdatePreferencesMutationBody = BodyType<UpdatePreferencesInput>
+    export type UpdatePreferencesMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Save scheduling preferences for a user/device
+ */
+export const useUpdatePreferences = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePreferences>>, TError,{data: BodyType<UpdatePreferencesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePreferences>>,
+        TError,
+        {data: BodyType<UpdatePreferencesInput>},
+        TContext
+      > => {
+      return useMutation(getUpdatePreferencesMutationOptions(options));
+    }
+
+export const getClaimGuestDataUrl = () => {
+
+
+
+
+  return `/api/claim-guest-data`
+}
+
+/**
+ * After a guest signs in, transfers commitments, schedules, assignments and preferences owned by the anonymous guest device id to the signed-in user's account. Requires an authenticated session.
+ * @summary Reassign data created as a signed-out guest to the signed-in user
+ */
+export const claimGuestData = async (claimGuestDataInput: ClaimGuestDataInput, options?: RequestInit): Promise<ClaimGuestDataResult> => {
+
+  return customFetch<ClaimGuestDataResult>(getClaimGuestDataUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(claimGuestDataInput)
+  }
+);}
+
+
+
+
+export const getClaimGuestDataMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof claimGuestData>>, TError,{data: BodyType<ClaimGuestDataInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof claimGuestData>>, TError,{data: BodyType<ClaimGuestDataInput>}, TContext> => {
+
+const mutationKey = ['claimGuestData'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof claimGuestData>>, {data: BodyType<ClaimGuestDataInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  claimGuestData(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClaimGuestDataMutationResult = NonNullable<Awaited<ReturnType<typeof claimGuestData>>>
+    export type ClaimGuestDataMutationBody = BodyType<ClaimGuestDataInput>
+    export type ClaimGuestDataMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Reassign data created as a signed-out guest to the signed-in user
+ */
+export const useClaimGuestData = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof claimGuestData>>, TError,{data: BodyType<ClaimGuestDataInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof claimGuestData>>,
+        TError,
+        {data: BodyType<ClaimGuestDataInput>},
+        TContext
+      > => {
+      return useMutation(getClaimGuestDataMutationOptions(options));
     }
 
 export const getUpdateCommitmentUrl = (id: string,) => {

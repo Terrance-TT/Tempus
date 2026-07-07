@@ -11,6 +11,7 @@ import {
   DeleteCommitmentParams,
   DeleteCommitmentQueryParams,
   ExtractCommitmentsFromImageBody,
+  ExtractCommitmentsFromTextBody,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -110,6 +111,75 @@ Rules:
             image_url: { url: toDataUrl(body.imageBase64) },
           },
         ],
+      },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "commitment_extraction_result",
+        strict: true,
+        schema: extractionResultSchema,
+      },
+    },
+  });
+
+  const raw = response.choices[0]?.message?.content;
+  if (!raw) {
+    throw new Error("No content returned from commitment extraction model");
+  }
+
+  const parsed = JSON.parse(raw) as { commitments: ExtractedCommitment[] };
+  const extracted = parsed.commitments ?? [];
+
+  if (extracted.length === 0) {
+    res.status(201).json([]);
+    return;
+  }
+
+  const inserted = await db
+    .insert(commitments)
+    .values(
+      extracted.map((c) => ({
+        deviceId: ownerId,
+        title: c.title,
+        type: c.type,
+        daysOfWeek: c.daysOfWeek,
+        startTime: c.startTime,
+        endTime: c.endTime,
+        notes: c.notes ?? null,
+      })),
+    )
+    .returning();
+
+  res
+    .status(201)
+    .json(
+      inserted.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })),
+    );
+});
+
+router.post("/commitments/extract-text", async (req, res) => {
+  const body = ExtractCommitmentsFromTextBody.parse(req.body);
+  const ownerId = resolveOwnerId(req, body.deviceId);
+
+  const systemPrompt = `You are an assistant that reads a student's plain-text description of their weekly schedule and extracts the recurring commitments.
+
+Rules:
+- Extract every class, extracurricular activity, and routine (like a standing club, practice, or meal block) the student mentions.
+- Group repeats: if the same activity occurs on multiple days at the same time, return ONE entry with all its days in daysOfWeek.
+- Classify each as "class" (academic courses/lectures/labs, including "school"), "extracurricular" (sports, clubs, jobs, activities), or "routine" (personal recurring blocks like meals, gym, sleep).
+- Times must be 24-hour "HH:mm". Convert AM/PM if needed. Interpret ambiguous times sensibly for a student (e.g. "school 8-3" means 08:00-15:00, "practice 4-5" means 16:00-17:00).
+- If the student doesn't specify days for something like school, assume weekdays (mon-fri).
+- Only include what the student actually describes. Do not invent commitments. If the text contains no recognizable schedule, return an empty commitments array.`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.4",
+    max_completion_tokens: 4096,
+    messages: [
+      { role: "system", content: systemPrompt },
+      {
+        role: "user",
+        content: `Extract the recurring commitments from this description of my schedule:\n\n${body.description}`,
       },
     ],
     response_format: {

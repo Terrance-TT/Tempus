@@ -89,6 +89,88 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Commitment"
+  /commitments/extract-text:
+    post:
+      operationId: extractCommitmentsFromText
+      tags: [commitments]
+      summary: Extract recurring commitments from a plain-text description
+      description: >
+        Accepts a free-text description of a student's weekly schedule
+        (e.g. "I have school 8-3, soccer practice 4-5 on Tuesdays") and uses
+        AI to extract recurring commitments. The extracted commitments are
+        saved for the device and returned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExtractCommitmentsTextInput"
+      responses:
+        "201":
+          description: Extracted and saved commitments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Commitment"
+  /preferences:
+    get:
+      operationId: getPreferences
+      tags: [preferences]
+      summary: Get the saved scheduling preferences for a user/device
+      parameters:
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Saved preferences (empty values if never saved)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferences"
+    put:
+      operationId: updatePreferences
+      tags: [preferences]
+      summary: Save scheduling preferences for a user/device
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePreferencesInput"
+      responses:
+        "200":
+          description: Updated preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferences"
+  /claim-guest-data:
+    post:
+      operationId: claimGuestData
+      tags: [preferences]
+      summary: Reassign data created as a signed-out guest to the signed-in user
+      description: >
+        After a guest signs in, transfers commitments, schedules, assignments
+        and preferences owned by the anonymous guest device id to the
+        signed-in user's account. Requires an authenticated session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimGuestDataInput"
+      responses:
+        "200":
+          description: Claim result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimGuestDataResult"
   /commitments/{id}:
     patch:
       operationId: updateCommitment
@@ -574,6 +656,74 @@ components:
       required:
         - deviceId
         - imageBase64
+    ExtractCommitmentsTextInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        description:
+          type: string
+          description: >
+            Free-text description of the student's weekly schedule, e.g.
+            "School 8am-3pm weekdays, soccer 4-5:30 Tue/Thu".
+      required:
+        - deviceId
+        - description
+    UserPreferences:
+      type: object
+      properties:
+        wakeTime:
+          type: string
+          nullable: true
+          description: 'When the student usually wakes up (e.g. "7:00 AM").'
+        bedTime:
+          type: string
+          nullable: true
+          description: 'When the student usually goes to bed (e.g. "10:30 PM").'
+        mealTimes:
+          type: string
+          nullable: true
+          description: 'Usual meal times, free text (e.g. "breakfast 7:30, lunch 12, dinner 6:30").'
+        notes:
+          type: string
+          nullable: true
+          description: Anything else the AI should keep in mind when scheduling.
+      required: []
+    UpdatePreferencesInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        wakeTime:
+          type: string
+          nullable: true
+        bedTime:
+          type: string
+          nullable: true
+        mealTimes:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - deviceId
+    ClaimGuestDataInput:
+      type: object
+      properties:
+        guestDeviceId:
+          type: string
+          description: The anonymous device id whose data should be claimed.
+      required:
+        - guestDeviceId
+    ClaimGuestDataResult:
+      type: object
+      properties:
+        claimedCount:
+          type: integer
+          description: Total number of rows reassigned to the signed-in user.
+      required:
+        - claimedCount
     Task:
       type: object
       description: An assignment or task the student needs to work on.
@@ -755,6 +905,12 @@ components:
           description: Assignments/tasks the student needs time for in this schedule.
           items:
             $ref: "#/components/schemas/Task"
+        preferences:
+          $ref: "#/components/schemas/UserPreferences"
+          description: >
+            The student's scheduling preferences (sleep, meals, extra notes).
+            When provided, the AI should use these instead of asking
+            clarifying questions.
       required:
         - deviceId
         - scope

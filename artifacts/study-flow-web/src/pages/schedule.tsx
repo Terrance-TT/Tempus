@@ -27,13 +27,30 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Plus, Pencil, Loader2, Send, CalendarCheck2 } from "lucide-react";
+import { Trash2, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Plus, Pencil, Loader2, Send, CalendarCheck2, List, LayoutGrid } from "lucide-react";
 import { format } from "date-fns";
 
 const DAYS_ORDER: DayOfWeek[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const DAY_NAMES: Record<DayOfWeek, string> = {
   mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday", fri: "Friday", sat: "Saturday", sun: "Sunday"
 };
+const DAY_SHORT: Record<DayOfWeek, string> = {
+  mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun"
+};
+
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  if (Number.isNaN(h)) return 0;
+  return h * 60 + (Number.isNaN(m) ? 0 : m);
+}
+
+function formatHourLabel(minutes: number): string {
+  const h = Math.floor(minutes / 60) % 24;
+  if (h === 0) return "12am";
+  if (h < 12) return `${h}am`;
+  if (h === 12) return "12pm";
+  return `${h - 12}pm`;
+}
 
 export default function Schedule() {
   const { id } = useParams();
@@ -43,6 +60,7 @@ export default function Schedule() {
   const queryClient = useQueryClient();
 
   const [aiInstruction, setAiInstruction] = useState("");
+  const [viewMode, setViewMode] = useState<"list" | "week">("list");
   const [editingBlock, setEditingBlock] = useState<ScheduleBlock | null>(null);
   const [addingForDay, setAddingForDay] = useState<DayOfWeek | null>(null);
   
@@ -70,6 +88,15 @@ export default function Schedule() {
   });
   const autoSyncedRef = useRef(false);
   const syncMap = new Map(calendarSyncs?.map(s => [s.blockId, s.googleEventId]) ?? []);
+
+  // Week schedules open in the all-days-at-a-glance grid by default.
+  const viewInitializedRef = useRef(false);
+  useEffect(() => {
+    if (schedule && !viewInitializedRef.current) {
+      viewInitializedRef.current = true;
+      if (schedule.scope === "week") setViewMode("week");
+    }
+  }, [schedule]);
 
   const handleSyncGoogleCalendar = () => {
     if (!id) return;
@@ -343,18 +370,43 @@ export default function Schedule() {
         </div>
 
         <header className="space-y-3 pb-6 border-b">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
-              <CalendarIcon className="w-6 h-6" />
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+                <CalendarIcon className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-heading font-semibold tracking-tight text-foreground capitalize">
+                  {schedule.scope} Schedule
+                </h1>
+                <p className="text-muted-foreground flex items-center gap-2 mt-1">
+                  Generated {format(new Date(schedule.createdAt), "MMMM d, yyyy")}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-heading font-semibold tracking-tight text-foreground capitalize">
-                {schedule.scope} Schedule
-              </h1>
-              <p className="text-muted-foreground flex items-center gap-2 mt-1">
-                Generated {format(new Date(schedule.createdAt), "MMMM d, yyyy")}
-              </p>
-            </div>
+
+            {schedule.scope === "week" && (
+              <div className="flex items-center gap-1 p-1 bg-secondary/50 rounded-lg" data-testid="toggle-view-mode">
+                <Button
+                  variant={viewMode === "list" ? "secondary" : "ghost"}
+                  size="sm"
+                  className={viewMode === "list" ? "bg-background shadow-sm" : "text-muted-foreground"}
+                  onClick={() => setViewMode("list")}
+                  data-testid="button-view-list"
+                >
+                  <List className="w-4 h-4 mr-1.5" /> List
+                </Button>
+                <Button
+                  variant={viewMode === "week" ? "secondary" : "ghost"}
+                  size="sm"
+                  className={viewMode === "week" ? "bg-background shadow-sm" : "text-muted-foreground"}
+                  onClick={() => setViewMode("week")}
+                  data-testid="button-view-week"
+                >
+                  <LayoutGrid className="w-4 h-4 mr-1.5" /> Week
+                </Button>
+              </div>
+            )}
           </div>
         </header>
 
@@ -375,6 +427,7 @@ export default function Schedule() {
           </form>
         </div>
 
+        {viewMode === "list" && (
         <div className="space-y-10">
           {DAYS_ORDER.map(day => {
             const blocks = groupedBlocks[day] || [];
@@ -457,6 +510,82 @@ export default function Schedule() {
             );
           })}
         </div>
+        )}
+
+        {viewMode === "week" && (() => {
+          const allBlocks = schedule.blocks;
+          const starts = allBlocks.map(b => timeToMinutes(b.startTime));
+          const ends = allBlocks.map(b => {
+            const s = timeToMinutes(b.startTime);
+            const e = timeToMinutes(b.endTime);
+            return e > s ? e : s + 30;
+          });
+          const minStart = Math.floor((starts.length ? Math.min(...starts) : 7 * 60) / 60) * 60;
+          const maxEnd = Math.ceil((ends.length ? Math.max(...ends) : 22 * 60) / 60) * 60;
+          const total = Math.max(maxEnd - minStart, 60);
+          const hourMarks: number[] = [];
+          for (let m = minStart + 60; m < maxEnd; m += 60) hourMarks.push(m);
+
+          return (
+            <div className="rounded-2xl border bg-card overflow-hidden animate-in fade-in duration-300" data-testid="week-grid">
+              <div className="grid border-b bg-secondary/20" style={{ gridTemplateColumns: "3rem repeat(7, 1fr)" }}>
+                <div />
+                {DAYS_ORDER.map(day => (
+                  <div key={day} className="text-center py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-l">
+                    {DAY_SHORT[day]}
+                  </div>
+                ))}
+              </div>
+              <div className="grid" style={{ gridTemplateColumns: "3rem repeat(7, 1fr)", height: "calc(100dvh - 22rem)", minHeight: "440px" }}>
+                <div className="relative">
+                  {hourMarks.map(m => (
+                    <span
+                      key={m}
+                      className="absolute right-1.5 -translate-y-1/2 text-[9px] tabular-nums text-muted-foreground"
+                      style={{ top: `${((m - minStart) / total) * 100}%` }}
+                    >
+                      {formatHourLabel(m)}
+                    </span>
+                  ))}
+                </div>
+                {DAYS_ORDER.map(day => {
+                  const blocks = groupedBlocks[day] || [];
+                  return (
+                    <div key={day} className="relative border-l">
+                      {hourMarks.map(m => (
+                        <div
+                          key={m}
+                          className="absolute left-0 right-0 border-t border-border/40 pointer-events-none"
+                          style={{ top: `${((m - minStart) / total) * 100}%` }}
+                        />
+                      ))}
+                      {blocks.map(block => {
+                        const s = timeToMinutes(block.startTime);
+                        let e = timeToMinutes(block.endTime);
+                        if (e <= s) e = s + 30;
+                        const top = ((s - minStart) / total) * 100;
+                        const height = ((e - s) / total) * 100;
+                        return (
+                          <button
+                            key={block.id}
+                            onClick={() => openEdit(block)}
+                            className={`absolute left-0.5 right-0.5 rounded-md border px-1 py-0.5 text-left overflow-hidden transition-shadow hover:shadow-md hover:z-10 ${getCategoryColor(block.category)}`}
+                            style={{ top: `${top}%`, height: `${height}%`, minHeight: "14px" }}
+                            title={`${block.title} • ${block.startTime}–${block.endTime}`}
+                            data-testid={`grid-block-${block.id}`}
+                          >
+                            <p className="text-[10px] font-semibold leading-tight truncate">{block.title}</p>
+                            <p className="text-[9px] opacity-70 leading-tight truncate hidden md:block">{block.startTime}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       <Dialog open={!!editingBlock || !!addingForDay} onOpenChange={(open) => {

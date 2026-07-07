@@ -187,7 +187,8 @@ Rules:
 - Keep all of the student's fixed commitments in place at their given times.
 - Create dedicated homework/study blocks for the provided tasks. Prioritize tasks by their due date (soonest first) and allocate roughly the estimated time when provided. Title these blocks after the task (e.g. "Work on Biology essay").
 - Fill remaining gaps between fixed commitments with sensible additions: breaks, meals, and free time, respecting existing routines (e.g. don't schedule homework during dinner).
-- If you are missing information that materially changes the schedule (e.g. dinner time, wake-up or bedtime, study preferences, how long a task will take), set status to "needs_clarification" and ask 1-4 short, specific questions. Do not ask about things already covered by existing commitments, tasks, or prior answers.
+- The student may have already provided their preferences (wake-up time, bedtime, meal times, and extra notes) in priorAnswers. Respect them: never schedule anything before wake-up or after bedtime, and place meals at the given times.
+- If a preference is missing, use sensible student defaults (wake 7:00, bed 22:30, breakfast/lunch/dinner at typical times) rather than asking. Only set status to "needs_clarification" (with 1-4 short, specific questions) as a last resort when the schedule genuinely cannot be built sensibly without an answer. Do not ask about things already covered by existing commitments, tasks, or prior answers.
 - Only produce status "complete" with full "blocks" once you have enough information to build a sensible schedule.
 - Keep block titles short and student-friendly (e.g. "Dinner", "Math homework", "Free time").
 - "blocks" must be empty when status is "needs_clarification", and "questions" must be empty when status is "complete".`;
@@ -480,6 +481,38 @@ router.post("/schedules/generate", async (req, res) => {
     }));
     taskList = (body.tasks as Task[] | undefined) ?? [];
     priorAnswers = body.answers ?? [];
+
+    // Fold structured preferences into the persisted prior answers so drafts
+    // and clarification follow-ups keep using them without re-submission.
+    const prefs = body.preferences;
+    if (prefs) {
+      const prefAnswers: ClarificationAnswer[] = [];
+      if (prefs.wakeTime) {
+        prefAnswers.push({
+          question: "What time do you usually wake up?",
+          answer: prefs.wakeTime,
+        });
+      }
+      if (prefs.bedTime) {
+        prefAnswers.push({
+          question: "What time do you usually go to bed?",
+          answer: prefs.bedTime,
+        });
+      }
+      if (prefs.mealTimes) {
+        prefAnswers.push({
+          question: "When do you usually eat your meals?",
+          answer: prefs.mealTimes,
+        });
+      }
+      if (prefs.notes) {
+        prefAnswers.push({
+          question: "Anything else to keep in mind for your schedule?",
+          answer: prefs.notes,
+        });
+      }
+      priorAnswers = [...prefAnswers, ...priorAnswers];
+    }
   }
 
   const effectiveScope = draftRow

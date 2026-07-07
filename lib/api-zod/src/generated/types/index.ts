@@ -8,6 +8,8 @@
 
 export * from './assignment';
 export * from './assignmentSource';
+export * from './claimGuestDataInput';
+export * from './claimGuestDataResult';
 export * from './clarificationAnswer';
 export * from './commitment';
 export * from './commitmentType';
@@ -19,9 +21,11 @@ export * from './deleteCommitmentParams';
 export * from './deleteScheduleParams';
 export * from './disconnectCanvasParams';
 export * from './extractCommitmentsInput';
+export * from './extractCommitmentsTextInput';
 export * from './generateScheduleInput';
 export * from './generateScheduleResult';
 export * from './getIntegrationsStatusParams';
+export * from './getPreferencesParams';
 export * from './getScheduleParams';
 export * from './googleCalendarStatus';
 export * from './healthStatus';
@@ -44,4 +48,6 @@ export * from './syncScheduleGoogleCalendarInput';
 export * from './syncScheduleGoogleCalendarResult';
 export * from './task';
 export * from './updateCommitmentInput';
+export * from './updatePreferencesInput';
 export * from './updateScheduleInput';
+export * from './userPreferences';

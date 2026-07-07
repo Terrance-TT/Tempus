@@ -8,6 +8,7 @@
 import type { ClarificationAnswer } from './clarificationAnswer';
 import type { ScheduleScope } from './scheduleScope';
 import type { Task } from './task';
+import type { UserPreferences } from './userPreferences';
 
 export interface GenerateScheduleInput {
   deviceId: string;
@@ -17,4 +18,6 @@ export interface GenerateScheduleInput {
   answers?: ClarificationAnswer[];
   /** Assignments/tasks the student needs time for in this schedule. */
   tasks?: Task[];
+  /** The student's scheduling preferences (sleep, meals, extra notes). When provided, the AI should use these instead of asking clarifying questions. */
+  preferences?: UserPreferences;
 }

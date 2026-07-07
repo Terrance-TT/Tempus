@@ -1,11 +1,18 @@
 import { useEffect, useRef, type ComponentType } from "react";
 import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { useClaimGuestData } from "@workspace/api-client-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  peekGuestDeviceId,
+  clearGuestDeviceId,
+  getPendingScheduleId,
+  clearPendingScheduleId,
+} from "@/hooks/use-device-id";
 
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
@@ -131,6 +138,45 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+// After a guest signs in, claim any data they created anonymously (commitments,
+// schedules, preferences) into their real account, then send them to the
+// schedule they were locked out of (if any).
+function GuestDataClaimer() {
+  const { user, isLoaded } = useUser();
+  const claimGuestData = useClaimGuestData();
+  const rqClient = useQueryClient();
+  const [, setLocation] = useLocation();
+  const attemptedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isLoaded || !user || attemptedRef.current) return;
+    const guestId = peekGuestDeviceId();
+    if (!guestId) return;
+    attemptedRef.current = true;
+    claimGuestData.mutate(
+      { data: { guestDeviceId: guestId } },
+      {
+        onSuccess: () => {
+          clearGuestDeviceId();
+          rqClient.clear();
+          const pending = getPendingScheduleId();
+          if (pending) {
+            clearPendingScheduleId();
+            setLocation(`/schedule/${pending}`);
+          }
+        },
+        onError: () => {
+          // Leave the guest id in place so a retry on next load can claim it.
+          attemptedRef.current = false;
+        },
+      },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, user?.id]);
+
+  return null;
+}
+
 function HomeRedirect() {
   return (
     <>
@@ -186,14 +232,14 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <GuestDataClaimer />
         <TooltipProvider>
           <Switch>
             <Route path="/" component={HomeRedirect} />
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />
-            <Route path="/create">
-              <AuthedRoute component={Create} />
-            </Route>
+            {/* Guests may build a schedule without an account */}
+            <Route path="/create" component={Create} />
             <Route path="/schedule/:id">
               <AuthedRoute component={Schedule} />
             </Route>

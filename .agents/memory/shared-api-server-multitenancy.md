@@ -67,6 +67,16 @@ Both the web (`study-flow-web`) and mobile (`study-flow`) apps share it.
   **Why:** real anonymous device ids are generated client-side and never take the auth
   provider's id shape, so this only ever blocks spoofing attempts, never legitimate traffic.
 
+- Anonymous "guest → signed-in account" data claiming treats the guest id as a bearer
+  token: it's only safe if the server enforces a strict, unforgeable client-generated
+  format (e.g. `guest-<uuidv4>` regex) so a signed-in caller can never claim rows keyed
+  by any *other* id shape (Clerk `user_` ids, raw mobile device UUIDs), plus a per-user
+  rate limit on claim attempts to prevent brute-forcing.
+  **Why:** a claim endpoint that merely excludes the auth provider's id shape still lets
+  an attacker reassign a mobile install's raw-UUID data to their own account.
+  **How to apply:** whenever adding a merge/claim/link endpoint keyed by a client-held
+  id, allowlist the exact generated format rather than denylisting known-bad shapes.
+
 - Any OAuth `connect`/`callback` flow added on top of an existing auth session (e.g. linking
   Google Calendar to an already-signed-in Clerk user) needs its own `state` param that is
   signed (HMAC with a server-only secret), single-use (track/reject nonce reuse), short-lived

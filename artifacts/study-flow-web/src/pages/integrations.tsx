@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDeviceId } from "@/hooks/use-device-id";
 import {
@@ -29,6 +30,8 @@ import {
   RefreshCw,
   CheckCircle2,
   Plug,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 
 function formatDue(dueDate: string): string {
@@ -43,6 +46,7 @@ function formatDue(dueDate: string): string {
 
 export default function Integrations() {
   const deviceId = useDeviceId();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -330,6 +334,21 @@ export default function Integrations() {
             </p>
           ) : (
             <div className="space-y-3">
+              <Card className="border-primary/30 bg-primary/5 shadow-sm" data-testid="card-generate-from-imports">
+                <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-primary shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <p className="text-sm">
+                      Ready to plan? Turn these {assignments.length} assignment{assignments.length === 1 ? "" : "s"} into a balanced schedule.
+                    </p>
+                  </div>
+                  <Button onClick={() => setLocation("/create?fromImport=1")} data-testid="button-generate-from-imports">
+                    Generate schedule <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
               {assignments.map((a) => (
                 <div key={a.id} className="bg-card border rounded-xl p-4 flex items-center justify-between gap-4">
                   <div className="min-w-0">

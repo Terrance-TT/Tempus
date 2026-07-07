@@ -1,18 +1,27 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { useDeviceId } from "@/hooks/use-device-id";
-import { 
-  useExtractCommitmentsFromImage, 
-  useListCommitments, 
+import {
+  useDeviceId,
+  useIsSignedIn,
+  setPendingScheduleId,
+} from "@/hooks/use-device-id";
+import {
+  useExtractCommitmentsFromImage,
+  useExtractCommitmentsFromText,
+  useListCommitments,
   useDeleteCommitment,
   useGenerateSchedule,
   getListCommitmentsQueryKey,
   useListAssignments,
   getListAssignmentsQueryKey,
+  useGetPreferences,
+  getGetPreferencesQueryKey,
+  useUpdatePreferences,
   Task,
   ScheduleScope,
-  ClarificationAnswer
+  ClarificationAnswer,
+  UserPreferences,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -22,19 +31,44 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Upload, Trash2, Plus, Clock, CalendarDays, Loader2, ArrowRight, ArrowLeft, ListTodo, Sparkles } from "lucide-react";
+import {
+  Camera,
+  Upload,
+  Trash2,
+  Plus,
+  Clock,
+  CalendarDays,
+  Loader2,
+  ArrowRight,
+  ArrowLeft,
+  ListTodo,
+  Sparkles,
+  MessageSquareText,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Lock,
+  Moon,
+  Sun,
+  UtensilsCrossed,
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function Create() {
   const deviceId = useDeviceId();
+  const isSignedIn = useIsSignedIn();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [inputMode, setInputMode] = useState<"photo" | "describe">("photo");
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionError, setExtractionError] = useState(false);
+  const [describeText, setDescribeText] = useState("");
+  const [showCommitmentDetails, setShowCommitmentDetails] = useState(false);
+  const [lastExtractedCount, setLastExtractedCount] = useState<number | null>(null);
 
   // Step 2 State
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -48,6 +82,14 @@ export default function Create() {
   const [clarifyingQuestions, setClarifyingQuestions] = useState<string[]>([]);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [lockedScheduleId, setLockedScheduleId] = useState<string | null>(null);
+
+  // Preferences (persisted per user)
+  const [wakeTime, setWakeTime] = useState("");
+  const [bedTime, setBedTime] = useState("");
+  const [mealTimes, setMealTimes] = useState("");
+  const [prefNotes, setPrefNotes] = useState("");
+  const prefsHydratedRef = useRef(false);
 
   const { data: commitments = [], isLoading: isLoadingCommitments } = useListCommitments(
     { deviceId: deviceId || "" },
@@ -59,9 +101,64 @@ export default function Create() {
     { query: { enabled: !!deviceId, queryKey: getListAssignmentsQueryKey({ deviceId: deviceId || "" }) } }
   );
 
+  const { data: savedPrefs } = useGetPreferences(
+    { deviceId: deviceId || "" },
+    { query: { enabled: !!deviceId, queryKey: getGetPreferencesQueryKey({ deviceId: deviceId || "" }) } }
+  );
+
+  useEffect(() => {
+    if (savedPrefs && !prefsHydratedRef.current) {
+      prefsHydratedRef.current = true;
+      setWakeTime(savedPrefs.wakeTime ?? "");
+      setBedTime(savedPrefs.bedTime ?? "");
+      setMealTimes(savedPrefs.mealTimes ?? "");
+      setPrefNotes(savedPrefs.notes ?? "");
+    }
+  }, [savedPrefs]);
+
   const extractCommitments = useExtractCommitmentsFromImage();
+  const extractFromText = useExtractCommitmentsFromText();
   const deleteCommitment = useDeleteCommitment();
   const generateSchedule = useGenerateSchedule();
+  const updatePreferences = useUpdatePreferences();
+
+  // Arriving from Integrations with imported assignments: jump straight to
+  // tasks and pre-fill them.
+  const importHandledRef = useRef(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("fromImport") || importHandledRef.current) return;
+    if (importedAssignments.length === 0) return;
+    importHandledRef.current = true;
+    window.history.replaceState(null, "", window.location.pathname);
+    setTasks((prev) => {
+      const existing = new Set(prev.map((t) => t.title));
+      const added = importedAssignments
+        .filter((a) => !existing.has(a.courseName ? `${a.courseName}: ${a.title}` : a.title))
+        .map((a) => {
+          const due = new Date(a.dueDate);
+          return {
+            title: a.courseName ? `${a.courseName}: ${a.title}` : a.title,
+            dueDate: Number.isNaN(due.getTime()) ? a.dueDate : due.toISOString().slice(0, 10),
+            estimatedMinutes: null,
+          };
+        });
+      return [...prev, ...added];
+    });
+    setStep(2);
+  }, [importedAssignments]);
+
+  const onExtractionSuccess = (count: number) => {
+    if (!deviceId) return;
+    queryClient.invalidateQueries({ queryKey: getListCommitmentsQueryKey({ deviceId }) });
+    setIsExtracting(false);
+    if (count === 0) {
+      setExtractionError(true);
+    } else {
+      setLastExtractedCount(count);
+      toast({ title: "Got it!", description: `Found ${count} commitment(s) in your schedule.` });
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,15 +173,7 @@ export default function Create() {
       extractCommitments.mutate(
         { data: { deviceId, imageBase64: base64 } },
         {
-          onSuccess: (newCommitments) => {
-            queryClient.invalidateQueries({ queryKey: getListCommitmentsQueryKey({ deviceId }) });
-            setIsExtracting(false);
-            if (newCommitments.length === 0) {
-              setExtractionError(true);
-            } else {
-              toast({ title: "Extracted successfully!", description: `Found ${newCommitments.length} commitments.` });
-            }
-          },
+          onSuccess: (newCommitments) => onExtractionSuccess(newCommitments.length),
           onError: () => {
             setIsExtracting(false);
             setExtractionError(true);
@@ -95,6 +184,27 @@ export default function Create() {
     };
     reader.readAsDataURL(file);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleDescribeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deviceId || !describeText.trim()) return;
+    setIsExtracting(true);
+    setExtractionError(false);
+    extractFromText.mutate(
+      { data: { deviceId, description: describeText.trim() } },
+      {
+        onSuccess: (newCommitments) => {
+          onExtractionSuccess(newCommitments.length);
+          if (newCommitments.length > 0) setDescribeText("");
+        },
+        onError: () => {
+          setIsExtracting(false);
+          setExtractionError(true);
+          toast({ title: "Couldn't understand that", description: "Try describing your week with days and times.", variant: "destructive" });
+        }
+      }
+    );
   };
 
   const handleDeleteCommitment = (id: string) => {
@@ -112,13 +222,13 @@ export default function Create() {
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim() || !newTaskDueDate.trim()) return;
-    
+
     setTasks([...tasks, {
       title: newTaskTitle.trim(),
       dueDate: newTaskDueDate.trim(),
       estimatedMinutes: newTaskMinutes ? parseInt(newTaskMinutes, 10) : null
     }]);
-    
+
     setNewTaskTitle("");
     setNewTaskDueDate("");
     setNewTaskMinutes("");
@@ -148,14 +258,38 @@ export default function Create() {
     toast({ title: "Assignments added", description: `${newTasks.length} imported assignment(s) added to your tasks.` });
   };
 
+  const buildPreferences = (): UserPreferences => ({
+    wakeTime: wakeTime.trim() || null,
+    bedTime: bedTime.trim() || null,
+    mealTimes: mealTimes.trim() || null,
+    notes: prefNotes.trim() || null,
+  });
+
+  const onGenerateComplete = (scheduleId: string) => {
+    if (isSignedIn) {
+      toast({ title: "Schedule generated!" });
+      setLocation(`/schedule/${scheduleId}`);
+    } else {
+      // Guests must sign in to view the result.
+      setPendingScheduleId(scheduleId);
+      setLockedScheduleId(scheduleId);
+      setIsGenerating(false);
+    }
+  };
+
   const handleGenerate = (selectedScope: ScheduleScope) => {
     if (!deviceId) return;
     setScope(selectedScope);
     setIsGenerating(true);
     setClarifyingQuestions([]);
-    
+
+    const preferences = buildPreferences();
+
+    // Persist preferences so they're remembered next time (fire-and-forget).
+    updatePreferences.mutate({ data: { deviceId, ...preferences } });
+
     generateSchedule.mutate(
-      { data: { deviceId, scope: selectedScope, tasks } },
+      { data: { deviceId, scope: selectedScope, tasks, preferences } },
       {
         onSuccess: (result) => {
           if (result.status === "needs_clarification" && result.questions) {
@@ -163,8 +297,7 @@ export default function Create() {
             setClarifyingQuestions(result.questions);
             setIsGenerating(false);
           } else if (result.status === "complete" && result.schedule) {
-            toast({ title: "Schedule generated!" });
-            setLocation(`/schedule/${result.schedule.id}`);
+            onGenerateComplete(result.schedule.id);
           }
         },
         onError: (err: any) => {
@@ -178,16 +311,16 @@ export default function Create() {
   const handleClarifySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!deviceId || !draftId) return;
-    
+
     const formattedAnswers: ClarificationAnswer[] = clarifyingQuestions.map(q => ({
       question: q,
       answer: answers[q] || "No preference",
     }));
 
     setIsGenerating(true);
-    
+
     generateSchedule.mutate(
-      { data: { deviceId, scope, draftId, answers: formattedAnswers, tasks } },
+      { data: { deviceId, scope, draftId, answers: formattedAnswers, tasks, preferences: buildPreferences() } },
       {
         onSuccess: (result) => {
           if (result.status === "needs_clarification" && result.questions) {
@@ -195,8 +328,7 @@ export default function Create() {
             setClarifyingQuestions(result.questions);
             setIsGenerating(false);
           } else if (result.status === "complete" && result.schedule) {
-            toast({ title: "Schedule generated!" });
-            setLocation(`/schedule/${result.schedule.id}`);
+            onGenerateComplete(result.schedule.id);
           }
         },
         onError: (err: any) => {
@@ -224,9 +356,9 @@ export default function Create() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex gap-2">
             {[1, 2, 3].map((s) => (
-              <div 
-                key={s} 
-                className={`h-2 rounded-full transition-all duration-300 ${s === step ? 'w-8 bg-primary' : s < step ? 'w-4 bg-primary/40' : 'w-4 bg-secondary'}`} 
+              <div
+                key={s}
+                className={`h-2 rounded-full transition-all duration-300 ${s === step ? 'w-8 bg-primary' : s < step ? 'w-4 bg-primary/40' : 'w-4 bg-secondary'}`}
               />
             ))}
           </div>
@@ -238,82 +370,161 @@ export default function Create() {
         {step === 1 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
             <header className="space-y-2">
-              <h1 className="text-3xl font-heading font-semibold text-foreground">Snap your schedule</h1>
-              <p className="text-muted-foreground text-lg">Take a photo of your timetable or syllabus. AI will extract your classes automatically.</p>
+              <h1 className="text-3xl font-heading font-semibold text-foreground">Tell us your week</h1>
+              <p className="text-muted-foreground text-lg">Snap a photo of your timetable — or just describe your week in words.</p>
             </header>
 
-            <Card className="border-dashed bg-secondary/20 hover:bg-secondary/40 transition-colors">
-              <CardContent className="p-8 text-center space-y-6">
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  capture="environment" 
-                  className="hidden" 
-                  ref={fileInputRef}
-                  onChange={handleFileUpload}
-                />
-                
-                {isExtracting ? (
-                  <div className="py-8 space-y-4">
-                    <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
-                    <p className="text-primary font-medium animate-pulse">Reading your schedule...</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
-                      <Camera className="w-10 h-10" />
+            <div className="grid grid-cols-2 gap-2 p-1 bg-secondary/40 rounded-xl" data-testid="tabs-input-mode">
+              <button
+                type="button"
+                onClick={() => setInputMode("photo")}
+                data-testid="tab-photo"
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${inputMode === "photo" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <Camera className="w-4 h-4" /> Snap a photo
+              </button>
+              <button
+                type="button"
+                onClick={() => setInputMode("describe")}
+                data-testid="tab-describe"
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${inputMode === "describe" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <MessageSquareText className="w-4 h-4" /> Describe it
+              </button>
+            </div>
+
+            {inputMode === "photo" && (
+              <Card className="border-dashed bg-secondary/20 hover:bg-secondary/40 transition-colors">
+                <CardContent className="p-8 text-center space-y-6">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                  />
+
+                  {isExtracting ? (
+                    <div className="py-8 space-y-4">
+                      <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
+                      <p className="text-primary font-medium animate-pulse">Reading your schedule...</p>
                     </div>
-                    
-                    <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <Button size="lg" onClick={() => fileInputRef.current?.click()} className="rounded-xl shadow-sm">
-                          <Camera className="mr-2 w-5 h-5" /> Take Photo
-                        </Button>
-                        <Button size="lg" variant="outline" onClick={() => fileInputRef.current?.click()} className="rounded-xl bg-background">
-                          <Upload className="mr-2 w-5 h-5" /> Upload Image
-                        </Button>
+                  ) : (
+                    <>
+                      <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
+                        <Camera className="w-10 h-10" />
                       </div>
-                      
-                      {extractionError && (
-                        <p className="text-destructive text-sm mt-4">We couldn't read that clearly. Try taking another photo.</p>
-                      )}
+
+                      <div className="space-y-4">
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                          <Button size="lg" onClick={() => fileInputRef.current?.click()} className="rounded-xl shadow-sm" data-testid="button-take-photo">
+                            <Camera className="mr-2 w-5 h-5" /> Take Photo
+                          </Button>
+                          <Button size="lg" variant="outline" onClick={() => fileInputRef.current?.click()} className="rounded-xl bg-background" data-testid="button-upload-image">
+                            <Upload className="mr-2 w-5 h-5" /> Upload Image
+                          </Button>
+                        </div>
+
+                        {extractionError && (
+                          <p className="text-destructive text-sm mt-4">We couldn't read that clearly. Try taking another photo — or switch to "Describe it".</p>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {inputMode === "describe" && (
+              <Card className="border shadow-sm">
+                <CardContent className="p-6">
+                  {isExtracting ? (
+                    <div className="py-8 space-y-4 text-center">
+                      <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
+                      <p className="text-primary font-medium animate-pulse">Turning your words into a schedule...</p>
                     </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                  ) : (
+                    <form onSubmit={handleDescribeSubmit} className="space-y-4">
+                      <Label className="text-base">Describe your regular week</Label>
+                      <Textarea
+                        placeholder='e.g. "School 8am-3pm Monday to Friday, soccer practice Tuesdays and Thursdays 4-5:30, piano lesson Wednesday at 6"'
+                        value={describeText}
+                        onChange={(e) => setDescribeText(e.target.value)}
+                        className="min-h-[140px] text-base"
+                        data-testid="input-describe-week"
+                      />
+                      {extractionError && (
+                        <p className="text-destructive text-sm">We couldn't find any commitments in that. Include days and times, like "soccer Tuesdays 4-5:30pm".</p>
+                      )}
+                      <Button type="submit" size="lg" className="w-full rounded-xl" disabled={!describeText.trim()} data-testid="button-extract-text">
+                        <Sparkles className="mr-2 w-5 h-5" /> Add to my schedule
+                      </Button>
+                    </form>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {commitments.length > 0 && (
-              <div className="space-y-4 pt-4 border-t">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg">Your Commitments</h3>
-                  <Badge variant="secondary">{commitments.length}</Badge>
-                </div>
-                
-                <div className="grid gap-3">
-                  {commitments.map((c) => (
-                    <div key={c.id} className="bg-card border rounded-xl p-4 flex justify-between items-center group">
+              <Card className="border-primary/30 bg-primary/5 shadow-sm" data-testid="card-commitments-summary">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-primary shrink-0">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </div>
                       <div>
-                        <p className="font-medium">{c.title}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                          <CalendarDays className="w-3.5 h-3.5" />
-                          <span className="uppercase text-[10px] tracking-wider">{c.daysOfWeek.join(", ")}</span>
-                          <span className="opacity-50">•</span>
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>{c.startTime} - {c.endTime}</span>
+                        <p className="font-semibold">
+                          {commitments.length} commitment{commitments.length === 1 ? "" : "s"} in your week
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {lastExtractedCount !== null ? "Schedule captured — you're ready to continue." : "From your saved schedule."}
                         </p>
                       </div>
-                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteCommitment(c.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowCommitmentDetails(v => !v)}
+                      className="text-muted-foreground"
+                      data-testid="button-toggle-commitments"
+                    >
+                      {showCommitmentDetails ? (
+                        <>Hide details <ChevronUp className="ml-1 w-4 h-4" /></>
+                      ) : (
+                        <>Review & edit <ChevronDown className="ml-1 w-4 h-4" /></>
+                      )}
+                    </Button>
+                  </div>
+
+                  {showCommitmentDetails && (
+                    <div className="grid gap-2 pt-2 border-t border-primary/10 animate-in fade-in duration-200">
+                      {commitments.map((c) => (
+                        <div key={c.id} className="bg-background border rounded-xl px-4 py-3 flex justify-between items-center group">
+                          <div>
+                            <p className="font-medium text-sm">{c.title}</p>
+                            <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
+                              <CalendarDays className="w-3 h-3" />
+                              <span className="uppercase tracking-wider">{c.daysOfWeek.join(", ")}</span>
+                              <span className="opacity-50">•</span>
+                              <Clock className="w-3 h-3" />
+                              <span>{c.startTime} - {c.endTime}</span>
+                            </p>
+                          </div>
+                          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8" onClick={() => handleDeleteCommitment(c.id)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             )}
 
             <div className="flex justify-end pt-6">
-              <Button size="lg" onClick={() => setStep(2)} disabled={commitments.length === 0 || isExtracting} className="rounded-xl">
+              <Button size="lg" onClick={() => setStep(2)} disabled={commitments.length === 0 || isExtracting} className="rounded-xl" data-testid="button-continue-step1">
                 Continue <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </div>
@@ -393,7 +604,7 @@ export default function Create() {
               <Button variant="ghost" onClick={() => setStep(3)} className="text-muted-foreground">
                 Skip for now
               </Button>
-              <Button size="lg" onClick={() => setStep(3)} className="rounded-xl shadow-sm">
+              <Button size="lg" onClick={() => setStep(3)} className="rounded-xl shadow-sm" data-testid="button-continue-step2">
                 Continue <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </div>
@@ -402,35 +613,72 @@ export default function Create() {
 
         {step === 3 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
-            <header className="space-y-2 text-center mb-10">
-              <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Sparkles className="w-8 h-8" />
-              </div>
-              <h1 className="text-3xl font-heading font-semibold text-foreground">Generate Plan</h1>
-              <p className="text-muted-foreground text-lg">Choose your timeframe and let AI do the rest.</p>
-            </header>
+            {!lockedScheduleId && (
+              <header className="space-y-2 text-center mb-6">
+                <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Sparkles className="w-8 h-8" />
+                </div>
+                <h1 className="text-3xl font-heading font-semibold text-foreground">Almost there</h1>
+                <p className="text-muted-foreground text-lg">A few preferences so your plan fits your life.</p>
+              </header>
+            )}
 
-            {!isGenerating && clarifyingQuestions.length === 0 && (
-              <div className="grid gap-6 sm:grid-cols-2 max-w-lg mx-auto">
-                <Card className="cursor-pointer hover:border-primary hover:shadow-md transition-all text-center p-6 bg-card" onClick={() => handleGenerate("day")}>
-                  <CardContent className="p-0 space-y-4">
-                    <CalendarDays className="w-10 h-10 mx-auto text-primary" />
-                    <div>
-                      <CardTitle className="text-xl">Daily Plan</CardTitle>
-                      <CardDescription className="mt-2">Plan out today in detail.</CardDescription>
+            {!isGenerating && !lockedScheduleId && clarifyingQuestions.length === 0 && (
+              <div className="space-y-6">
+                <Card className="border shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Your routine</CardTitle>
+                    <CardDescription>We'll remember these for next time.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-2">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2"><Sun className="w-4 h-4 text-primary" /> Wake-up time</Label>
+                        <Input placeholder="e.g. 7:00 AM" value={wakeTime} onChange={e => setWakeTime(e.target.value)} data-testid="input-wake-time" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2"><Moon className="w-4 h-4 text-primary" /> Bedtime</Label>
+                        <Input placeholder="e.g. 10:30 PM" value={bedTime} onChange={e => setBedTime(e.target.value)} data-testid="input-bed-time" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2"><UtensilsCrossed className="w-4 h-4 text-primary" /> Meal times</Label>
+                      <Input placeholder='e.g. "breakfast 7:30, lunch 12, dinner 6:30"' value={mealTimes} onChange={e => setMealTimes(e.target.value)} data-testid="input-meal-times" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Anything else we should know?</Label>
+                      <Textarea
+                        placeholder="e.g. I focus best in the morning, keep Sundays light..."
+                        value={prefNotes}
+                        onChange={e => setPrefNotes(e.target.value)}
+                        className="min-h-[80px]"
+                        data-testid="input-pref-notes"
+                      />
                     </div>
                   </CardContent>
                 </Card>
-                
-                <Card className="cursor-pointer hover:border-primary hover:shadow-md transition-all text-center p-6 bg-card" onClick={() => handleGenerate("week")}>
-                  <CardContent className="p-0 space-y-4">
-                    <CalendarDays className="w-10 h-10 mx-auto text-primary" />
-                    <div>
-                      <CardTitle className="text-xl">Weekly Plan</CardTitle>
-                      <CardDescription className="mt-2">Structure your entire week.</CardDescription>
-                    </div>
-                  </CardContent>
-                </Card>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Card className="cursor-pointer hover:border-primary hover:shadow-md transition-all text-center p-6 bg-card" onClick={() => handleGenerate("day")} data-testid="card-generate-day">
+                    <CardContent className="p-0 space-y-3">
+                      <CalendarDays className="w-8 h-8 mx-auto text-primary" />
+                      <div>
+                        <CardTitle className="text-lg">Daily Plan</CardTitle>
+                        <CardDescription className="mt-1">Plan out today in detail.</CardDescription>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="cursor-pointer hover:border-primary hover:shadow-md transition-all text-center p-6 bg-card" onClick={() => handleGenerate("week")} data-testid="card-generate-week">
+                    <CardContent className="p-0 space-y-3">
+                      <CalendarDays className="w-8 h-8 mx-auto text-primary" />
+                      <div>
+                        <CardTitle className="text-lg">Weekly Plan</CardTitle>
+                        <CardDescription className="mt-1">Structure your entire week.</CardDescription>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             )}
 
@@ -448,10 +696,32 @@ export default function Create() {
               </div>
             )}
 
-            {!isGenerating && clarifyingQuestions.length > 0 && (
+            {!isGenerating && lockedScheduleId && (
+              <Card className="max-w-lg mx-auto text-center shadow-lg border-primary/20 overflow-hidden" data-testid="card-schedule-locked">
+                <div className="bg-primary/5 border-b border-primary/10 py-10 px-6 space-y-4">
+                  <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto">
+                    <Lock className="w-7 h-7" />
+                  </div>
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-heading font-semibold">Your schedule is ready!</h2>
+                    <p className="text-muted-foreground">Sign in with Google to unlock it — we'll keep everything you just built.</p>
+                  </div>
+                </div>
+                <CardContent className="p-6 space-y-3">
+                  <Button size="lg" className="w-full rounded-xl text-base" onClick={() => setLocation("/sign-in")} data-testid="button-signin-to-view">
+                    Sign in with Google to view
+                  </Button>
+                  <Button variant="ghost" className="w-full text-muted-foreground" onClick={() => setLocation("/sign-up")} data-testid="button-signup-to-view">
+                    New here? Create an account
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {!isGenerating && !lockedScheduleId && clarifyingQuestions.length > 0 && (
               <Card className="shadow-md border-primary/20 max-w-xl mx-auto">
                 <CardHeader className="bg-primary/5 border-b border-border/50">
-                  <CardTitle>A quick question...</CardTitle>
+                  <CardTitle>One last thing...</CardTitle>
                   <CardDescription>
                     The AI needs a little more context to build the best schedule for you.
                   </CardDescription>
@@ -461,7 +731,7 @@ export default function Create() {
                     {clarifyingQuestions.map((q, i) => (
                       <div key={i} className="space-y-3">
                         <Label className="text-base leading-relaxed">{q}</Label>
-                        <Textarea 
+                        <Textarea
                           placeholder="Your answer..."
                           value={answers[q] || ""}
                           onChange={(e) => setAnswers(prev => ({ ...prev, [q]: e.target.value }))}
@@ -479,9 +749,9 @@ export default function Create() {
                 </CardContent>
               </Card>
             )}
-            
-            {!isGenerating && clarifyingQuestions.length === 0 && (
-              <div className="flex justify-center pt-8">
+
+            {!isGenerating && !lockedScheduleId && clarifyingQuestions.length === 0 && (
+              <div className="flex justify-center pt-4">
                 <Button variant="ghost" onClick={() => setStep(2)}>
                   <ArrowLeft className="mr-2 w-4 h-4" /> Back to tasks
                 </Button>

@@ -4,6 +4,7 @@ import commitmentsRouter from "./commitments";
 import schedulesRouter from "./schedules";
 import googleCalendarRouter from "./googleCalendar";
 import integrationsRouter from "./integrations";
+import preferencesRouter from "./preferences";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(commitmentsRouter);
 router.use(schedulesRouter);
 router.use(googleCalendarRouter);
 router.use(integrationsRouter);
+router.use(preferencesRouter);
 
 export default router;

@@ -88,6 +88,76 @@ export const ExtractCommitmentsFromImageResponse = zod.array(ExtractCommitmentsF
 
 
 /**
+ * Accepts a free-text description of a student's weekly schedule (e.g. "I have school 8-3, soccer practice 4-5 on Tuesdays") and uses AI to extract recurring commitments. The extracted commitments are saved for the device and returned.
+ * @summary Extract recurring commitments from a plain-text description
+ */
+export const ExtractCommitmentsFromTextBody = zod.object({
+  "deviceId": zod.string(),
+  "description": zod.string().describe('Free-text description of the student\'s weekly schedule, e.g. \"School 8am-3pm weekdays, soccer 4-5:30 Tue\/Thu\".\n')
+})
+
+export const ExtractCommitmentsFromTextResponseItem = zod.object({
+  "id": zod.string(),
+  "deviceId": zod.string(),
+  "title": zod.string(),
+  "type": zod.enum(['class', 'extracurricular', 'routine']),
+  "daysOfWeek": zod.array(zod.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])),
+  "startTime": zod.string().describe('24h time, \"HH:mm\"'),
+  "endTime": zod.string().describe('24h time, \"HH:mm\"'),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ExtractCommitmentsFromTextResponse = zod.array(ExtractCommitmentsFromTextResponseItem)
+
+
+/**
+ * @summary Get the saved scheduling preferences for a user/device
+ */
+export const GetPreferencesQueryParams = zod.object({
+  "deviceId": zod.coerce.string()
+})
+
+export const GetPreferencesResponse = zod.object({
+  "wakeTime": zod.string().nullish().describe('When the student usually wakes up (e.g. \"7:00 AM\").'),
+  "bedTime": zod.string().nullish().describe('When the student usually goes to bed (e.g. \"10:30 PM\").'),
+  "mealTimes": zod.string().nullish().describe('Usual meal times, free text (e.g. \"breakfast 7:30, lunch 12, dinner 6:30\").'),
+  "notes": zod.string().nullish().describe('Anything else the AI should keep in mind when scheduling.')
+})
+
+
+/**
+ * @summary Save scheduling preferences for a user/device
+ */
+export const UpdatePreferencesBody = zod.object({
+  "deviceId": zod.string(),
+  "wakeTime": zod.string().nullish(),
+  "bedTime": zod.string().nullish(),
+  "mealTimes": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})
+
+export const UpdatePreferencesResponse = zod.object({
+  "wakeTime": zod.string().nullish().describe('When the student usually wakes up (e.g. \"7:00 AM\").'),
+  "bedTime": zod.string().nullish().describe('When the student usually goes to bed (e.g. \"10:30 PM\").'),
+  "mealTimes": zod.string().nullish().describe('Usual meal times, free text (e.g. \"breakfast 7:30, lunch 12, dinner 6:30\").'),
+  "notes": zod.string().nullish().describe('Anything else the AI should keep in mind when scheduling.')
+})
+
+
+/**
+ * After a guest signs in, transfers commitments, schedules, assignments and preferences owned by the anonymous guest device id to the signed-in user's account. Requires an authenticated session.
+ * @summary Reassign data created as a signed-out guest to the signed-in user
+ */
+export const ClaimGuestDataBody = zod.object({
+  "guestDeviceId": zod.string().describe('The anonymous device id whose data should be claimed.')
+})
+
+export const ClaimGuestDataResponse = zod.object({
+  "claimedCount": zod.number().describe('Total number of rows reassigned to the signed-in user.')
+})
+
+
+/**
  * @summary Update a commitment
  */
 export const UpdateCommitmentParams = zod.object({
@@ -323,7 +393,13 @@ export const GenerateScheduleBody = zod.object({
   "dueDate": zod.string().describe('When it is due, free text (e.g. \"tomorrow\", \"Friday\", \"2026-07-10\").'),
   "estimatedMinutes": zod.number().nullish().describe('Rough estimate of how long the task will take, in minutes.'),
   "notes": zod.string().nullish()
-}).describe('An assignment or task the student needs to work on.')).optional().describe('Assignments\/tasks the student needs time for in this schedule.')
+}).describe('An assignment or task the student needs to work on.')).optional().describe('Assignments\/tasks the student needs time for in this schedule.'),
+  "preferences": zod.object({
+  "wakeTime": zod.string().nullish().describe('When the student usually wakes up (e.g. \"7:00 AM\").'),
+  "bedTime": zod.string().nullish().describe('When the student usually goes to bed (e.g. \"10:30 PM\").'),
+  "mealTimes": zod.string().nullish().describe('Usual meal times, free text (e.g. \"breakfast 7:30, lunch 12, dinner 6:30\").'),
+  "notes": zod.string().nullish().describe('Anything else the AI should keep in mind when scheduling.')
+}).optional().describe('The student\'s scheduling preferences (sleep, meals, extra notes). When provided, the AI should use these instead of asking clarifying questions.\n')
 })
 
 export const GenerateScheduleResponse = zod.object({

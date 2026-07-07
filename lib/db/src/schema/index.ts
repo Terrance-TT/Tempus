@@ -21,3 +21,4 @@ export * from "./commitments";
 export * from "./schedules";
 export * from "./googleCalendar";
 export * from "./integrations";
+export * from "./preferences";

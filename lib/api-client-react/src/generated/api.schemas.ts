@@ -71,6 +71,41 @@ export interface ExtractCommitmentsInput {
   imageBase64: string;
 }
 
+export interface ExtractCommitmentsTextInput {
+  deviceId: string;
+  /** Free-text description of the student's weekly schedule, e.g. "School 8am-3pm weekdays, soccer 4-5:30 Tue/Thu". */
+  description: string;
+}
+
+export interface UserPreferences {
+  /** When the student usually wakes up (e.g. "7:00 AM"). */
+  wakeTime?: string | null;
+  /** When the student usually goes to bed (e.g. "10:30 PM"). */
+  bedTime?: string | null;
+  /** Usual meal times, free text (e.g. "breakfast 7:30, lunch 12, dinner 6:30"). */
+  mealTimes?: string | null;
+  /** Anything else the AI should keep in mind when scheduling. */
+  notes?: string | null;
+}
+
+export interface UpdatePreferencesInput {
+  deviceId: string;
+  wakeTime?: string | null;
+  bedTime?: string | null;
+  mealTimes?: string | null;
+  notes?: string | null;
+}
+
+export interface ClaimGuestDataInput {
+  /** The anonymous device id whose data should be claimed. */
+  guestDeviceId: string;
+}
+
+export interface ClaimGuestDataResult {
+  /** Total number of rows reassigned to the signed-in user. */
+  claimedCount: number;
+}
+
 /**
  * An assignment or task the student needs to work on.
  */
@@ -174,6 +209,8 @@ export interface GenerateScheduleInput {
   answers?: ClarificationAnswer[];
   /** Assignments/tasks the student needs time for in this schedule. */
   tasks?: Task[];
+  /** The student's scheduling preferences (sleep, meals, extra notes). When provided, the AI should use these instead of asking clarifying questions. */
+  preferences?: UserPreferences;
 }
 
 export interface GoogleCalendarStatus {
@@ -251,6 +288,10 @@ export interface ImportAssignmentsResult {
 }
 
 export type ListCommitmentsParams = {
+deviceId: string;
+};
+
+export type GetPreferencesParams = {
 deviceId: string;
 };
 
