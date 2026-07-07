@@ -112,7 +112,7 @@ export default function Home() {
               </CardContent>
             </Card>
           </div>
-        ) : (
+        ) : currentPlans.length === 0 ? (
           <Card className="text-center py-16 px-6 border-dashed bg-secondary/10 shadow-none relative overflow-hidden rounded-3xl">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
             <div className="relative z-10 space-y-6 max-w-md mx-auto">
@@ -129,6 +129,22 @@ export default function Home() {
                 <PlusCircle className="mr-2 w-5 h-5" /> Create Your First Plan
               </Button>
             </div>
+          </Card>
+        ) : (
+          <Card className="border-dashed bg-secondary/10 shadow-none rounded-2xl">
+            <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <p className="text-muted-foreground">
+                  No finished plan yet — pick up one of your plans below or start a new one.
+                </p>
+              </div>
+              <Button className="rounded-xl shrink-0" onClick={() => setLocation("/create")}>
+                <PlusCircle className="mr-2 w-4 h-4" /> New Plan
+              </Button>
+            </CardContent>
           </Card>
         )}
 
