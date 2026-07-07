@@ -81,10 +81,10 @@ export default function Landing() {
         <div className="container mx-auto px-4 md:px-8">
           <div className="text-center mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 fill-mode-both">
             <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4">
-              How the calm sets in
+              How To Procrastinate
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              No manual data entry. No over-promising. Just a clear path forward.
+              No manual data entry. Just a simple schedule, and a clear path forward.
             </p>
           </div>
 
