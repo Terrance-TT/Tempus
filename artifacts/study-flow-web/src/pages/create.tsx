@@ -55,6 +55,7 @@ import {
   UtensilsCrossed,
   Link2,
   Zap,
+  BookOpen,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -65,6 +66,8 @@ export default function Create() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isColumbiaMode] = useState(() => !!sessionStorage.getItem("columbiaPreset"));
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [inputMode, setInputMode] = useState<"photo" | "describe">("photo");
@@ -741,97 +744,180 @@ export default function Create() {
               <p className="text-muted-foreground text-lg ml-11">Add any assignments or tasks you need to complete.</p>
             </header>
 
-            {importedAssignments.length > 0 && (
-              <Card className="border border-primary/30 bg-primary/5 shadow-sm">
-                <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm">
-                    <span className="font-medium">{importedAssignments.length}</span> assignment(s) imported from Canvas / Google Classroom.
-                  </p>
-                  <Button variant="secondary" size="sm" onClick={handleAddImportedAssignments}>
-                    <Plus className="w-4 h-4 mr-2" /> Add them as tasks
-                  </Button>
-                </CardContent>
-              </Card>
+            {/* Columbia mode: show classes already set + Canvas-only CTA */}
+            {isColumbiaMode && (
+              <>
+                {/* Classes already added banner */}
+                <Card className="border-primary/40 bg-primary/5 shadow-sm">
+                  <CardContent className="p-5 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary shrink-0">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">Your class schedule is already set</p>
+                        <p className="text-xs text-muted-foreground">These repeat every weekday — no setup needed.</p>
+                      </div>
+                    </div>
+                    <div className="grid gap-2 pl-12">
+                      <div className="bg-background border rounded-lg px-3 py-2 flex items-center gap-3">
+                        <div className="w-1 h-8 rounded-full bg-primary shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium">Entrepreneurship with Daniel</p>
+                          <p className="text-xs text-muted-foreground">Mon–Fri · 9:10 AM – 11:00 AM &amp; 1:10 PM – 3:00 PM</p>
+                        </div>
+                      </div>
+                      <div className="bg-background border rounded-lg px-3 py-2 flex items-center gap-3">
+                        <div className="w-1 h-8 rounded-full bg-muted-foreground/40 shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Lunch</p>
+                          <p className="text-xs text-muted-foreground">Mon–Fri · 11:00 AM – 1:00 PM</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Canvas CTA — primary, full-width */}
+                {importedAssignments.length > 0 ? (
+                  <Card className="border-primary/30 bg-primary/5 shadow-sm">
+                    <CardContent className="p-5 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary shrink-0">
+                          <BookOpen className="w-5 h-5" />
+                        </div>
+                        <p className="text-sm font-medium">
+                          {importedAssignments.length} assignment{importedAssignments.length === 1 ? "" : "s"} imported from Canvas
+                        </p>
+                      </div>
+                      <Button onClick={handleAddImportedAssignments} data-testid="button-import-canvas">
+                        <Plus className="w-4 h-4 mr-2" /> Add to plan
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="border shadow-sm">
+                    <CardContent className="p-6 space-y-4 text-center">
+                      <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mx-auto">
+                        <BookOpen className="w-7 h-7" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-semibold text-lg">Connect Canvas to pull your assignments</p>
+                        <p className="text-muted-foreground text-sm">
+                          Your CourseWorks2 assignments will be imported automatically — due dates and all.
+                        </p>
+                      </div>
+                      <Button
+                        size="lg"
+                        className="w-full rounded-xl text-base h-14"
+                        onClick={() => setLocation("/integrations")}
+                        data-testid="button-import-canvas"
+                      >
+                        <Link2 className="w-5 h-5 mr-2" />
+                        Connect Canvas &amp; import assignments
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
             )}
 
-            <Card className="border shadow-sm">
-              <CardContent className="p-6">
-                <form onSubmit={handleAddTask} className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Task Title *</Label>
-                      <Input placeholder="e.g. Math Worksheet" value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Due Date *</Label>
-                      <Input placeholder="e.g. tomorrow, Friday" value={newTaskDueDate} onChange={e => setNewTaskDueDate(e.target.value)} required />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Estimated Time (minutes)</Label>
-                    <Input type="number" placeholder="e.g. 45" value={newTaskMinutes} onChange={e => setNewTaskMinutes(e.target.value)} />
-                  </div>
-                  <Button type="submit" variant="secondary" className="w-full">
-                    <Plus className="w-4 h-4 mr-2" /> Add Task
-                  </Button>
-                </form>
+            {/* Default (non-Columbia) flow */}
+            {!isColumbiaMode && (
+              <>
+                {importedAssignments.length > 0 && (
+                  <Card className="border border-primary/30 bg-primary/5 shadow-sm">
+                    <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-sm">
+                        <span className="font-medium">{importedAssignments.length}</span> assignment(s) imported from Canvas / Google Classroom.
+                      </p>
+                      <Button variant="secondary" size="sm" onClick={handleAddImportedAssignments}>
+                        <Plus className="w-4 h-4 mr-2" /> Add them as tasks
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
 
-                <div className="mt-4 pt-4 border-t border-dashed">
-                  <p className="text-xs text-muted-foreground mb-3 uppercase tracking-wider font-medium">Or import from</p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full text-xs gap-1.5 h-8"
-                      onClick={() => {
-                        if (importedAssignments.length > 0) {
-                          handleAddImportedAssignments();
-                        } else {
-                          setLocation("/integrations");
-                        }
-                      }}
-                      data-testid="button-import-canvas"
-                    >
-                      <Link2 className="w-3.5 h-3.5" />
-                      Canvas
-                      {importedAssignments.length > 0 && (
-                        <span className="bg-primary/15 text-primary rounded-full px-1.5 py-0 text-[10px] font-semibold ml-0.5">
-                          {importedAssignments.length}
-                        </span>
+                <Card className="border shadow-sm">
+                  <CardContent className="p-6">
+                    <form onSubmit={handleAddTask} className="space-y-4">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Task Title *</Label>
+                          <Input placeholder="e.g. Math Worksheet" value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)} required />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Due Date *</Label>
+                          <Input placeholder="e.g. tomorrow, Friday" value={newTaskDueDate} onChange={e => setNewTaskDueDate(e.target.value)} required />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Estimated Time (minutes)</Label>
+                        <Input type="number" placeholder="e.g. 45" value={newTaskMinutes} onChange={e => setNewTaskMinutes(e.target.value)} />
+                      </div>
+                      <Button type="submit" variant="secondary" className="w-full">
+                        <Plus className="w-4 h-4 mr-2" /> Add Task
+                      </Button>
+                    </form>
+
+                    <div className="mt-4 pt-4 border-t border-dashed">
+                      <p className="text-xs text-muted-foreground mb-3 uppercase tracking-wider font-medium">Or import from</p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full text-xs gap-1.5 h-8"
+                          onClick={() => {
+                            if (importedAssignments.length > 0) {
+                              handleAddImportedAssignments();
+                            } else {
+                              setLocation("/integrations");
+                            }
+                          }}
+                          data-testid="button-import-canvas"
+                        >
+                          <Link2 className="w-3.5 h-3.5" />
+                          Canvas
+                          {importedAssignments.length > 0 && (
+                            <span className="bg-primary/15 text-primary rounded-full px-1.5 py-0 text-[10px] font-semibold ml-0.5">
+                              {importedAssignments.length}
+                            </span>
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full text-xs gap-1.5 h-8"
+                          onClick={() => {
+                            if (importedAssignments.length > 0) {
+                              handleAddImportedAssignments();
+                            } else {
+                              setLocation("/integrations");
+                            }
+                          }}
+                          data-testid="button-import-classroom"
+                        >
+                          <Link2 className="w-3.5 h-3.5" />
+                          Google Classroom
+                          {importedAssignments.length > 0 && (
+                            <span className="bg-primary/15 text-primary rounded-full px-1.5 py-0 text-[10px] font-semibold ml-0.5">
+                              {importedAssignments.length}
+                            </span>
+                          )}
+                        </Button>
+                      </div>
+                      {importedAssignments.length === 0 && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Not connected yet — clicking will take you to Integrations to set it up.
+                        </p>
                       )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full text-xs gap-1.5 h-8"
-                      onClick={() => {
-                        if (importedAssignments.length > 0) {
-                          handleAddImportedAssignments();
-                        } else {
-                          setLocation("/integrations");
-                        }
-                      }}
-                      data-testid="button-import-classroom"
-                    >
-                      <Link2 className="w-3.5 h-3.5" />
-                      Google Classroom
-                      {importedAssignments.length > 0 && (
-                        <span className="bg-primary/15 text-primary rounded-full px-1.5 py-0 text-[10px] font-semibold ml-0.5">
-                          {importedAssignments.length}
-                        </span>
-                      )}
-                    </Button>
-                  </div>
-                  {importedAssignments.length === 0 && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Not connected yet — clicking will take you to Integrations to set it up.
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
 
             {tasks.length > 0 && (
               <div className="space-y-3 pt-4">
