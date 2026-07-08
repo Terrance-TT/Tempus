@@ -602,6 +602,12 @@ router.post("/integrations/schoology", async (req, res) => {
     });
     return;
   }
+  if (!(await isPublicCanvasHost(domain))) {
+    res.status(400).json({
+      message: "That Schoology domain isn't reachable. Use your school's public Schoology address, e.g. api.schoology.com",
+    });
+    return;
+  }
 
   const consumerKey = body.consumerKey.trim();
   const consumerSecret = body.consumerSecret.trim();
@@ -682,6 +688,10 @@ router.post("/integrations/schoology/import", async (req, res) => {
     .where(eq(schoologyConnections.ownerId, ownerId));
   if (!connection) {
     res.status(409).json({ message: "Schoology is not connected" });
+    return;
+  }
+  if (!(await isPublicCanvasHost(connection.domain))) {
+    res.status(409).json({ message: "The saved Schoology domain is no longer valid. Reconnect Schoology." });
     return;
   }
 
