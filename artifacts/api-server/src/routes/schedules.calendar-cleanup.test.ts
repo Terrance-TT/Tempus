@@ -151,6 +151,69 @@ async function seedSyncedSchedule(): Promise<SeededSchedule> {
   return { scheduleId: schedule.id, blocks, eventIds };
 }
 
+/**
+ * Like seedSyncedSchedule but seeds a connection whose access token is already
+ * expired, forcing getValidAccessToken to attempt a refresh.
+ */
+async function seedSyncedScheduleExpired(): Promise<SeededSchedule> {
+  const blocks = [
+    {
+      id: randomUUID(),
+      day: "mon",
+      startTime: "09:00",
+      endTime: "10:00",
+      title: "Math homework",
+      category: "homework",
+      notes: null,
+    },
+    {
+      id: randomUUID(),
+      day: "tue",
+      startTime: "14:00",
+      endTime: "15:00",
+      title: "Biology reading",
+      category: "homework",
+      notes: null,
+    },
+  ];
+
+  const [schedule] = await db
+    .insert(schedules)
+    .values({
+      deviceId: TEST_USER_ID,
+      scope: "week",
+      status: "complete",
+      blocks,
+      clarifyingQuestions: [],
+      answers: [],
+      tasks: [],
+      commitmentsSnapshot: [],
+    })
+    .returning();
+
+  await db
+    .insert(googleCalendarConnections)
+    .values({
+      ownerId: TEST_USER_ID,
+      accessToken: "expired-access-token",
+      refreshToken: "test-refresh-token",
+      // One hour in the past — getValidAccessToken will hit the token endpoint.
+      expiresAt: new Date(Date.now() - 60 * 60 * 1000),
+    })
+    .onConflictDoNothing();
+
+  const eventIds = blocks.map((b) => `gcal-event-${b.id}`);
+  await db.insert(scheduleCalendarSyncs).values(
+    blocks.map((b, i) => ({
+      scheduleId: schedule.id,
+      blockId: b.id,
+      googleEventId: eventIds[i],
+    })),
+  );
+
+  return { scheduleId: schedule.id, blocks, eventIds };
+}
+
 async function syncRowsFor(scheduleId: string) {
   return db
     .select()
@@ -290,5 +353,96 @@ describe("calendar event cleanup when blocks are removed", () => {
     const rows = await syncRowsFor(scheduleId);
     expect(rows).toHaveLength(1);
     expect(rows[0].blockId).toBe(kept.id);
+  });
+});
+
+describe("calendar cleanup with an expired Google session", () => {
+  it("refreshes an expired access token and still deletes the removed-block event", async () => {
+    const { scheduleId, blocks } = await seedSyncedScheduleExpired();
+    seededScheduleIds.push(scheduleId);
+    const [kept] = blocks;
+
+    // The first fetch call will be the token refresh POST; subsequent calls
+    // (calendar DELETE) fall through to the base stub.
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockImplementationOnce(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        const url = input.toString();
+        const method = init?.method ?? "GET";
+        fetchCalls.push({ url, method });
+        return new Response(
+          JSON.stringify({
+            access_token: "refreshed-token",
+            expires_in: 3600,
+            token_type: "Bearer",
+            scope: "https://www.googleapis.com/auth/calendar.events",
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      },
+    );
+
+    const res = await request(app)
+      .patch(`/api/schedules/${scheduleId}`)
+      .send({ deviceId: TEST_USER_ID, blocks: [kept] });
+
+    expect(res.status).toBe(200);
+
+    // The token endpoint was called exactly once (the refresh happened).
+    const tokenCalls = fetchCalls.filter(
+      (c) =>
+        c.url === "https://oauth2.googleapis.com/token" &&
+        c.method === "POST",
+    );
+    expect(tokenCalls).toHaveLength(1);
+
+    // The refreshed token was persisted in the DB.
+    const [conn] = await db
+      .select()
+      .from(googleCalendarConnections)
+      .where(eq(googleCalendarConnections.ownerId, TEST_USER_ID));
+    expect(conn).toBeDefined();
+    expect(conn.accessToken).toBe("refreshed-token");
+
+    // The removed block's Google event was still deleted after the refresh.
+    expect(deletedEventIds()).toHaveLength(1);
+  });
+
+  it("deletes the connection row and still returns success when the refresh token is revoked", async () => {
+    const { scheduleId, blocks } = await seedSyncedScheduleExpired();
+    seededScheduleIds.push(scheduleId);
+    const [kept] = blocks;
+
+    // Token refresh fails — simulates a revoked refresh token.
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockImplementationOnce(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        fetchCalls.push({
+          url: input.toString(),
+          method: init?.method ?? "GET",
+        });
+        return new Response('{"error":"invalid_grant"}', { status: 400 });
+      },
+    );
+
+    const res = await request(app)
+      .patch(`/api/schedules/${scheduleId}`)
+      .send({ deviceId: TEST_USER_ID, blocks: [kept] });
+
+    // Schedule update must still succeed — no 500.
+    expect(res.status).toBe(200);
+
+    // The dead connection row must have been removed.
+    const conns = await db
+      .select()
+      .from(googleCalendarConnections)
+      .where(eq(googleCalendarConnections.ownerId, TEST_USER_ID));
+    expect(conns).toHaveLength(0);
+
+    // No calendar events should have been touched.
+    expect(deletedEventIds()).toHaveLength(0);
   });
 });
