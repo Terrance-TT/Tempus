@@ -5,7 +5,7 @@ import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { useClaimGuestData } from "@workspace/api-client-react";
+import { useClaimGuestData, setBaseUrl } from "@workspace/api-client-react";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,6 +27,14 @@ import Integrations from "@/pages/integrations";
 import Pricing from "@/pages/pricing";
 import CheckoutSuccess from "@/pages/checkout-success";
 import NotFound from "@/pages/not-found";
+
+// When the frontend and backend are on different origins (e.g. Railway), set
+// the API base URL from an env var so the React Query client calls the right host.
+// In the Replit dev environment this is empty, so relative "/api" paths keep working.
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+if (apiBaseUrl) {
+  setBaseUrl(apiBaseUrl);
+}
 
 const queryClient = new QueryClient();
 

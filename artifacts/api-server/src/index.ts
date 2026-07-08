@@ -9,7 +9,14 @@ async function initStripe() {
   try {
     await runMigrations({ databaseUrl });
     const stripeSync = await getStripeSync();
-    const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
+    const publicHost =
+      process.env.RAILWAY_PUBLIC_DOMAIN
+      ?? process.env.REPLIT_DOMAINS?.split(",")[0];
+    if (!publicHost) {
+      logger.warn("Stripe init skipped — no public host configured");
+      return;
+    }
+    const webhookBaseUrl = `https://${publicHost}`;
     await stripeSync.findOrCreateManagedWebhook(`${webhookBaseUrl}/api/stripe/webhook`);
     stripeSync.syncBackfill().catch((err) => logger.error({ err }, "Stripe backfill error"));
     logger.info("Stripe initialized");
@@ -20,7 +27,7 @@ async function initStripe() {
 
 await initStripe();
 
-const rawPort = process.env["PORT"];
+const rawPort = process.env["PORT"] || process.env["RAILWAY_PORT"];
 
 if (!rawPort) {
   throw new Error(
