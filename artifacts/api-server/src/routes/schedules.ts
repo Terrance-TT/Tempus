@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 import { db, commitments, schedules, googleCalendarConnections, scheduleCalendarSyncs } from "@workspace/db";
 import { checkIsProSubscriber, FREE_TIER_SCHEDULE_LIMIT } from "../lib/subscription";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { logger } from "../lib/logger";
 import { resolveOwnerId } from "../lib/auth";
 import {
   getValidAccessToken,
@@ -171,17 +172,23 @@ const generationResultSchema = {
   additionalProperties: false,
 } as const;
 
-async function runScheduleGeneration(
-  scope: "day" | "week",
-  commitmentsSnapshot: CommitmentSnapshot[],
-  answers: ClarificationAnswer[],
-  tasks: Task[],
-): Promise<{
-  status: "needs_clarification" | "complete";
-  questions: string[];
-  blocks: ScheduleBlock[];
-}> {
-  const systemPrompt = `You are an expert student schedule planner. Given a student's recurring commitments (classes, extracurriculars, personal routines like meals/sleep) and a list of assignments/tasks they need to complete, produce a realistic, well-balanced ${scope === "day" ? "single day" : "full week (mon-sun)"} schedule.
+/**
+ * Minimum number of distinct days required in a "complete" week schedule.
+ * If the LLM returns fewer (e.g. all blocks on "mon"), we retry once with
+ * an explicit correction note in the prompt.
+ */
+const WEEK_MIN_DISTINCT_DAYS = 5;
+
+function buildGenerationPrompt(scope: "day" | "week", correctionNote?: string): string {
+  const weekExtra = scope === "week"
+    ? `\n- CRITICAL: The schedule MUST include blocks for ALL seven days: mon, tue, wed, thu, fri, sat, AND sun. Every single day must appear at least once in the blocks array. Do NOT put all blocks on the same day or skip any day.`
+    : "";
+
+  const correction = correctionNote
+    ? `\n\nCORRECTION REQUIRED: ${correctionNote}`
+    : "";
+
+  return `You are an expert student schedule planner. Given a student's recurring commitments (classes, extracurriculars, personal routines like meals/sleep) and a list of assignments/tasks they need to complete, produce a realistic, well-balanced ${scope === "day" ? "single day" : "full week (mon-sun)"} schedule.
 
 Rules:
 - Never overlap two blocks on the same day.
@@ -194,15 +201,17 @@ Rules:
 - If a preference is missing, use sensible student defaults (wake 7:00, bed 22:30, breakfast/lunch/dinner at typical times) rather than asking. Only set status to "needs_clarification" (with 1-4 short, specific questions) as a last resort when the schedule genuinely cannot be built sensibly without an answer. Do not ask about things already covered by existing commitments, tasks, or prior answers.
 - Only produce status "complete" with full "blocks" once you have enough information to build a sensible schedule.
 - Keep block titles short and student-friendly (e.g. "Dinner", "Math homework", "Free time").
-- "blocks" must be empty when status is "needs_clarification", and "questions" must be empty when status is "complete".`;
+- "blocks" must be empty when status is "needs_clarification", and "questions" must be empty when status is "complete".${weekExtra}${correction}`;
+}
 
-  const userPrompt = JSON.stringify({
-    scope,
-    commitments: commitmentsSnapshot,
-    tasks,
-    priorAnswers: answers,
-  });
-
+async function callGenerationModel(
+  systemPrompt: string,
+  userPrompt: string,
+): Promise<{
+  status: "needs_clarification" | "complete";
+  questions: string[];
+  blocks: ScheduleBlock[];
+}> {
   const response = await openai.chat.completions.create({
     model: "gpt-5.4",
     max_completion_tokens: 4096,
@@ -239,6 +248,46 @@ Rules:
       ...block,
     })),
   };
+}
+
+async function runScheduleGeneration(
+  scope: "day" | "week",
+  commitmentsSnapshot: CommitmentSnapshot[],
+  answers: ClarificationAnswer[],
+  tasks: Task[],
+): Promise<{
+  status: "needs_clarification" | "complete";
+  questions: string[];
+  blocks: ScheduleBlock[];
+}> {
+  const userPrompt = JSON.stringify({
+    scope,
+    commitments: commitmentsSnapshot,
+    tasks,
+    priorAnswers: answers,
+  });
+
+  const result = await callGenerationModel(buildGenerationPrompt(scope), userPrompt);
+
+  // Sanity-check week schedules: if the LLM crammed everything onto too few
+  // days (a known hallucination pattern), retry once with an explicit correction.
+  if (
+    scope === "week" &&
+    result.status === "complete" &&
+    result.blocks.length > 0
+  ) {
+    const distinctDays = new Set(result.blocks.map((b) => b.day)).size;
+    if (distinctDays < WEEK_MIN_DISTINCT_DAYS) {
+      logger.warn(
+        { distinctDays, totalBlocks: result.blocks.length },
+        "Week schedule has too few distinct days — retrying with correction",
+      );
+      const correction = `Your previous response only used ${distinctDays} distinct day(s) out of 7. You MUST spread blocks across all seven days (mon, tue, wed, thu, fri, sat, sun). Every day must appear at least once. Do not put all or most blocks on the same day.`;
+      return callGenerationModel(buildGenerationPrompt(scope, correction), userPrompt);
+    }
+  }
+
+  return result;
 }
 
 const revisionResultSchema = {
