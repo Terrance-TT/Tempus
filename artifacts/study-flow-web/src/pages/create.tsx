@@ -8,6 +8,9 @@ import {
   savePendingCreateState,
   getPendingCreateState,
   clearPendingCreateState,
+  saveCreateDraft,
+  getCreateDraft,
+  clearCreateDraft,
 } from "@/hooks/use-device-id";
 import { useSubscriptionStatus } from "@/hooks/use-subscription";
 import {
@@ -74,6 +77,9 @@ export default function Create() {
     if (sessionStorage.getItem("columbiaPreset")) return true;
     return !!getPendingCreateState()?.columbiaPreset;
   });
+
+  const [resumedFromDraft, setResumedFromDraft] = useState(false);
+  const draftInitializedRef = useRef(false);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [inputMode, setInputMode] = useState<"photo" | "describe">("photo");
@@ -144,14 +150,60 @@ export default function Create() {
     }
   }, [savedPrefs]);
 
-  // Restore create page progress saved before sign-in redirect
+  // Restore progress on mount — pendingCreateState (sign-in redirect) takes
+  // priority; otherwise restore a saved draft.
   useEffect(() => {
+    if (draftInitializedRef.current) return;
+    draftInitializedRef.current = true;
+
     const pending = getPendingCreateState();
-    if (!pending) return;
-    if (pending.columbiaPreset) sessionStorage.setItem("columbiaPreset", "1");
-    if (pending.step) setStep(pending.step);
-    clearPendingCreateState();
+    if (pending) {
+      if (pending.columbiaPreset) sessionStorage.setItem("columbiaPreset", "1");
+      if (pending.step) setStep(pending.step);
+      clearPendingCreateState();
+      return;
+    }
+
+    const draft = getCreateDraft();
+    if (!draft) return;
+    // Only restore if there's meaningful progress
+    if (draft.step === 1 && draft.tasks.length === 0) return;
+
+    setStep(draft.step);
+    setTasks(draft.tasks);
+    setStudyPref(draft.studyPref);
+    setFocusLength(draft.focusLength);
+    setWakeTime(draft.wakeTime);
+    setBedTime(draft.bedTime);
+    setMealTimes(draft.mealTimes);
+    setPrefNotes(draft.prefNotes);
+    prefsHydratedRef.current = true; // prevent server prefs from overriding restored values
+    setResumedFromDraft(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-save draft whenever key wizard state changes
+  useEffect(() => {
+    if (!draftInitializedRef.current) return;
+    const hasMeaningfulProgress = step > 1 || tasks.length > 0 || studyPref.length > 0 || focusLength !== null;
+    if (hasMeaningfulProgress) {
+      saveCreateDraft({
+        step,
+        tasks: tasks.map(t => ({ ...t, estimatedMinutes: t.estimatedMinutes ?? null })),
+        studyPref,
+        focusLength,
+        wakeTime,
+        bedTime,
+        mealTimes,
+        prefNotes,
+        columbiaPreset: isColumbiaMode,
+        savedAt: Date.now(),
+      });
+    } else {
+      clearCreateDraft();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, tasks, studyPref, focusLength, wakeTime, bedTime, mealTimes, prefNotes]);
 
   // Save progress and go to sign-in — survives OAuth full-page redirect
   const goToSignIn = () => {
@@ -161,6 +213,18 @@ export default function Create() {
   const goToSignUp = () => {
     savePendingCreateState({ columbiaPreset: isColumbiaMode, step });
     setLocation("/sign-up");
+  };
+
+  const handleStartOver = () => {
+    clearCreateDraft();
+    setStep(1);
+    setTasks([]);
+    setStudyPref([]);
+    setFocusLength(null);
+    setDescribeText("");
+    setLastExtractedCount(null);
+    setResumedFromDraft(false);
+    prefsHydratedRef.current = false; // allow server prefs to re-hydrate
   };
 
   const extractCommitments = useExtractCommitmentsFromImage();
@@ -419,6 +483,7 @@ export default function Create() {
   }, [adCountdown, pendingNavScheduleId]);
 
   const onGenerateComplete = (scheduleId: string, blocks?: ScheduleBlock[]) => {
+    clearCreateDraft();
     if (isSignedIn) {
       const interestingBlocks = (blocks ?? []).filter(b =>
         ["homework", "study", "review", "assignment"].includes(b.category)
@@ -581,9 +646,20 @@ export default function Create() {
               />
             ))}
           </div>
-          <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-            Step {step} of 3
-          </span>
+          <div className="flex items-center gap-3">
+            {resumedFromDraft && (
+              <button
+                type="button"
+                onClick={handleStartOver}
+                className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+              >
+                Start over
+              </button>
+            )}
+            <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              Step {step} of 3
+            </span>
+          </div>
         </div>
 
         {step === 1 && (

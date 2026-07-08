@@ -3,6 +3,7 @@ import { useUser } from "@clerk/react";
 const GUEST_ID_KEY = "studyflow_guest_device_id";
 const PENDING_SCHEDULE_KEY = "studyflow_pending_schedule_id";
 const PENDING_CREATE_KEY = "tempus_resume_create";
+const CREATE_DRAFT_KEY = "tempus_create_draft";
 
 export type PendingCreateState = {
   columbiaPreset?: boolean;
@@ -21,6 +22,33 @@ export function getPendingCreateState(): PendingCreateState | null {
 
 export function clearPendingCreateState(): void {
   localStorage.removeItem(PENDING_CREATE_KEY);
+}
+
+export type CreateDraft = {
+  step: 1 | 2 | 3;
+  tasks: Array<{ title: string; dueDate: string; estimatedMinutes: number | null }>;
+  studyPref: string[];
+  focusLength: string | null;
+  wakeTime: string;
+  bedTime: string;
+  mealTimes: string;
+  prefNotes: string;
+  columbiaPreset?: boolean;
+  savedAt: number;
+};
+
+export function saveCreateDraft(draft: CreateDraft): void {
+  localStorage.setItem(CREATE_DRAFT_KEY, JSON.stringify(draft));
+}
+
+export function getCreateDraft(): CreateDraft | null {
+  const raw = localStorage.getItem(CREATE_DRAFT_KEY);
+  if (!raw) return null;
+  try { return JSON.parse(raw) as CreateDraft; } catch { return null; }
+}
+
+export function clearCreateDraft(): void {
+  localStorage.removeItem(CREATE_DRAFT_KEY);
 }
 
 /**
