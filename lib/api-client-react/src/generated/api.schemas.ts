@@ -281,6 +281,7 @@ export interface IntegrationsStatus {
   /** Whether the signed-in user's Google account is connected (Classroom access is granted through the same connection). */
   classroomConnected: boolean;
   schoologyConnected: boolean;
+  schoologyDomain?: string | null;
 }
 
 export interface ConnectCanvasInput {
@@ -293,6 +294,8 @@ export interface ConnectCanvasInput {
 
 export interface ConnectSchoologyInput {
   deviceId: string;
+  /** Your school's Schoology domain, e.g. "lms.myschool.edu" or "api.schoology.com". */
+  domain: string;
   /** Schoology API consumer key from Settings → API Access. */
   consumerKey: string;
   /** Schoology API consumer secret from Settings → API Access. */

@@ -133,6 +133,7 @@ export default function Integrations() {
     { query: { enabled: !!deviceId, queryKey: getListAssignmentsQueryKey({ deviceId: deviceId || "" }) } },
   );
 
+  const [schoologyDomain, setSchoologyDomain] = useState("api.schoology.com");
   const [schoologyKey, setSchoologyKey] = useState("");
   const [schoologySecret, setSchoologySecret] = useState("");
 
@@ -259,11 +260,12 @@ export default function Integrations() {
     e.preventDefault();
     if (!deviceId) return;
     connectSchoology.mutate(
-      { data: { deviceId, consumerKey: schoologyKey, consumerSecret: schoologySecret } },
+      { data: { deviceId, domain: schoologyDomain, consumerKey: schoologyKey, consumerSecret: schoologySecret } },
       {
         onSuccess: () => {
           setSchoologyKey("");
           setSchoologySecret("");
+          setSchoologyDomain("api.schoology.com");
           invalidate();
           toast({ title: "Schoology connected", description: "You can now import your assignments." });
         },
@@ -832,7 +834,7 @@ export default function Integrations() {
                   ) : status?.schoologyConnected ? (
                     <>
                       <p className="text-sm text-muted-foreground">
-                        Pulls upcoming assignments from all your enrolled Schoology sections.
+                        Connected to <span className="font-medium text-foreground">{status.schoologyDomain}</span>
                       </p>
                       <div className="flex flex-wrap gap-3">
                         <Button onClick={handleImportSchoology} disabled={importSchoology.isPending}>
@@ -856,6 +858,18 @@ export default function Integrations() {
                           <li>Go to the <strong>API Access</strong> tab</li>
                           <li>Your <strong>Consumer Key</strong> and <strong>Consumer Secret</strong> are listed there</li>
                         </ol>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Schoology Domain</Label>
+                        <Input
+                          placeholder="api.schoology.com"
+                          value={schoologyDomain}
+                          onChange={(e) => setSchoologyDomain(e.target.value)}
+                          required
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Most schools use <span className="font-mono">api.schoology.com</span>. Enterprise schools may have a custom domain like <span className="font-mono">lms.yourschool.edu</span>
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label>Consumer Key</Label>

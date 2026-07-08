@@ -450,7 +450,8 @@ export const GetIntegrationsStatusResponse = zod.object({
   "canvasConnected": zod.boolean(),
   "canvasBaseUrl": zod.string().nullish(),
   "classroomConnected": zod.boolean().describe('Whether the signed-in user\'s Google account is connected (Classroom access is granted through the same connection).'),
-  "schoologyConnected": zod.boolean()
+  "schoologyConnected": zod.boolean(),
+  "schoologyDomain": zod.string().nullish()
 })
 
 
@@ -467,7 +468,8 @@ export const ConnectCanvasResponse = zod.object({
   "canvasConnected": zod.boolean(),
   "canvasBaseUrl": zod.string().nullish(),
   "classroomConnected": zod.boolean().describe('Whether the signed-in user\'s Google account is connected (Classroom access is granted through the same connection).'),
-  "schoologyConnected": zod.boolean()
+  "schoologyConnected": zod.boolean(),
+  "schoologyDomain": zod.string().nullish()
 })
 
 
@@ -535,6 +537,7 @@ export const ImportClassroomAssignmentsResponse = zod.object({
  */
 export const ConnectSchoologyBody = zod.object({
   "deviceId": zod.string(),
+  "domain": zod.string().describe('Your school\'s Schoology domain, e.g. \"lms.myschool.edu\" or \"api.schoology.com\".'),
   "consumerKey": zod.string().describe('Schoology API consumer key from Settings → API Access.'),
   "consumerSecret": zod.string().describe('Schoology API consumer secret from Settings → API Access.')
 })
@@ -543,7 +546,8 @@ export const ConnectSchoologyResponse = zod.object({
   "canvasConnected": zod.boolean(),
   "canvasBaseUrl": zod.string().nullish(),
   "classroomConnected": zod.boolean().describe('Whether the signed-in user\'s Google account is connected (Classroom access is granted through the same connection).'),
-  "schoologyConnected": zod.boolean()
+  "schoologyConnected": zod.boolean(),
+  "schoologyDomain": zod.string().nullish()
 })
 
 

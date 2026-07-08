@@ -64,6 +64,7 @@ async function buildStatus(req: Parameters<typeof getAuth>[0], ownerId: string) 
     canvasBaseUrl: canvas?.baseUrl ?? null,
     classroomConnected,
     schoologyConnected: Boolean(schoology),
+    schoologyDomain: schoology?.domain ?? null,
   };
 }
 
@@ -146,7 +147,29 @@ async function canvasFetch(
 
 // --- OAuth 1.0a two-legged signing for Schoology ---
 
-const SCHOOLOGY_API_BASE = "https://api.schoology.com/v1";
+function normalizeSchoologyDomain(input: string): string | null {
+  let raw = input.trim();
+  if (!raw) return null;
+  // Strip any scheme prefix — we always force https
+  raw = raw.replace(/^https?:\/\//i, "");
+  // Strip any path
+  const hostname = raw.split("/")[0];
+  if (!hostname || !hostname.includes(".")) return null;
+  // Reject localhost / private-network names
+  if (
+    hostname === "localhost" ||
+    hostname.endsWith(".localhost") ||
+    hostname.endsWith(".local") ||
+    hostname.endsWith(".internal")
+  ) {
+    return null;
+  }
+  return hostname.toLowerCase();
+}
+
+function schoologyApiBase(domain: string): string {
+  return `https://${domain}/api/v1`;
+}
 
 function buildOauth1Header(
   method: string,
@@ -200,11 +223,12 @@ function buildOauth1Header(
 }
 
 async function schoologyFetch(
+  domain: string,
   path: string,
   consumerKey: string,
   consumerSecret: string,
 ): Promise<{ ok: boolean; status: number; data: unknown }> {
-  const url = `${SCHOOLOGY_API_BASE}${path}`;
+  const url = `${schoologyApiBase(domain)}${path}`;
   const authHeader = buildOauth1Header("GET", url, consumerKey, consumerSecret);
   const response = await fetch(url, {
     headers: {
@@ -571,6 +595,14 @@ router.post("/integrations/schoology", async (req, res) => {
   const body = ConnectSchoologyBody.parse(req.body);
   const ownerId = resolveOwnerId(req, body.deviceId);
 
+  const domain = normalizeSchoologyDomain(body.domain);
+  if (!domain) {
+    res.status(400).json({
+      message: "Enter a valid Schoology domain, e.g. api.schoology.com or lms.myschool.edu",
+    });
+    return;
+  }
+
   const consumerKey = body.consumerKey.trim();
   const consumerSecret = body.consumerSecret.trim();
   if (!consumerKey || !consumerSecret) {
@@ -580,10 +612,10 @@ router.post("/integrations/schoology", async (req, res) => {
 
   let check: { ok: boolean; status: number; data: unknown };
   try {
-    check = await schoologyFetch("/users/me", consumerKey, consumerSecret);
+    check = await schoologyFetch(domain, "/users/me", consumerKey, consumerSecret);
   } catch {
     res.status(400).json({
-      message: "Could not reach Schoology. Check your internet connection and try again.",
+      message: "Could not reach that Schoology domain. Double-check the domain and try again.",
     });
     return;
   }
@@ -592,17 +624,17 @@ router.post("/integrations/schoology", async (req, res) => {
       message:
         check.status === 401
           ? "Schoology rejected those credentials. Double-check your consumer key and secret from Settings → API Access."
-          : `Schoology returned an error (HTTP ${check.status}). Double-check your consumer key and secret.`,
+          : `Schoology returned an error (HTTP ${check.status}). Double-check the domain, key, and secret.`,
     });
     return;
   }
 
   await db
     .insert(schoologyConnections)
-    .values({ ownerId, consumerKey, consumerSecret })
+    .values({ ownerId, domain, consumerKey, consumerSecret })
     .onConflictDoUpdate({
       target: schoologyConnections.ownerId,
-      set: { consumerKey, consumerSecret, updatedAt: new Date() },
+      set: { domain, consumerKey, consumerSecret, updatedAt: new Date() },
     });
 
   res.json(await buildStatus(req, ownerId));
@@ -654,6 +686,7 @@ router.post("/integrations/schoology/import", async (req, res) => {
   }
 
   const sectionsResult = await schoologyFetch(
+    connection.domain,
     "/sections?start=0&limit=200",
     connection.consumerKey,
     connection.consumerSecret,
@@ -682,6 +715,7 @@ router.post("/integrations/schoology/import", async (req, res) => {
 
   for (const section of sections) {
     const assignmentsResult = await schoologyFetch(
+      connection.domain,
       `/sections/${section.id}/assignments?start=0&limit=200`,
       connection.consumerKey,
       connection.consumerSecret,

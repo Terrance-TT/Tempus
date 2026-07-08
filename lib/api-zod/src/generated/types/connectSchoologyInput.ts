@@ -8,6 +8,8 @@
 
 export interface ConnectSchoologyInput {
   deviceId: string;
+  /** Your school's Schoology domain, e.g. "lms.myschool.edu" or "api.schoology.com". */
+  domain: string;
   /** Schoology API consumer key from Settings → API Access. */
   consumerKey: string;
   /** Schoology API consumer secret from Settings → API Access. */

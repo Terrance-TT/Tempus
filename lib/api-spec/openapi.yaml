@@ -1149,6 +1149,9 @@ components:
           description: Whether the signed-in user's Google account is connected (Classroom access is granted through the same connection).
         schoologyConnected:
           type: boolean
+        schoologyDomain:
+          type: string
+          nullable: true
       required:
         - canvasConnected
         - classroomConnected
@@ -1173,6 +1176,9 @@ components:
       properties:
         deviceId:
           type: string
+        domain:
+          type: string
+          description: Your school's Schoology domain, e.g. "lms.myschool.edu" or "api.schoology.com".
         consumerKey:
           type: string
           description: Schoology API consumer key from Settings → API Access.
@@ -1181,6 +1187,7 @@ components:
           description: Schoology API consumer secret from Settings → API Access.
       required:
         - deviceId
+        - domain
         - consumerKey
         - consumerSecret
     ImportAssignmentsInput:
