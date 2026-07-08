@@ -521,6 +521,31 @@ export default function Create() {
 
   return (
     <Layout>
+      {/* Columbia sign-in nudge — fixed right panel, desktop only */}
+      {isColumbiaMode && !isSignedIn && (
+        <div className="hidden lg:flex fixed right-5 top-1/2 -translate-y-1/2 z-40 flex-col gap-3 w-52 rounded-2xl border bg-card shadow-lg shadow-black/5 p-4 animate-in fade-in slide-in-from-right-4 duration-500">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <Lock className="w-4 h-4" />
+            </div>
+            <p className="font-semibold text-sm leading-tight">Save your schedule</p>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Sign in with your Columbia email so your plan isn't lost when you close the tab.
+          </p>
+          <Button
+            size="sm"
+            className="w-full rounded-xl"
+            onClick={() => setLocation("/sign-in")}
+          >
+            Sign in <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+          </Button>
+          <p className="text-[10px] text-muted-foreground/70 text-center leading-tight">
+            Use your <span className="font-medium">@columbia.edu</span> Google account
+          </p>
+        </div>
+      )}
+
       <div className="max-w-2xl mx-auto space-y-8 pt-4 pb-12">
         <div className="flex items-center justify-between mb-8">
           <div className="flex gap-2">
