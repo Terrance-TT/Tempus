@@ -333,6 +333,7 @@ router.post("/integrations/canvas/import", async (req, res) => {
     title: string;
     dueDate: string;
     url: string | null;
+    description: string | null;
   }> = [];
 
   for (const course of courses) {
@@ -447,6 +448,7 @@ router.post("/integrations/classroom/import", async (req, res) => {
     title: string;
     dueDate: string;
     url: string | null;
+    description: string | null;
   }> = [];
 
   for (const course of courses) {
