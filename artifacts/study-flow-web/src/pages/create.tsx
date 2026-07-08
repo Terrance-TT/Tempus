@@ -5,6 +5,9 @@ import {
   useDeviceId,
   useIsSignedIn,
   setPendingScheduleId,
+  savePendingCreateState,
+  getPendingCreateState,
+  clearPendingCreateState,
 } from "@/hooks/use-device-id";
 import { useSubscriptionStatus } from "@/hooks/use-subscription";
 import {
@@ -67,7 +70,10 @@ export default function Create() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [isColumbiaMode] = useState(() => !!sessionStorage.getItem("columbiaPreset"));
+  const [isColumbiaMode] = useState(() => {
+    if (sessionStorage.getItem("columbiaPreset")) return true;
+    return !!getPendingCreateState()?.columbiaPreset;
+  });
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [inputMode, setInputMode] = useState<"photo" | "describe">("photo");
@@ -137,6 +143,25 @@ export default function Create() {
       setPrefNotes(savedPrefs.notes ?? "");
     }
   }, [savedPrefs]);
+
+  // Restore create page progress saved before sign-in redirect
+  useEffect(() => {
+    const pending = getPendingCreateState();
+    if (!pending) return;
+    if (pending.columbiaPreset) sessionStorage.setItem("columbiaPreset", "1");
+    if (pending.step) setStep(pending.step);
+    clearPendingCreateState();
+  }, []);
+
+  // Save progress and go to sign-in — survives OAuth full-page redirect
+  const goToSignIn = () => {
+    savePendingCreateState({ columbiaPreset: isColumbiaMode, step });
+    setLocation("/sign-in");
+  };
+  const goToSignUp = () => {
+    savePendingCreateState({ columbiaPreset: isColumbiaMode, step });
+    setLocation("/sign-up");
+  };
 
   const extractCommitments = useExtractCommitmentsFromImage();
   const extractFromText = useExtractCommitmentsFromText();
@@ -536,7 +561,7 @@ export default function Create() {
           <Button
             size="sm"
             className="w-full rounded-xl"
-            onClick={() => setLocation("/sign-in")}
+            onClick={goToSignIn}
           >
             Sign in <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
           </Button>
@@ -1154,7 +1179,7 @@ export default function Create() {
                       <Button size="lg" className="rounded-xl" onClick={() => setLocation("/pricing")}>
                         <Zap className="mr-2 w-4 h-4" /> Upgrade to Pro — $10/mo
                       </Button>
-                      <Button size="lg" variant="outline" className="rounded-xl" onClick={() => setLocation("/sign-in")}>
+                      <Button size="lg" variant="outline" className="rounded-xl" onClick={goToSignIn}>
                         Already subscribed? Sign in
                       </Button>
                     </div>
@@ -1212,10 +1237,10 @@ export default function Create() {
                   </div>
                 </div>
                 <CardContent className="p-6 space-y-3">
-                  <Button size="lg" className="w-full rounded-xl text-base" onClick={() => setLocation("/sign-in")} data-testid="button-signin-to-view">
+                  <Button size="lg" className="w-full rounded-xl text-base" onClick={goToSignIn} data-testid="button-signin-to-view">
                     Sign in with Google to view
                   </Button>
-                  <Button variant="ghost" className="w-full text-muted-foreground" onClick={() => setLocation("/sign-up")} data-testid="button-signup-to-view">
+                  <Button variant="ghost" className="w-full text-muted-foreground" onClick={goToSignUp} data-testid="button-signup-to-view">
                     New here? Create an account
                   </Button>
                 </CardContent>

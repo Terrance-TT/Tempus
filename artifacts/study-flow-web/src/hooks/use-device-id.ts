@@ -2,6 +2,26 @@ import { useUser } from "@clerk/react";
 
 const GUEST_ID_KEY = "studyflow_guest_device_id";
 const PENDING_SCHEDULE_KEY = "studyflow_pending_schedule_id";
+const PENDING_CREATE_KEY = "tempus_resume_create";
+
+export type PendingCreateState = {
+  columbiaPreset?: boolean;
+  step?: 1 | 2 | 3;
+};
+
+export function savePendingCreateState(state: PendingCreateState): void {
+  localStorage.setItem(PENDING_CREATE_KEY, JSON.stringify(state));
+}
+
+export function getPendingCreateState(): PendingCreateState | null {
+  const raw = localStorage.getItem(PENDING_CREATE_KEY);
+  if (!raw) return null;
+  try { return JSON.parse(raw) as PendingCreateState; } catch { return null; }
+}
+
+export function clearPendingCreateState(): void {
+  localStorage.removeItem(PENDING_CREATE_KEY);
+}
 
 /**
  * Lazily creates (and persists) a random guest device id in localStorage.

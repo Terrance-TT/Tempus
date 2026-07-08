@@ -14,6 +14,8 @@ import {
   clearGuestDeviceId,
   getPendingScheduleId,
   clearPendingScheduleId,
+  getPendingCreateState,
+  clearPendingCreateState,
 } from "@/hooks/use-device-id";
 
 import Landing from "@/pages/landing";
@@ -205,9 +207,13 @@ function GuestDataClaimer() {
             toast({ title: "Your plans are ready", description: "Everything you created before signing in has been saved to your account." });
           }
           const pending = getPendingScheduleId();
+          const pendingCreate = getPendingCreateState();
           if (pending) {
             clearPendingScheduleId();
             setLocation(`/schedule/${pending}`);
+          } else if (pendingCreate) {
+            clearPendingCreateState();
+            setLocation("/create");
           }
         },
         onError: () => {

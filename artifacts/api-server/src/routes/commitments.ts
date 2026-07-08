@@ -136,10 +136,20 @@ Rules:
     return;
   }
 
+  // Skip any that already exist with the same title+startTime+endTime
+  const existing = await db.select().from(commitments).where(eq(commitments.deviceId, ownerId));
+  const existingKeys = new Set(existing.map((r) => `${r.title.toLowerCase()}|||${r.startTime ?? ""}|||${r.endTime ?? ""}`));
+  const newOnes = extracted.filter((c) => !existingKeys.has(`${c.title.toLowerCase()}|||${c.startTime}|||${c.endTime}`));
+
+  if (newOnes.length === 0) {
+    res.status(201).json([]);
+    return;
+  }
+
   const inserted = await db
     .insert(commitments)
     .values(
-      extracted.map((c) => ({
+      newOnes.map((c) => ({
         deviceId: ownerId,
         title: c.title,
         type: c.type,
@@ -205,10 +215,20 @@ Rules:
     return;
   }
 
+  // Skip any that already exist with the same title+startTime+endTime
+  const existing = await db.select().from(commitments).where(eq(commitments.deviceId, ownerId));
+  const existingKeys = new Set(existing.map((r) => `${r.title.toLowerCase()}|||${r.startTime ?? ""}|||${r.endTime ?? ""}`));
+  const newOnes = extracted.filter((c) => !existingKeys.has(`${c.title.toLowerCase()}|||${c.startTime}|||${c.endTime}`));
+
+  if (newOnes.length === 0) {
+    res.status(201).json([]);
+    return;
+  }
+
   const inserted = await db
     .insert(commitments)
     .values(
-      extracted.map((c) => ({
+      newOnes.map((c) => ({
         deviceId: ownerId,
         title: c.title,
         type: c.type,
@@ -234,8 +254,22 @@ router.get("/commitments", async (req, res) => {
     .select()
     .from(commitments)
     .where(eq(commitments.deviceId, ownerId));
+
+  // Deduplicate: merge rows with the same title+startTime+endTime, combining their days
+  const seen = new Map<string, typeof rows[number]>();
+  for (const row of rows) {
+    const key = `${row.title.toLowerCase()}|||${row.startTime ?? ""}|||${row.endTime ?? ""}`;
+    const existing = seen.get(key);
+    if (existing) {
+      const merged = [...new Set([...(existing.daysOfWeek ?? []), ...(row.daysOfWeek ?? [])])];
+      seen.set(key, { ...existing, daysOfWeek: merged });
+    } else {
+      seen.set(key, { ...row });
+    }
+  }
+
   res.json(
-    rows.map((row) => ({
+    [...seen.values()].map((row) => ({
       ...row,
       createdAt: row.createdAt.toISOString(),
     })),
