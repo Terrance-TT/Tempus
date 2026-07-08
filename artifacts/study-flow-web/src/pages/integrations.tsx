@@ -909,6 +909,7 @@ export default function Integrations() {
             <CardTitle className="flex items-center gap-2 text-xl">
               <ShieldCheck className="w-5 h-5 text-primary" />
               Tempus Focus Guard
+              <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700">Beta</Badge>
               <Badge variant="outline" className="ml-auto">Chrome extension</Badge>
             </CardTitle>
             <CardDescription>
