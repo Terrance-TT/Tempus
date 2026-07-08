@@ -1,12 +1,13 @@
-import { useEffect, useRef, type ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
-import { ArrowLeft, UserCircle } from "lucide-react";
+import { ArrowLeft, UserCircle, Loader2 } from "lucide-react";
 import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { useClaimGuestData } from "@workspace/api-client-react";
 import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   peekGuestDeviceId,
@@ -183,19 +184,26 @@ function GuestDataClaimer() {
   const claimGuestData = useClaimGuestData();
   const rqClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const attemptedRef = useRef(false);
+  const [isMigrating, setIsMigrating] = useState(false);
 
   useEffect(() => {
     if (!isLoaded || !user || attemptedRef.current) return;
     const guestId = peekGuestDeviceId();
     if (!guestId) return;
     attemptedRef.current = true;
+    setIsMigrating(true);
     claimGuestData.mutate(
       { data: { guestDeviceId: guestId } },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           clearGuestDeviceId();
           rqClient.clear();
+          setIsMigrating(false);
+          if ((result as any)?.claimedCount > 0) {
+            toast({ title: "Your plans are ready", description: "Everything you created before signing in has been saved to your account." });
+          }
           const pending = getPendingScheduleId();
           if (pending) {
             clearPendingScheduleId();
@@ -205,25 +213,26 @@ function GuestDataClaimer() {
         onError: () => {
           // Leave the guest id in place so a retry on next load can claim it.
           attemptedRef.current = false;
+          setIsMigrating(false);
         },
       },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, user?.id]);
 
-  return null;
+  if (!isMigrating) return null;
+  return (
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 bg-card border shadow-lg rounded-full px-4 py-2.5 text-sm font-medium text-foreground animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+      Saving your plans to your account…
+    </div>
+  );
 }
 
 function HomeRedirect() {
   const { user, isLoaded } = useUser();
   if (!isLoaded) return null;
   return user ? <Home /> : <Landing />;
-}
-
-function AuthedRoute({ component: Component }: { component: ComponentType }) {
-  const { user, isLoaded } = useUser();
-  if (!isLoaded) return null;
-  return user ? <Component /> : <Landing />;
 }
 
 function ClerkProviderWithRoutes() {
@@ -263,12 +272,8 @@ function ClerkProviderWithRoutes() {
             <Route path="/sign-up/*?" component={SignUpPage} />
             {/* Guests may build a schedule without an account */}
             <Route path="/create" component={Create} />
-            <Route path="/schedule/:id">
-              <AuthedRoute component={Schedule} />
-            </Route>
-            <Route path="/history">
-              <AuthedRoute component={History} />
-            </Route>
+            <Route path="/schedule/:id" component={Schedule} />
+            <Route path="/history" component={History} />
             <Route path="/integrations" component={Integrations} />
             <Route path="/pricing" component={Pricing} />
             <Route path="/checkout/success" component={CheckoutSuccess} />
