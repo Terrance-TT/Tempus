@@ -48,6 +48,8 @@ import {
 
 import { isFunEvent } from "@/lib/sps-events";
 
+type Panel = "canvas" | "sps" | "classroom" | null;
+
 function formatDue(dueDate: string): string {
   const parsed = new Date(dueDate);
   if (Number.isNaN(parsed.getTime())) return dueDate;
@@ -83,14 +85,17 @@ export default function Integrations() {
   const previewSpsIcs = usePreviewSpsEngageIcs();
   const importSpsEvents = useImportSpsEngageEvents();
 
+  const [openPanel, setOpenPanel] = useState<Panel>(null);
+
+  const togglePanel = (panel: Panel) =>
+    setOpenPanel((prev) => (prev === panel ? null : panel));
+
   const spsDisplayed = spsFunOnly && spsEvents
     ? spsEvents.filter((ev) => isFunEvent(ev.title))
     : spsEvents ?? [];
 
   const handleGenerateCode = () => {
     if (!deviceId) return;
-    // First click fetches the existing code; clicking again rotates the
-    // token so a leaked code can be invalidated.
     const rotate = connectionCode !== null;
     createExtensionToken.mutate(
       { data: { deviceId, rotate } },
@@ -101,11 +106,7 @@ export default function Integrations() {
           setCodeCopied(false);
         },
         onError: () => {
-          toast({
-            title: "Couldn't generate code",
-            description: "Please try again.",
-            variant: "destructive",
-          });
+          toast({ title: "Couldn't generate code", description: "Please try again.", variant: "destructive" });
         },
       },
     );
@@ -164,8 +165,7 @@ export default function Integrations() {
           }
           toast({
             title: "Import failed",
-            description:
-              err?.data?.message ?? "Google Classroom import failed. Please try again.",
+            description: err?.data?.message ?? "Google Classroom import failed. Please try again.",
             variant: "destructive",
           });
         },
@@ -296,6 +296,7 @@ export default function Integrations() {
           setSpsEvents(null);
           setSpsIcsUrl("");
           setSpsSelected(new Set());
+          setOpenPanel(null);
         },
         onError: () => {
           toast({ title: "Import failed. Please try again.", variant: "destructive" });
@@ -405,278 +406,333 @@ export default function Integrations() {
           </section>
         )}
 
-        {/* SPS Engage */}
-        <Card className="border-2 border-blue-400 dark:border-blue-700 bg-blue-50/60 dark:bg-blue-950/25 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <span className="text-blue-900 dark:text-blue-100">SPS Engage</span>
-              <Badge className="ml-auto text-xs bg-blue-600 text-white border-0 hover:bg-blue-700">Columbia students</Badge>
-            </CardTitle>
-            <CardDescription>
-              Add events from your SPS Engage calendar so they appear as fixed blocks when generating your schedule.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-100/60 dark:bg-blue-900/30 p-3 space-y-1.5">
-              <p className="text-xs font-medium text-blue-900 dark:text-blue-100">How to get your ICS feed URL:</p>
-              <ol className="text-xs text-blue-800/80 dark:text-blue-300 space-y-1 list-decimal list-inside">
-                <li>Sign in at <a href="https://spscolumbia.campusgroups.com" target="_blank" rel="noopener noreferrer" className="font-mono bg-white/70 dark:bg-blue-950/60 px-1 rounded underline-offset-2 hover:underline">spscolumbia.campusgroups.com</a></li>
-                <li>Click <strong>Calendar</strong> in the top nav</li>
-                <li>Click <strong>Subscribe to Calendars</strong> → switch to the <strong>ICS Feeds</strong> tab</li>
-                <li>Copy your <strong>personal feed URL</strong> (includes starred events from all your groups)</li>
-              </ol>
-            </div>
+        {/* Integration cards */}
+        <section className="space-y-3">
+          <h2 className="font-semibold text-xl">Connect a tool</h2>
+          <div className="space-y-3">
 
-            <form onSubmit={handleSpsPreview} className="space-y-3">
-              <div className="space-y-2">
-                <Label>Your ICS feed URL</Label>
-                <Input
-                  type="password"
-                  placeholder="https://spscolumbia.campusgroups.com/ics?user_id=…&token=…"
-                  value={spsIcsUrl}
-                  onChange={(e) => { setSpsIcsUrl(e.target.value); setSpsEvents(null); }}
-                  autoComplete="off"
-                />
-                <p className="text-xs text-muted-foreground">The URL contains a private token — it's hidden above and never stored on our servers.</p>
-              </div>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={!spsIcsUrl || previewSpsIcs.isPending}>
-                {previewSpsIcs.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                Preview upcoming events
-              </Button>
-            </form>
-
-            {spsEvents !== null && (
-              spsEvents.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No events found in the next 14 days.</p>
-              ) : (
-                <div className="space-y-2">
-                  {/* Filter row */}
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <p className="text-sm font-medium">
-                      {spsFunOnly
-                        ? `${spsDisplayed.length} fun event${spsDisplayed.length !== 1 ? "s" : ""} (of ${spsEvents.length} total)`
-                        : `${spsEvents.length} event${spsEvents.length !== 1 ? "s" : ""} found (next 14 days)`}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors font-medium ${spsFunOnly ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/40"}`}
-                        onClick={() => {
-                          const next = !spsFunOnly;
-                          setSpsFunOnly(next);
-                          if (next) {
-                            setSpsSelected(new Set(spsEvents.filter((ev) => isFunEvent(ev.title)).map((ev) => ev.uid)));
-                          } else {
-                            setSpsSelected(new Set(spsEvents.map((ev) => ev.uid)));
-                          }
-                        }}
-                      >
-                        <PartyPopper className="w-3 h-3" />
-                        Fun events only
-                      </button>
-                      <button
-                        type="button"
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                        onClick={() =>
-                          setSpsSelected(
-                            spsSelected.size === spsDisplayed.length
-                              ? new Set()
-                              : new Set(spsDisplayed.map((ev) => ev.uid)),
-                          )
-                        }
-                      >
-                        {spsSelected.size === spsDisplayed.length ? "Deselect all" : "Select all"}
-                      </button>
-                    </div>
+            {/* ── Canvas LMS ── */}
+            <Card className="border shadow-sm overflow-hidden">
+              <button
+                type="button"
+                className="w-full text-left hover:bg-muted/40 transition-colors"
+                onClick={() => togglePanel("canvas")}
+                aria-expanded={openPanel === "canvas"}
+              >
+                <div className="flex items-center gap-4 px-5 py-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <BookOpen className="w-5 h-5" />
                   </div>
-
-                  {spsDisplayed.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No fun events detected — try turning off the filter to see all events.
-                    </p>
-                  ) : (
-                    <div className="max-h-60 overflow-y-auto space-y-1 rounded-lg border border-blue-200 dark:border-blue-800 p-2 bg-white/60 dark:bg-blue-950/20">
-                      {spsDisplayed.map((ev) => {
-                        const start = new Date(ev.startIso);
-                        const end = new Date(ev.endIso);
-                        const dateStr = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-                        const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-                        const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-                        const checked = spsSelected.has(ev.uid);
-                        return (
-                          <label
-                            key={ev.uid}
-                            className={`flex items-start gap-3 p-2 rounded-lg cursor-pointer transition-colors ${checked ? "bg-blue-100 dark:bg-blue-900/50" : "hover:bg-blue-50 dark:hover:bg-blue-950/40"}`}
-                          >
-                            <input
-                              type="checkbox"
-                              className="mt-0.5 accent-blue-600 shrink-0"
-                              checked={checked}
-                              onChange={() => {
-                                const next = new Set(spsSelected);
-                                if (checked) next.delete(ev.uid); else next.add(ev.uid);
-                                setSpsSelected(next);
-                              }}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium leading-snug">{ev.title}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {dateStr} · {startTime}–{endTime}
-                                {ev.location ? ` · ${ev.location}` : ""}
-                              </p>
-                            </div>
-                            {ev.url && (
-                              <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 shrink-0 mt-0.5">
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
-                            )}
-                          </label>
-                        );
-                      })}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold">Canvas LMS</span>
+                      {status?.canvasConnected && (
+                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                          <CheckCircle2 className="w-3 h-3" /> Connected
+                        </Badge>
+                      )}
                     </div>
-                  )}
-                  <Button
-                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
-                    disabled={spsSelected.size === 0 || importSpsEvents.isPending}
-                    onClick={handleSpsImport}
-                  >
-                    {importSpsEvents.isPending
-                      ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                    Add {spsSelected.size} event{spsSelected.size !== 1 ? "s" : ""} to schedule
-                  </Button>
-                </div>
-              )
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Canvas LMS */}
-          <Card className="border shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <BookOpen className="w-5 h-5 text-primary" />
-                Canvas LMS
-                {status?.canvasConnected && (
-                  <Badge variant="secondary" className="ml-auto flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Connected
-                  </Badge>
-                )}
-              </CardTitle>
-              <CardDescription>
-                {status?.canvasConnected
-                  ? `Connected to ${status.canvasBaseUrl}`
-                  : "Import upcoming assignments from your school's Canvas."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingStatus ? (
-                <Skeleton className="h-24 w-full" />
-              ) : status?.canvasConnected ? (
-                <div className="flex flex-wrap gap-3">
-                  <Button onClick={handleImportCanvas} disabled={importCanvas.isPending}>
-                    {importCanvas.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                    )}
-                    Import assignments
-                  </Button>
-                  <Button variant="outline" onClick={handleDisconnectCanvas} disabled={disconnectCanvas.isPending}>
-                    Disconnect
-                  </Button>
-                </div>
-              ) : (
-                <form onSubmit={handleConnectCanvas} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>School Canvas URL</Label>
-                    <Input
-                      placeholder="https://myschool.instructure.com"
-                      value={canvasUrl}
-                      onChange={(e) => setCanvasUrl(e.target.value)}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Open Canvas in your browser and copy the first part of the address bar — it usually looks like https://schoolname.instructure.com or https://canvas.school.edu
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Import upcoming assignments from your Canvas courses
                     </p>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Access Token</Label>
-                    <Input
-                      type="password"
-                      placeholder="Paste your Canvas access token"
-                      value={canvasToken}
-                      onChange={(e) => setCanvasToken(e.target.value)}
-                      required
-                    />
-                    {isColumbiaPreset ? (
-                      <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5">
-                        <p className="text-xs font-medium text-foreground">How to get your CourseWorks2 token:</p>
-                        <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                          <li>Sign in to <span className="font-mono bg-background px-1 rounded">courseworks2.columbia.edu</span></li>
-                          <li>Click your profile picture (top-right) → <strong>Settings</strong></li>
-                          <li>Scroll down to <strong>Approved Integrations</strong></li>
-                          <li>Click <strong>+ New Access Token</strong></li>
-                          <li>Enter a purpose (e.g. <em>Tempus</em>) — leave expiry blank</li>
-                          <li>Click <strong>Generate Token</strong> and copy it immediately — it won't be shown again</li>
-                        </ol>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        In Canvas: Account → Settings → New Access Token
+                  {openPanel === "canvas"
+                    ? <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
+                    : <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />}
+                </div>
+              </button>
+
+              {openPanel === "canvas" && (
+                <div className="px-5 pb-5 border-t pt-5 space-y-4">
+                  {isLoadingStatus ? (
+                    <Skeleton className="h-24 w-full" />
+                  ) : status?.canvasConnected ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Connected to <span className="font-medium text-foreground">{status.canvasBaseUrl}</span>
                       </p>
-                    )}
-                  </div>
-                  <Button type="submit" className="w-full" disabled={connectCanvas.isPending}>
-                    {connectCanvas.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Connect Canvas
-                  </Button>
-                </form>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Google Classroom */}
-          <Card className="border shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <GraduationCap className="w-5 h-5 text-primary" />
-                Google Classroom
-                {status?.classroomConnected && (
-                  <Badge variant="secondary" className="ml-auto flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Connected
-                  </Badge>
-                )}
-              </CardTitle>
-              <CardDescription>
-                Import upcoming coursework from your Google Classroom classes.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingStatus ? (
-                <Skeleton className="h-24 w-full" />
-              ) : (
-                <div className="space-y-3">
-                  <Button onClick={() => handleImportClassroom()} disabled={importClassroom.isPending} className="w-full sm:w-auto">
-                    {importClassroom.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                    )}
-                    {status?.classroomConnected ? "Import coursework" : "Connect & import"}
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    {status?.classroomConnected
-                      ? "Pulls published coursework with upcoming due dates."
-                      : "You'll be asked to allow Classroom access on your Google account."}
-                  </p>
+                      <div className="flex flex-wrap gap-3">
+                        <Button onClick={handleImportCanvas} disabled={importCanvas.isPending}>
+                          {importCanvas.isPending
+                            ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            : <RefreshCw className="w-4 h-4 mr-2" />}
+                          Import assignments
+                        </Button>
+                        <Button variant="outline" onClick={handleDisconnectCanvas} disabled={disconnectCanvas.isPending}>
+                          Disconnect
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <form onSubmit={handleConnectCanvas} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>School Canvas URL</Label>
+                        <Input
+                          placeholder="https://myschool.instructure.com"
+                          value={canvasUrl}
+                          onChange={(e) => setCanvasUrl(e.target.value)}
+                          required
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Open Canvas in your browser and copy the first part of the address bar — usually <span className="font-mono">https://schoolname.instructure.com</span>
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Access Token</Label>
+                        <Input
+                          type="password"
+                          placeholder="Paste your Canvas access token"
+                          value={canvasToken}
+                          onChange={(e) => setCanvasToken(e.target.value)}
+                          required
+                        />
+                        {isColumbiaPreset ? (
+                          <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5">
+                            <p className="text-xs font-medium text-foreground">How to get your CourseWorks2 token:</p>
+                            <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                              <li>Sign in to <span className="font-mono bg-background px-1 rounded">courseworks2.columbia.edu</span></li>
+                              <li>Click your profile picture (top-right) → <strong>Settings</strong></li>
+                              <li>Scroll down to <strong>Approved Integrations</strong></li>
+                              <li>Click <strong>+ New Access Token</strong></li>
+                              <li>Enter a purpose (e.g. <em>Tempus</em>) — leave expiry blank</li>
+                              <li>Click <strong>Generate Token</strong> and copy it immediately</li>
+                            </ol>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            In Canvas: Account → Settings → New Access Token
+                          </p>
+                        )}
+                      </div>
+                      <Button type="submit" className="w-full" disabled={connectCanvas.isPending}>
+                        {connectCanvas.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Connect Canvas
+                      </Button>
+                    </form>
+                  )}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
+            </Card>
+
+            {/* ── SPS Engage ── */}
+            <Card className="border shadow-sm overflow-hidden">
+              <button
+                type="button"
+                className="w-full text-left hover:bg-muted/40 transition-colors"
+                onClick={() => togglePanel("sps")}
+                aria-expanded={openPanel === "sps"}
+              >
+                <div className="flex items-center gap-4 px-5 py-4">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold">SPS Engage</span>
+                      <Badge className="text-xs bg-blue-600 text-white border-0 hover:bg-blue-600">Columbia students</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Add events from your SPS Engage calendar as fixed schedule blocks
+                    </p>
+                  </div>
+                  {openPanel === "sps"
+                    ? <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
+                    : <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />}
+                </div>
+              </button>
+
+              {openPanel === "sps" && (
+                <div className="px-5 pb-5 border-t pt-5 space-y-4">
+                  <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5">
+                    <p className="text-xs font-medium">How to get your ICS feed URL:</p>
+                    <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                      <li>Sign in at <a href="https://spscolumbia.campusgroups.com" target="_blank" rel="noopener noreferrer" className="font-mono bg-background px-1 rounded underline-offset-2 hover:underline">spscolumbia.campusgroups.com</a></li>
+                      <li>Click <strong>Calendar</strong> in the top nav</li>
+                      <li>Click <strong>Subscribe to Calendars</strong> → switch to the <strong>ICS Feeds</strong> tab</li>
+                      <li>Copy your <strong>personal feed URL</strong></li>
+                    </ol>
+                  </div>
+
+                  <form onSubmit={handleSpsPreview} className="space-y-3">
+                    <div className="space-y-2">
+                      <Label>Your ICS feed URL</Label>
+                      <Input
+                        type="password"
+                        placeholder="https://spscolumbia.campusgroups.com/ics?user_id=…&token=…"
+                        value={spsIcsUrl}
+                        onChange={(e) => { setSpsIcsUrl(e.target.value); setSpsEvents(null); }}
+                        autoComplete="off"
+                      />
+                      <p className="text-xs text-muted-foreground">The URL contains a private token — it's hidden above and never stored on our servers.</p>
+                    </div>
+                    <Button type="submit" disabled={!spsIcsUrl || previewSpsIcs.isPending}>
+                      {previewSpsIcs.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                      Preview upcoming events
+                    </Button>
+                  </form>
+
+                  {spsEvents !== null && (
+                    spsEvents.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No events found in the next 14 days.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <p className="text-sm font-medium">
+                            {spsFunOnly
+                              ? `${spsDisplayed.length} fun event${spsDisplayed.length !== 1 ? "s" : ""} (of ${spsEvents.length} total)`
+                              : `${spsEvents.length} event${spsEvents.length !== 1 ? "s" : ""} found (next 14 days)`}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors font-medium ${spsFunOnly ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "border-border text-foreground hover:bg-muted"}`}
+                              onClick={() => {
+                                const next = !spsFunOnly;
+                                setSpsFunOnly(next);
+                                if (next) {
+                                  setSpsSelected(new Set(spsEvents.filter((ev) => isFunEvent(ev.title)).map((ev) => ev.uid)));
+                                } else {
+                                  setSpsSelected(new Set(spsEvents.map((ev) => ev.uid)));
+                                }
+                              }}
+                            >
+                              <PartyPopper className="w-3 h-3" />
+                              Fun events only
+                            </button>
+                            <button
+                              type="button"
+                              className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                              onClick={() =>
+                                setSpsSelected(
+                                  spsSelected.size === spsDisplayed.length
+                                    ? new Set()
+                                    : new Set(spsDisplayed.map((ev) => ev.uid)),
+                                )
+                              }
+                            >
+                              {spsSelected.size === spsDisplayed.length ? "Deselect all" : "Select all"}
+                            </button>
+                          </div>
+                        </div>
+
+                        {spsDisplayed.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            No fun events detected — try turning off the filter to see all events.
+                          </p>
+                        ) : (
+                          <div className="max-h-60 overflow-y-auto space-y-1 rounded-lg border p-2 bg-muted/20">
+                            {spsDisplayed.map((ev) => {
+                              const start = new Date(ev.startIso);
+                              const end = new Date(ev.endIso);
+                              const dateStr = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+                              const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+                              const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+                              const checked = spsSelected.has(ev.uid);
+                              return (
+                                <label
+                                  key={ev.uid}
+                                  className={`flex items-start gap-3 p-2 rounded-lg cursor-pointer transition-colors ${checked ? "bg-primary/10" : "hover:bg-muted"}`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="mt-0.5 shrink-0"
+                                    checked={checked}
+                                    onChange={() => {
+                                      const next = new Set(spsSelected);
+                                      if (checked) next.delete(ev.uid); else next.add(ev.uid);
+                                      setSpsSelected(next);
+                                    }}
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium leading-snug">{ev.title}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {dateStr} · {startTime}–{endTime}
+                                      {ev.location ? ` · ${ev.location}` : ""}
+                                    </p>
+                                  </div>
+                                  {ev.url && (
+                                    <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground shrink-0 mt-0.5">
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                  )}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                        <Button
+                          className="w-full sm:w-auto"
+                          disabled={spsSelected.size === 0 || importSpsEvents.isPending}
+                          onClick={handleSpsImport}
+                        >
+                          {importSpsEvents.isPending
+                            ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                          Add {spsSelected.size} event{spsSelected.size !== 1 ? "s" : ""} to schedule
+                        </Button>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
+            </Card>
+
+            {/* ── Google Classroom ── */}
+            <Card className="border shadow-sm overflow-hidden">
+              <button
+                type="button"
+                className="w-full text-left hover:bg-muted/40 transition-colors"
+                onClick={() => togglePanel("classroom")}
+                aria-expanded={openPanel === "classroom"}
+              >
+                <div className="flex items-center gap-4 px-5 py-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold">Google Classroom</span>
+                      {status?.classroomConnected && (
+                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                          <CheckCircle2 className="w-3 h-3" /> Connected
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Import upcoming coursework from your Google Classroom classes
+                    </p>
+                  </div>
+                  {openPanel === "classroom"
+                    ? <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
+                    : <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />}
+                </div>
+              </button>
+
+              {openPanel === "classroom" && (
+                <div className="px-5 pb-5 border-t pt-5 space-y-3">
+                  {isLoadingStatus ? (
+                    <Skeleton className="h-16 w-full" />
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        {status?.classroomConnected
+                          ? "Pulls published coursework with upcoming due dates from all your classes."
+                          : "You'll be asked to allow Classroom access on your Google account."}
+                      </p>
+                      <Button onClick={() => handleImportClassroom()} disabled={importClassroom.isPending}>
+                        {importClassroom.isPending
+                          ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          : <RefreshCw className="w-4 h-4 mr-2" />}
+                        {status?.classroomConnected ? "Import coursework" : "Connect & import"}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              )}
+            </Card>
+
+          </div>
+        </section>
 
         {/* Focus Guard extension */}
         <Card className="border shadow-sm" data-testid="card-focus-guard">
@@ -687,9 +743,7 @@ export default function Integrations() {
               <Badge variant="outline" className="ml-auto">Chrome extension</Badge>
             </CardTitle>
             <CardDescription>
-              Automatically blocks YouTube, Instagram, Snapchat and other distracting sites
-              during the work blocks on your schedule. Strict mode: there's no off switch —
-              the only way out is removing the extension.
+              Automatically blocks distracting sites during your work blocks. Strict mode — the only way out is removing the extension.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -733,16 +787,14 @@ export default function Integrations() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Paste this into the Tempus Focus Guard popup in Chrome. Keep it private — it
-                  lets the extension read your schedule. Regenerating invalidates the old code,
-                  so a connected extension will ask for the new one.
+                  Paste this into the Tempus Focus Guard popup in Chrome. Keep it private — regenerating invalidates the old code.
                 </p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Empty state when no assignments and not loading */}
+        {/* Empty state */}
         {!isLoadingAssignments && assignments.length === 0 && (
           <p className="text-muted-foreground text-sm">
             Nothing imported yet. Connect a tool above and import your assignments — they'll show up here and in the New Plan flow.
