@@ -25,12 +25,14 @@ import type {
   ClaimGuestDataResult,
   Commitment,
   ConnectCanvasInput,
+  ConnectSchoologyInput,
   CreateCommitmentInput,
   CreateExtensionTokenInput,
   DeleteAssignmentParams,
   DeleteCommitmentParams,
   DeleteScheduleParams,
   DisconnectCanvasParams,
+  DisconnectSchoologyParams,
   ExtensionTokenResult,
   ExtractCommitmentsInput,
   ExtractCommitmentsTextInput,
@@ -1972,6 +1974,223 @@ export const useImportClassroomAssignments = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getImportClassroomAssignmentsMutationOptions(options));
+    }
+
+export const getConnectSchoologyUrl = () => {
+
+
+
+
+  return `/api/integrations/schoology`
+}
+
+/**
+ * @summary Connect a Schoology account using a consumer key and secret
+ */
+export const connectSchoology = async (connectSchoologyInput: ConnectSchoologyInput, options?: RequestInit): Promise<IntegrationsStatus> => {
+
+  return customFetch<IntegrationsStatus>(getConnectSchoologyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(connectSchoologyInput)
+  }
+);}
+
+
+
+
+export const getConnectSchoologyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connectSchoology>>, TError,{data: BodyType<ConnectSchoologyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof connectSchoology>>, TError,{data: BodyType<ConnectSchoologyInput>}, TContext> => {
+
+const mutationKey = ['connectSchoology'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof connectSchoology>>, {data: BodyType<ConnectSchoologyInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  connectSchoology(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConnectSchoologyMutationResult = NonNullable<Awaited<ReturnType<typeof connectSchoology>>>
+    export type ConnectSchoologyMutationBody = BodyType<ConnectSchoologyInput>
+    export type ConnectSchoologyMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Connect a Schoology account using a consumer key and secret
+ */
+export const useConnectSchoology = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connectSchoology>>, TError,{data: BodyType<ConnectSchoologyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof connectSchoology>>,
+        TError,
+        {data: BodyType<ConnectSchoologyInput>},
+        TContext
+      > => {
+      return useMutation(getConnectSchoologyMutationOptions(options));
+    }
+
+export const getDisconnectSchoologyUrl = (params: DisconnectSchoologyParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/integrations/schoology?${stringifiedParams}` : `/api/integrations/schoology`
+}
+
+/**
+ * @summary Disconnect the Schoology account
+ */
+export const disconnectSchoology = async (params: DisconnectSchoologyParams, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDisconnectSchoologyUrl(params),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDisconnectSchoologyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectSchoology>>, TError,{params: DisconnectSchoologyParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof disconnectSchoology>>, TError,{params: DisconnectSchoologyParams}, TContext> => {
+
+const mutationKey = ['disconnectSchoology'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disconnectSchoology>>, {params: DisconnectSchoologyParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  disconnectSchoology(params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DisconnectSchoologyMutationResult = NonNullable<Awaited<ReturnType<typeof disconnectSchoology>>>
+
+    export type DisconnectSchoologyMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Disconnect the Schoology account
+ */
+export const useDisconnectSchoology = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectSchoology>>, TError,{params: DisconnectSchoologyParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof disconnectSchoology>>,
+        TError,
+        {params: DisconnectSchoologyParams},
+        TContext
+      > => {
+      return useMutation(getDisconnectSchoologyMutationOptions(options));
+    }
+
+export const getImportSchoologyAssignmentsUrl = () => {
+
+
+
+
+  return `/api/integrations/schoology/import`
+}
+
+/**
+ * @summary Import upcoming assignments from Schoology
+ */
+export const importSchoologyAssignments = async (importAssignmentsInput: ImportAssignmentsInput, options?: RequestInit): Promise<ImportAssignmentsResult> => {
+
+  return customFetch<ImportAssignmentsResult>(getImportSchoologyAssignmentsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(importAssignmentsInput)
+  }
+);}
+
+
+
+
+export const getImportSchoologyAssignmentsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importSchoologyAssignments>>, TError,{data: BodyType<ImportAssignmentsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importSchoologyAssignments>>, TError,{data: BodyType<ImportAssignmentsInput>}, TContext> => {
+
+const mutationKey = ['importSchoologyAssignments'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importSchoologyAssignments>>, {data: BodyType<ImportAssignmentsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importSchoologyAssignments(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportSchoologyAssignmentsMutationResult = NonNullable<Awaited<ReturnType<typeof importSchoologyAssignments>>>
+    export type ImportSchoologyAssignmentsMutationBody = BodyType<ImportAssignmentsInput>
+    export type ImportSchoologyAssignmentsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Import upcoming assignments from Schoology
+ */
+export const useImportSchoologyAssignments = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importSchoologyAssignments>>, TError,{data: BodyType<ImportAssignmentsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importSchoologyAssignments>>,
+        TError,
+        {data: BodyType<ImportAssignmentsInput>},
+        TContext
+      > => {
+      return useMutation(getImportSchoologyAssignmentsMutationOptions(options));
     }
 
 export const getListAssignmentsUrl = (params: ListAssignmentsParams,) => {

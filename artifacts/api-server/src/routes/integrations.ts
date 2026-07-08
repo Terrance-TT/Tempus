@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import { createHmac, randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import {
@@ -8,6 +9,7 @@ import {
   assignments,
   canvasConnections,
   googleCalendarConnections,
+  schoologyConnections,
 } from "@workspace/db";
 import { resolveOwnerId } from "../lib/auth";
 import {
@@ -20,6 +22,9 @@ import {
   DisconnectCanvasQueryParams,
   ImportCanvasAssignmentsBody,
   ImportClassroomAssignmentsBody,
+  ConnectSchoologyBody,
+  DisconnectSchoologyQueryParams,
+  ImportSchoologyAssignmentsBody,
   ListAssignmentsQueryParams,
   DeleteAssignmentParams,
   DeleteAssignmentQueryParams,
@@ -49,10 +54,16 @@ async function buildStatus(req: Parameters<typeof getAuth>[0], ownerId: string) 
     classroomConnected = Boolean(google);
   }
 
+  const [schoology] = await db
+    .select()
+    .from(schoologyConnections)
+    .where(eq(schoologyConnections.ownerId, ownerId));
+
   return {
     canvasConnected: Boolean(canvas),
     canvasBaseUrl: canvas?.baseUrl ?? null,
     classroomConnected,
+    schoologyConnected: Boolean(schoology),
   };
 }
 
@@ -133,9 +144,83 @@ async function canvasFetch(
   return { ok: response.ok, status: response.status, data };
 }
 
+// --- OAuth 1.0a two-legged signing for Schoology ---
+
+const SCHOOLOGY_API_BASE = "https://api.schoology.com/v1";
+
+function buildOauth1Header(
+  method: string,
+  url: string,
+  consumerKey: string,
+  consumerSecret: string,
+): string {
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const nonce = randomUUID().replace(/-/g, "");
+
+  const oauthParams: Record<string, string> = {
+    oauth_consumer_key: consumerKey,
+    oauth_nonce: nonce,
+    oauth_signature_method: "HMAC-SHA1",
+    oauth_timestamp: timestamp,
+    oauth_version: "1.0",
+  };
+
+  // Parse query params from URL to include in signature
+  const urlObj = new URL(url);
+  const allParams: Record<string, string> = { ...oauthParams };
+  for (const [k, v] of urlObj.searchParams.entries()) {
+    allParams[k] = v;
+  }
+
+  const baseUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
+
+  const normalizedParams = Object.entries(allParams)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join("&");
+
+  const signatureBase = [
+    method.toUpperCase(),
+    encodeURIComponent(baseUrl),
+    encodeURIComponent(normalizedParams),
+  ].join("&");
+
+  // Two-legged: no token secret
+  const signingKey = `${encodeURIComponent(consumerSecret)}&`;
+
+  const signature = createHmac("sha1", signingKey)
+    .update(signatureBase)
+    .digest("base64");
+
+  const headerParts = Object.entries({ ...oauthParams, oauth_signature: signature })
+    .map(([k, v]) => `${k}="${encodeURIComponent(v)}"`)
+    .join(", ");
+
+  return `OAuth realm="Schoology API", ${headerParts}`;
+}
+
+async function schoologyFetch(
+  path: string,
+  consumerKey: string,
+  consumerSecret: string,
+): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const url = `${SCHOOLOGY_API_BASE}${path}`;
+  const authHeader = buildOauth1Header("GET", url, consumerKey, consumerSecret);
+  const response = await fetch(url, {
+    headers: {
+      Authorization: authHeader,
+      Accept: "application/json",
+    },
+  });
+  const data = await response.json().catch(() => null);
+  return { ok: response.ok, status: response.status, data };
+}
+
+// ---
+
 async function upsertAssignments(
   ownerId: string,
-  source: "canvas" | "classroom",
+  source: "canvas" | "classroom" | "schoology",
   items: Array<{
     externalId: string;
     courseName: string | null;
@@ -479,6 +564,154 @@ router.post("/integrations/classroom/import", async (req, res) => {
   const { importedCount } = await upsertAssignments(userId, "classroom", items);
   res.json({ importedCount, assignments: await listOwnerAssignments(userId) });
 });
+
+// --- Schoology ---
+
+router.post("/integrations/schoology", async (req, res) => {
+  const body = ConnectSchoologyBody.parse(req.body);
+  const ownerId = resolveOwnerId(req, body.deviceId);
+
+  const consumerKey = body.consumerKey.trim();
+  const consumerSecret = body.consumerSecret.trim();
+  if (!consumerKey || !consumerSecret) {
+    res.status(400).json({ message: "Consumer key and secret are required" });
+    return;
+  }
+
+  let check: { ok: boolean; status: number; data: unknown };
+  try {
+    check = await schoologyFetch("/users/me", consumerKey, consumerSecret);
+  } catch {
+    res.status(400).json({
+      message: "Could not reach Schoology. Check your internet connection and try again.",
+    });
+    return;
+  }
+  if (!check.ok) {
+    res.status(400).json({
+      message:
+        check.status === 401
+          ? "Schoology rejected those credentials. Double-check your consumer key and secret from Settings → API Access."
+          : `Schoology returned an error (HTTP ${check.status}). Double-check your consumer key and secret.`,
+    });
+    return;
+  }
+
+  await db
+    .insert(schoologyConnections)
+    .values({ ownerId, consumerKey, consumerSecret })
+    .onConflictDoUpdate({
+      target: schoologyConnections.ownerId,
+      set: { consumerKey, consumerSecret, updatedAt: new Date() },
+    });
+
+  res.json(await buildStatus(req, ownerId));
+});
+
+router.delete("/integrations/schoology", async (req, res) => {
+  const { deviceId } = DisconnectSchoologyQueryParams.parse(req.query);
+  const ownerId = resolveOwnerId(req, deviceId);
+  await db
+    .delete(schoologyConnections)
+    .where(eq(schoologyConnections.ownerId, ownerId));
+  res.status(204).end();
+});
+
+type SchoologySection = {
+  id: string;
+  course_title?: string;
+  section_title?: string;
+};
+
+type SchoologyAssignment = {
+  id: string;
+  title: string;
+  due?: string;
+  web_url?: string;
+  description?: string;
+};
+
+function schoologyDueToIso(due: string | undefined): string | null {
+  if (!due || due.trim() === "" || due === "0000-00-00 00:00:00") return null;
+  // Schoology format: "YYYY-MM-DD HH:MM:SS" in UTC
+  const iso = due.trim().replace(" ", "T") + "Z";
+  const ts = Date.parse(iso);
+  if (Number.isNaN(ts)) return null;
+  return new Date(ts).toISOString();
+}
+
+router.post("/integrations/schoology/import", async (req, res) => {
+  const body = ImportSchoologyAssignmentsBody.parse(req.body);
+  const ownerId = resolveOwnerId(req, body.deviceId);
+
+  const [connection] = await db
+    .select()
+    .from(schoologyConnections)
+    .where(eq(schoologyConnections.ownerId, ownerId));
+  if (!connection) {
+    res.status(409).json({ message: "Schoology is not connected" });
+    return;
+  }
+
+  const sectionsResult = await schoologyFetch(
+    "/sections?start=0&limit=200",
+    connection.consumerKey,
+    connection.consumerSecret,
+  );
+  if (!sectionsResult.ok) {
+    res.status(502).json({
+      message:
+        sectionsResult.status === 401
+          ? "Schoology rejected the saved credentials. Reconnect Schoology with a new key and secret."
+          : `Schoology returned an error while listing sections (HTTP ${sectionsResult.status}).`,
+    });
+    return;
+  }
+
+  const sectionsData = sectionsResult.data as { section?: SchoologySection[] };
+  const sections = sectionsData.section ?? [];
+  const now = Date.now();
+  const items: Array<{
+    externalId: string;
+    courseName: string | null;
+    title: string;
+    dueDate: string;
+    url: string | null;
+    description: string | null;
+  }> = [];
+
+  for (const section of sections) {
+    const assignmentsResult = await schoologyFetch(
+      `/sections/${section.id}/assignments?start=0&limit=200`,
+      connection.consumerKey,
+      connection.consumerSecret,
+    );
+    if (!assignmentsResult.ok) continue;
+    const assignmentsData = assignmentsResult.data as { assignment?: SchoologyAssignment[] };
+    for (const a of assignmentsData.assignment ?? []) {
+      if (!a?.id || !a.title) continue;
+      const dueIso = schoologyDueToIso(a.due);
+      if (!dueIso) continue;
+      if (Date.parse(dueIso) < now) continue;
+      const courseName = [section.course_title, section.section_title]
+        .filter(Boolean)
+        .join(" – ") || null;
+      items.push({
+        externalId: a.id,
+        courseName,
+        title: a.title,
+        dueDate: dueIso,
+        url: a.web_url ?? null,
+        description: stripHtml(a.description),
+      });
+    }
+  }
+
+  const { importedCount } = await upsertAssignments(ownerId, "schoology", items);
+  res.json({ importedCount, assignments: await listOwnerAssignments(ownerId) });
+});
+
+// ---
 
 router.get("/assignments", async (req, res) => {
   const { deviceId } = ListAssignmentsQueryParams.parse(req.query);

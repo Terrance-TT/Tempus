@@ -449,7 +449,8 @@ export const GetIntegrationsStatusQueryParams = zod.object({
 export const GetIntegrationsStatusResponse = zod.object({
   "canvasConnected": zod.boolean(),
   "canvasBaseUrl": zod.string().nullish(),
-  "classroomConnected": zod.boolean().describe('Whether the signed-in user\'s Google account is connected (Classroom access is granted through the same connection).')
+  "classroomConnected": zod.boolean().describe('Whether the signed-in user\'s Google account is connected (Classroom access is granted through the same connection).'),
+  "schoologyConnected": zod.boolean()
 })
 
 
@@ -465,7 +466,8 @@ export const ConnectCanvasBody = zod.object({
 export const ConnectCanvasResponse = zod.object({
   "canvasConnected": zod.boolean(),
   "canvasBaseUrl": zod.string().nullish(),
-  "classroomConnected": zod.boolean().describe('Whether the signed-in user\'s Google account is connected (Classroom access is granted through the same connection).')
+  "classroomConnected": zod.boolean().describe('Whether the signed-in user\'s Google account is connected (Classroom access is granted through the same connection).'),
+  "schoologyConnected": zod.boolean()
 })
 
 
@@ -491,7 +493,7 @@ export const ImportCanvasAssignmentsResponse = zod.object({
   "assignments": zod.array(zod.object({
   "id": zod.string(),
   "deviceId": zod.string(),
-  "source": zod.enum(['canvas', 'classroom']),
+  "source": zod.enum(['canvas', 'classroom', 'schoology']),
   "externalId": zod.string(),
   "courseName": zod.string().nullish(),
   "title": zod.string(),
@@ -516,7 +518,58 @@ export const ImportClassroomAssignmentsResponse = zod.object({
   "assignments": zod.array(zod.object({
   "id": zod.string(),
   "deviceId": zod.string(),
-  "source": zod.enum(['canvas', 'classroom']),
+  "source": zod.enum(['canvas', 'classroom', 'schoology']),
+  "externalId": zod.string(),
+  "courseName": zod.string().nullish(),
+  "title": zod.string(),
+  "dueDate": zod.string().describe('ISO date or datetime when the assignment is due.'),
+  "url": zod.string().nullish().describe('Link to the assignment in the source system.'),
+  "description": zod.string().nullish().describe('Assignment description or instructions (plain text).'),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Connect a Schoology account using a consumer key and secret
+ */
+export const ConnectSchoologyBody = zod.object({
+  "deviceId": zod.string(),
+  "consumerKey": zod.string().describe('Schoology API consumer key from Settings → API Access.'),
+  "consumerSecret": zod.string().describe('Schoology API consumer secret from Settings → API Access.')
+})
+
+export const ConnectSchoologyResponse = zod.object({
+  "canvasConnected": zod.boolean(),
+  "canvasBaseUrl": zod.string().nullish(),
+  "classroomConnected": zod.boolean().describe('Whether the signed-in user\'s Google account is connected (Classroom access is granted through the same connection).'),
+  "schoologyConnected": zod.boolean()
+})
+
+
+/**
+ * @summary Disconnect the Schoology account
+ */
+export const DisconnectSchoologyQueryParams = zod.object({
+  "deviceId": zod.coerce.string()
+})
+
+export const DisconnectSchoologyResponse = zod.void()
+
+
+/**
+ * @summary Import upcoming assignments from Schoology
+ */
+export const ImportSchoologyAssignmentsBody = zod.object({
+  "deviceId": zod.string()
+})
+
+export const ImportSchoologyAssignmentsResponse = zod.object({
+  "importedCount": zod.number().describe('Number of new assignments imported (existing ones are updated, not duplicated).'),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "deviceId": zod.string(),
+  "source": zod.enum(['canvas', 'classroom', 'schoology']),
   "externalId": zod.string(),
   "courseName": zod.string().nullish(),
   "title": zod.string(),
@@ -538,7 +591,7 @@ export const ListAssignmentsQueryParams = zod.object({
 export const ListAssignmentsResponseItem = zod.object({
   "id": zod.string(),
   "deviceId": zod.string(),
-  "source": zod.enum(['canvas', 'classroom']),
+  "source": zod.enum(['canvas', 'classroom', 'schoology']),
   "externalId": zod.string(),
   "courseName": zod.string().nullish(),
   "title": zod.string(),

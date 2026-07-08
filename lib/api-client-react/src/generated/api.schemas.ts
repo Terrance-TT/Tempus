@@ -256,6 +256,7 @@ export type AssignmentSource = typeof AssignmentSource[keyof typeof AssignmentSo
 export const AssignmentSource = {
   canvas: 'canvas',
   classroom: 'classroom',
+  schoology: 'schoology',
 } as const;
 
 export interface Assignment {
@@ -279,6 +280,7 @@ export interface IntegrationsStatus {
   canvasBaseUrl?: string | null;
   /** Whether the signed-in user's Google account is connected (Classroom access is granted through the same connection). */
   classroomConnected: boolean;
+  schoologyConnected: boolean;
 }
 
 export interface ConnectCanvasInput {
@@ -287,6 +289,14 @@ export interface ConnectCanvasInput {
   baseUrl: string;
   /** Canvas personal access token generated in Account → Settings → New Access Token. */
   accessToken: string;
+}
+
+export interface ConnectSchoologyInput {
+  deviceId: string;
+  /** Schoology API consumer key from Settings → API Access. */
+  consumerKey: string;
+  /** Schoology API consumer secret from Settings → API Access. */
+  consumerSecret: string;
 }
 
 export interface ImportAssignmentsInput {
@@ -348,6 +358,10 @@ deviceId: string;
 };
 
 export type DisconnectCanvasParams = {
+deviceId: string;
+};
+
+export type DisconnectSchoologyParams = {
 deviceId: string;
 };
 

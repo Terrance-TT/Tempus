@@ -9,6 +9,9 @@ import {
   useDisconnectCanvas,
   useImportCanvasAssignments,
   useImportClassroomAssignments,
+  useConnectSchoology,
+  useDisconnectSchoology,
+  useImportSchoologyAssignments,
   useListAssignments,
   getListAssignmentsQueryKey,
   useDeleteAssignment,
@@ -48,7 +51,7 @@ import {
 
 import { isFunEvent } from "@/lib/sps-events";
 
-type Panel = "canvas" | "sps" | "classroom" | null;
+type Panel = "canvas" | "sps" | "classroom" | "schoology" | null;
 
 function formatDue(dueDate: string): string {
   const parsed = new Date(dueDate);
@@ -130,10 +133,16 @@ export default function Integrations() {
     { query: { enabled: !!deviceId, queryKey: getListAssignmentsQueryKey({ deviceId: deviceId || "" }) } },
   );
 
+  const [schoologyKey, setSchoologyKey] = useState("");
+  const [schoologySecret, setSchoologySecret] = useState("");
+
   const connectCanvas = useConnectCanvas();
   const disconnectCanvas = useDisconnectCanvas();
   const importCanvas = useImportCanvasAssignments();
   const importClassroom = useImportClassroomAssignments();
+  const connectSchoology = useConnectSchoology();
+  const disconnectSchoology = useDisconnectSchoology();
+  const importSchoology = useImportSchoologyAssignments();
   const deleteAssignment = useDeleteAssignment();
 
   const invalidate = () => {
@@ -233,6 +242,60 @@ export default function Integrations() {
           invalidate();
           toast({
             title: "Canvas imported",
+            description:
+              result.importedCount > 0
+                ? `${result.importedCount} new assignment(s) added.`
+                : "You're up to date — no new assignments.",
+          });
+        },
+        onError: (err: any) => {
+          toast({ title: "Import failed", description: err?.data?.message, variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  const handleConnectSchoology = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deviceId) return;
+    connectSchoology.mutate(
+      { data: { deviceId, consumerKey: schoologyKey, consumerSecret: schoologySecret } },
+      {
+        onSuccess: () => {
+          setSchoologyKey("");
+          setSchoologySecret("");
+          invalidate();
+          toast({ title: "Schoology connected", description: "You can now import your assignments." });
+        },
+        onError: (err: any) => {
+          toast({ title: "Couldn't connect Schoology", description: err?.data?.message, variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  const handleDisconnectSchoology = () => {
+    if (!deviceId) return;
+    disconnectSchoology.mutate(
+      { params: { deviceId } },
+      {
+        onSuccess: () => {
+          invalidate();
+          toast({ title: "Schoology disconnected" });
+        },
+      },
+    );
+  };
+
+  const handleImportSchoology = () => {
+    if (!deviceId) return;
+    importSchoology.mutate(
+      { data: { deviceId } },
+      {
+        onSuccess: (result) => {
+          invalidate();
+          toast({
+            title: "Schoology imported",
             description:
               result.importedCount > 0
                 ? `${result.importedCount} new assignment(s) added.`
@@ -355,7 +418,7 @@ export default function Integrations() {
                           {a.courseName && <span>{a.courseName}</span>}
                           <span>Due {formatDue(a.dueDate)}</span>
                           <Badge variant="outline" className="text-[10px] uppercase">
-                            {a.source === "canvas" ? "Canvas" : "Classroom"}
+                            {a.source === "canvas" ? "Canvas" : a.source === "schoology" ? "Schoology" : "Classroom"}
                           </Badge>
                         </p>
                       </div>
@@ -726,6 +789,98 @@ export default function Integrations() {
                         {status?.classroomConnected ? "Import coursework" : "Connect & import"}
                       </Button>
                     </>
+                  )}
+                </div>
+              )}
+            </Card>
+
+            {/* ── Schoology ── */}
+            <Card className="border shadow-sm overflow-hidden">
+              <button
+                type="button"
+                className="w-full text-left hover:bg-muted/40 transition-colors"
+                onClick={() => togglePanel("schoology")}
+                aria-expanded={openPanel === "schoology"}
+              >
+                <div className="flex items-center gap-4 px-5 py-4">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold">Schoology</span>
+                      {status?.schoologyConnected && (
+                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                          <CheckCircle2 className="w-3 h-3" /> Connected
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Import upcoming assignments from your Schoology courses
+                    </p>
+                  </div>
+                  {openPanel === "schoology"
+                    ? <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
+                    : <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />}
+                </div>
+              </button>
+
+              {openPanel === "schoology" && (
+                <div className="px-5 pb-5 border-t pt-5 space-y-4">
+                  {isLoadingStatus ? (
+                    <Skeleton className="h-24 w-full" />
+                  ) : status?.schoologyConnected ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Pulls upcoming assignments from all your enrolled Schoology sections.
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        <Button onClick={handleImportSchoology} disabled={importSchoology.isPending}>
+                          {importSchoology.isPending
+                            ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            : <RefreshCw className="w-4 h-4 mr-2" />}
+                          Import assignments
+                        </Button>
+                        <Button variant="outline" onClick={handleDisconnectSchoology} disabled={disconnectSchoology.isPending}>
+                          Disconnect
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <form onSubmit={handleConnectSchoology} className="space-y-4">
+                      <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5">
+                        <p className="text-xs font-medium">How to get your API credentials:</p>
+                        <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                          <li>Sign in to your school's Schoology site</li>
+                          <li>Click your name (top-right) → <strong>Settings</strong></li>
+                          <li>Go to the <strong>API Access</strong> tab</li>
+                          <li>Your <strong>Consumer Key</strong> and <strong>Consumer Secret</strong> are listed there</li>
+                        </ol>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Consumer Key</Label>
+                        <Input
+                          placeholder="Paste your Schoology consumer key"
+                          value={schoologyKey}
+                          onChange={(e) => setSchoologyKey(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Consumer Secret</Label>
+                        <Input
+                          type="password"
+                          placeholder="Paste your Schoology consumer secret"
+                          value={schoologySecret}
+                          onChange={(e) => setSchoologySecret(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={connectSchoology.isPending}>
+                        {connectSchoology.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Connect Schoology
+                      </Button>
+                    </form>
                   )}
                 </div>
               )}

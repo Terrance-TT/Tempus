@@ -522,6 +522,55 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ImportAssignmentsResult"
+  /integrations/schoology:
+    post:
+      operationId: connectSchoology
+      tags: [integrations]
+      summary: Connect a Schoology account using a consumer key and secret
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectSchoologyInput"
+      responses:
+        "200":
+          description: Updated integration status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationsStatus"
+    delete:
+      operationId: disconnectSchoology
+      tags: [integrations]
+      summary: Disconnect the Schoology account
+      parameters:
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Disconnected
+  /integrations/schoology/import:
+    post:
+      operationId: importSchoologyAssignments
+      tags: [integrations]
+      summary: Import upcoming assignments from Schoology
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportAssignmentsInput"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportAssignmentsResult"
   /assignments:
     get:
       operationId: listAssignments
@@ -1048,7 +1097,7 @@ components:
         - status
     AssignmentSource:
       type: string
-      enum: [canvas, classroom]
+      enum: [canvas, classroom, schoology]
     Assignment:
       type: object
       properties:
@@ -1098,9 +1147,12 @@ components:
         classroomConnected:
           type: boolean
           description: Whether the signed-in user's Google account is connected (Classroom access is granted through the same connection).
+        schoologyConnected:
+          type: boolean
       required:
         - canvasConnected
         - classroomConnected
+        - schoologyConnected
     ConnectCanvasInput:
       type: object
       properties:
@@ -1116,6 +1168,21 @@ components:
         - deviceId
         - baseUrl
         - accessToken
+    ConnectSchoologyInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        consumerKey:
+          type: string
+          description: Schoology API consumer key from Settings → API Access.
+        consumerSecret:
+          type: string
+          description: Schoology API consumer secret from Settings → API Access.
+      required:
+        - deviceId
+        - consumerKey
+        - consumerSecret
     ImportAssignmentsInput:
       type: object
       properties:

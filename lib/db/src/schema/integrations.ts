@@ -1,5 +1,14 @@
 import { pgTable, text, timestamp, uuid, unique } from "drizzle-orm/pg-core";
 
+export const schoologyConnections = pgTable("schoology_connections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ownerId: text("owner_id").notNull().unique(),
+  consumerKey: text("consumer_key").notNull(),
+  consumerSecret: text("consumer_secret").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const canvasConnections = pgTable("canvas_connections", {
   id: uuid("id").primaryKey().defaultRandom(),
   ownerId: text("owner_id").notNull().unique(),

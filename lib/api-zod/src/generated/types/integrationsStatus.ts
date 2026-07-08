@@ -11,4 +11,5 @@ export interface IntegrationsStatus {
   canvasBaseUrl?: string | null;
   /** Whether the signed-in user's Google account is connected (Classroom access is granted through the same connection). */
   classroomConnected: boolean;
+  schoologyConnected: boolean;
 }

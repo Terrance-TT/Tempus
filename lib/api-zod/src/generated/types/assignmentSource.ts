@@ -12,4 +12,5 @@ export type AssignmentSource = typeof AssignmentSource[keyof typeof AssignmentSo
 export const AssignmentSource = {
   canvas: 'canvas',
   classroom: 'classroom',
+  schoology: 'schoology',
 } as const;
