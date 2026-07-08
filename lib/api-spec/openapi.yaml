@@ -561,6 +561,46 @@ paths:
       responses:
         "204":
           description: Deleted
+  /sps-engage/preview-ics:
+    post:
+      operationId: previewSpsEngageIcs
+      tags: [sps-engage]
+      summary: Fetch and preview upcoming events from an SPS Engage ICS feed URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpsPreviewIcsInput"
+      responses:
+        "200":
+          description: Upcoming events from the ICS feed (next 14 days)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SpsEvent"
+  /sps-engage/import-events:
+    post:
+      operationId: importSpsEngageEvents
+      tags: [sps-engage]
+      summary: Import selected SPS Engage events as extracurricular commitments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpsImportEventsInput"
+      responses:
+        "201":
+          description: Created commitments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Commitment"
 components:
   schemas:
     HealthStatus:
@@ -1096,3 +1136,48 @@ components:
       required:
         - importedCount
         - assignments
+    SpsPreviewIcsInput:
+      type: object
+      properties:
+        icsUrl:
+          type: string
+          description: ICS feed URL from SPS Engage (spscolumbia.campusgroups.com).
+        deviceId:
+          type: string
+      required:
+        - icsUrl
+    SpsEvent:
+      type: object
+      properties:
+        uid:
+          type: string
+        title:
+          type: string
+        startIso:
+          type: string
+          format: date-time
+        endIso:
+          type: string
+          format: date-time
+        location:
+          type: string
+          nullable: true
+        url:
+          type: string
+          nullable: true
+      required:
+        - uid
+        - title
+        - startIso
+        - endIso
+    SpsImportEventsInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpsEvent"
+      required:
+        - events

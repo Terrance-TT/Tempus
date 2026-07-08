@@ -564,3 +564,51 @@ export const DeleteAssignmentQueryParams = zod.object({
 export const DeleteAssignmentResponse = zod.void()
 
 
+/**
+ * @summary Fetch and preview upcoming events from an SPS Engage ICS feed URL
+ */
+export const PreviewSpsEngageIcsBody = zod.object({
+  "icsUrl": zod.string().describe('ICS feed URL from SPS Engage (spscolumbia.campusgroups.com).'),
+  "deviceId": zod.string().optional()
+})
+
+export const PreviewSpsEngageIcsResponseItem = zod.object({
+  "uid": zod.string(),
+  "title": zod.string(),
+  "startIso": zod.coerce.date(),
+  "endIso": zod.coerce.date(),
+  "location": zod.string().nullish(),
+  "url": zod.string().nullish()
+})
+export const PreviewSpsEngageIcsResponse = zod.array(PreviewSpsEngageIcsResponseItem)
+
+
+/**
+ * @summary Import selected SPS Engage events as extracurricular commitments
+ */
+export const ImportSpsEngageEventsBody = zod.object({
+  "deviceId": zod.string().optional(),
+  "events": zod.array(zod.object({
+  "uid": zod.string(),
+  "title": zod.string(),
+  "startIso": zod.coerce.date(),
+  "endIso": zod.coerce.date(),
+  "location": zod.string().nullish(),
+  "url": zod.string().nullish()
+}))
+})
+
+export const ImportSpsEngageEventsResponseItem = zod.object({
+  "id": zod.string(),
+  "deviceId": zod.string(),
+  "title": zod.string(),
+  "type": zod.enum(['class', 'extracurricular', 'routine']),
+  "daysOfWeek": zod.array(zod.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])),
+  "startTime": zod.string().describe('24h time, \"HH:mm\"'),
+  "endTime": zod.string().describe('24h time, \"HH:mm\"'),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ImportSpsEngageEventsResponse = zod.array(ImportSpsEngageEventsResponseItem)
+
+

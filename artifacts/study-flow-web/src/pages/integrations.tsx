@@ -13,6 +13,9 @@ import {
   getListAssignmentsQueryKey,
   useDeleteAssignment,
   useCreateExtensionToken,
+  usePreviewSpsEngageIcs,
+  useImportSpsEngageEvents,
+  type SpsEvent,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -39,6 +42,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Calendar,
 } from "lucide-react";
 
 function formatDue(dueDate: string): string {
@@ -68,6 +72,12 @@ export default function Integrations() {
   const [codeCopied, setCodeCopied] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const createExtensionToken = useCreateExtensionToken();
+
+  const [spsIcsUrl, setSpsIcsUrl] = useState("");
+  const [spsEvents, setSpsEvents] = useState<SpsEvent[] | null>(null);
+  const [spsSelected, setSpsSelected] = useState<Set<string>>(new Set());
+  const previewSpsIcs = usePreviewSpsEngageIcs();
+  const importSpsEvents = useImportSpsEngageEvents();
 
   const handleGenerateCode = () => {
     if (!deviceId) return;
@@ -235,6 +245,51 @@ export default function Integrations() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListAssignmentsQueryKey({ deviceId: deviceId || "" }) });
+        },
+      },
+    );
+  };
+
+  const handleSpsPreview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!spsIcsUrl) return;
+    setSpsEvents(null);
+    setSpsSelected(new Set());
+    previewSpsIcs.mutate(
+      { data: { icsUrl: spsIcsUrl, deviceId: deviceId || undefined } },
+      {
+        onSuccess: (events) => {
+          setSpsEvents(events);
+          setSpsSelected(new Set(events.map((ev) => ev.uid)));
+        },
+        onError: (err: any) => {
+          toast({
+            title: "Couldn't load events",
+            description: err?.data?.message ?? "Check your ICS URL and try again.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  const handleSpsImport = () => {
+    if (!spsEvents || spsSelected.size === 0) return;
+    const toImport = spsEvents.filter((ev) => spsSelected.has(ev.uid));
+    importSpsEvents.mutate(
+      { data: { deviceId: deviceId || undefined, events: toImport } },
+      {
+        onSuccess: (result) => {
+          toast({
+            title: "Events added",
+            description: `${result.length} SPS Engage event${result.length === 1 ? "" : "s"} added as fixed blocks in your schedule.`,
+          });
+          setSpsEvents(null);
+          setSpsIcsUrl("");
+          setSpsSelected(new Set());
+        },
+        onError: () => {
+          toast({ title: "Import failed. Please try again.", variant: "destructive" });
         },
       },
     );
@@ -466,6 +521,123 @@ export default function Integrations() {
             </CardContent>
           </Card>
         </div>
+
+        {/* SPS Engage */}
+        <Card className="border shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Calendar className="w-5 h-5 text-primary" />
+              SPS Engage
+              <Badge variant="outline" className="ml-auto text-xs">Columbia students</Badge>
+            </CardTitle>
+            <CardDescription>
+              Add events from your SPS Engage calendar so they appear as fixed blocks when generating your schedule.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5">
+              <p className="text-xs font-medium text-foreground">How to get your ICS feed URL:</p>
+              <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>Sign in at <a href="https://spscolumbia.campusgroups.com" target="_blank" rel="noopener noreferrer" className="font-mono bg-background px-1 rounded underline-offset-2 hover:underline">spscolumbia.campusgroups.com</a></li>
+                <li>Click <strong>Calendar</strong> in the top nav</li>
+                <li>Click <strong>Subscribe to Calendars</strong> → switch to the <strong>ICS Feeds</strong> tab</li>
+                <li>Copy your <strong>personal feed URL</strong> (includes starred events from all your groups)</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleSpsPreview} className="space-y-3">
+              <div className="space-y-2">
+                <Label>Your ICS feed URL</Label>
+                <Input
+                  type="password"
+                  placeholder="https://spscolumbia.campusgroups.com/ics?user_id=…&token=…"
+                  value={spsIcsUrl}
+                  onChange={(e) => { setSpsIcsUrl(e.target.value); setSpsEvents(null); }}
+                  autoComplete="off"
+                />
+                <p className="text-xs text-muted-foreground">The URL contains a private token — it's hidden above and never stored on our servers.</p>
+              </div>
+              <Button type="submit" variant="outline" disabled={!spsIcsUrl || previewSpsIcs.isPending}>
+                {previewSpsIcs.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                Preview upcoming events
+              </Button>
+            </form>
+
+            {spsEvents !== null && (
+              spsEvents.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No events found in the next 14 days.</p>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">{spsEvents.length} event{spsEvents.length !== 1 ? "s" : ""} found (next 14 days)</p>
+                    <button
+                      type="button"
+                      className="text-xs text-primary hover:underline"
+                      onClick={() =>
+                        setSpsSelected(
+                          spsSelected.size === spsEvents.length
+                            ? new Set()
+                            : new Set(spsEvents.map((ev) => ev.uid)),
+                        )
+                      }
+                    >
+                      {spsSelected.size === spsEvents.length ? "Deselect all" : "Select all"}
+                    </button>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto space-y-1 rounded-lg border p-2">
+                    {spsEvents.map((ev) => {
+                      const start = new Date(ev.startIso);
+                      const end = new Date(ev.endIso);
+                      const dateStr = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+                      const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+                      const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+                      const checked = spsSelected.has(ev.uid);
+                      return (
+                        <label
+                          key={ev.uid}
+                          className={`flex items-start gap-3 p-2 rounded-lg cursor-pointer transition-colors ${checked ? "bg-primary/8" : "hover:bg-muted/50"}`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="mt-0.5 accent-primary shrink-0"
+                            checked={checked}
+                            onChange={() => {
+                              const next = new Set(spsSelected);
+                              if (checked) next.delete(ev.uid); else next.add(ev.uid);
+                              setSpsSelected(next);
+                            }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium leading-snug">{ev.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {dateStr} · {startTime}–{endTime}
+                              {ev.location ? ` · ${ev.location}` : ""}
+                            </p>
+                          </div>
+                          {ev.url && (
+                            <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground shrink-0 mt-0.5">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    className="w-full sm:w-auto"
+                    disabled={spsSelected.size === 0 || importSpsEvents.isPending}
+                    onClick={handleSpsImport}
+                  >
+                    {importSpsEvents.isPending
+                      ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                    Add {spsSelected.size} event{spsSelected.size !== 1 ? "s" : ""} to schedule
+                  </Button>
+                </div>
+              )
+            )}
+          </CardContent>
+        </Card>
 
         {/* Focus Guard extension */}
         <Card className="border shadow-sm" data-testid="card-focus-guard">

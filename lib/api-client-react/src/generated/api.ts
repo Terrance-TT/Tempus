@@ -51,6 +51,9 @@ import type {
   Schedule,
   ScheduleCalendarSync,
   ScheduleSummary,
+  SpsEvent,
+  SpsImportEventsInput,
+  SpsPreviewIcsInput,
   SyncScheduleGoogleCalendarInput,
   SyncScheduleGoogleCalendarResult,
   UpdateCommitmentInput,
@@ -2132,5 +2135,145 @@ export const useDeleteAssignment = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteAssignmentMutationOptions(options));
+    }
+
+export const getPreviewSpsEngageIcsUrl = () => {
+
+
+
+
+  return `/api/sps-engage/preview-ics`
+}
+
+/**
+ * @summary Fetch and preview upcoming events from an SPS Engage ICS feed URL
+ */
+export const previewSpsEngageIcs = async (spsPreviewIcsInput: SpsPreviewIcsInput, options?: RequestInit): Promise<SpsEvent[]> => {
+
+  return customFetch<SpsEvent[]>(getPreviewSpsEngageIcsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(spsPreviewIcsInput)
+  }
+);}
+
+
+
+
+export const getPreviewSpsEngageIcsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewSpsEngageIcs>>, TError,{data: BodyType<SpsPreviewIcsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof previewSpsEngageIcs>>, TError,{data: BodyType<SpsPreviewIcsInput>}, TContext> => {
+
+const mutationKey = ['previewSpsEngageIcs'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof previewSpsEngageIcs>>, {data: BodyType<SpsPreviewIcsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  previewSpsEngageIcs(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PreviewSpsEngageIcsMutationResult = NonNullable<Awaited<ReturnType<typeof previewSpsEngageIcs>>>
+    export type PreviewSpsEngageIcsMutationBody = BodyType<SpsPreviewIcsInput>
+    export type PreviewSpsEngageIcsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Fetch and preview upcoming events from an SPS Engage ICS feed URL
+ */
+export const usePreviewSpsEngageIcs = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewSpsEngageIcs>>, TError,{data: BodyType<SpsPreviewIcsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof previewSpsEngageIcs>>,
+        TError,
+        {data: BodyType<SpsPreviewIcsInput>},
+        TContext
+      > => {
+      return useMutation(getPreviewSpsEngageIcsMutationOptions(options));
+    }
+
+export const getImportSpsEngageEventsUrl = () => {
+
+
+
+
+  return `/api/sps-engage/import-events`
+}
+
+/**
+ * @summary Import selected SPS Engage events as extracurricular commitments
+ */
+export const importSpsEngageEvents = async (spsImportEventsInput: SpsImportEventsInput, options?: RequestInit): Promise<Commitment[]> => {
+
+  return customFetch<Commitment[]>(getImportSpsEngageEventsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(spsImportEventsInput)
+  }
+);}
+
+
+
+
+export const getImportSpsEngageEventsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importSpsEngageEvents>>, TError,{data: BodyType<SpsImportEventsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importSpsEngageEvents>>, TError,{data: BodyType<SpsImportEventsInput>}, TContext> => {
+
+const mutationKey = ['importSpsEngageEvents'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importSpsEngageEvents>>, {data: BodyType<SpsImportEventsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importSpsEngageEvents(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportSpsEngageEventsMutationResult = NonNullable<Awaited<ReturnType<typeof importSpsEngageEvents>>>
+    export type ImportSpsEngageEventsMutationBody = BodyType<SpsImportEventsInput>
+    export type ImportSpsEngageEventsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Import selected SPS Engage events as extracurricular commitments
+ */
+export const useImportSpsEngageEvents = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importSpsEngageEvents>>, TError,{data: BodyType<SpsImportEventsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importSpsEngageEvents>>,
+        TError,
+        {data: BodyType<SpsImportEventsInput>},
+        TContext
+      > => {
+      return useMutation(getImportSpsEngageEventsMutationOptions(options));
     }
 

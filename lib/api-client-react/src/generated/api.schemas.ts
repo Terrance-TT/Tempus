@@ -299,6 +299,26 @@ export interface ImportAssignmentsResult {
   assignments: Assignment[];
 }
 
+export interface SpsPreviewIcsInput {
+  /** ICS feed URL from SPS Engage (spscolumbia.campusgroups.com). */
+  icsUrl: string;
+  deviceId?: string;
+}
+
+export interface SpsEvent {
+  uid: string;
+  title: string;
+  startIso: string;
+  endIso: string;
+  location?: string | null;
+  url?: string | null;
+}
+
+export interface SpsImportEventsInput {
+  deviceId?: string;
+  events: SpsEvent[];
+}
+
 export type ListCommitmentsParams = {
 deviceId: string;
 };
