@@ -269,9 +269,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/history">
               <AuthedRoute component={History} />
             </Route>
-            <Route path="/integrations">
-              <AuthedRoute component={Integrations} />
-            </Route>
+            <Route path="/integrations" component={Integrations} />
             <Route path="/pricing" component={Pricing} />
             <Route path="/checkout/success" component={CheckoutSuccess} />
             <Route component={NotFound} />
