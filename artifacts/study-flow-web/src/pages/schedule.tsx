@@ -16,7 +16,9 @@ import {
   ScheduleBlock,
   ScheduleBlockInput,
   ScheduleBlockCategory,
-  DayOfWeek
+  DayOfWeek,
+  usePreviewSpsEngageIcs,
+  type SpsEvent,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -27,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Plus, Pencil, Loader2, Send, CalendarCheck2, List, LayoutGrid } from "lucide-react";
+import { Trash2, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Plus, Pencil, Loader2, Send, CalendarCheck2, List, LayoutGrid, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 
 const DAYS_ORDER: DayOfWeek[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
@@ -121,6 +123,21 @@ export default function Schedule() {
     window.history.replaceState({}, "", window.location.pathname);
     const t = setTimeout(() => setIsRevealing(false), 3000);
     return () => clearTimeout(t);
+  }, []);
+
+  const previewSpsIcs = usePreviewSpsEngageIcs();
+  const [spsEvents, setSpsEvents] = useState<SpsEvent[] | null>(null);
+  useEffect(() => {
+    const icsUrl = localStorage.getItem("spsIcsUrl");
+    if (!icsUrl) return;
+    previewSpsIcs.mutate(
+      { data: { icsUrl } },
+      {
+        onSuccess: (events) => setSpsEvents(events.slice(0, 6)),
+        onError: () => {},
+      },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSyncGoogleCalendar = () => {
@@ -393,6 +410,39 @@ export default function Schedule() {
             </AlertDialog>
           </div>
         </div>
+
+        {/* SPS Engage upcoming events */}
+        {spsEvents && spsEvents.length > 0 && (
+          <div className="rounded-2xl border bg-card shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
+            <div className="flex items-center gap-2.5 px-4 py-3 border-b bg-muted/30">
+              <CalendarIcon className="w-4 h-4 text-primary" />
+              <span className="font-semibold text-sm">SPS Engage — Upcoming Events</span>
+            </div>
+            <div className="divide-y">
+              {spsEvents.map((ev) => {
+                const start = new Date(ev.startIso);
+                const end = new Date(ev.endIso);
+                const dateStr = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+                const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+                const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+                return (
+                  <div key={ev.uid} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors">
+                    <p className="text-xs text-muted-foreground w-40 shrink-0 tabular-nums">{dateStr} · {startTime}–{endTime}</p>
+                    <p className="text-sm font-medium truncate flex-1">{ev.title}</p>
+                    {ev.location && (
+                      <p className="text-xs text-muted-foreground hidden sm:block shrink-0 max-w-32 truncate">{ev.location}</p>
+                    )}
+                    {ev.url && (
+                      <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground shrink-0">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <header className="space-y-3 pb-6 border-b">
           <div className="flex items-center justify-between gap-3 flex-wrap">

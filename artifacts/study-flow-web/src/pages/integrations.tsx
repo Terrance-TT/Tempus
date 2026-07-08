@@ -261,6 +261,7 @@ export default function Integrations() {
         onSuccess: (events) => {
           setSpsEvents(events);
           setSpsSelected(new Set(events.map((ev) => ev.uid)));
+          localStorage.setItem("spsIcsUrl", spsIcsUrl);
         },
         onError: (err: any) => {
           toast({
