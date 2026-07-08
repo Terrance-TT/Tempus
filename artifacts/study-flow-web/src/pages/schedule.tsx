@@ -20,6 +20,7 @@ import {
   usePreviewSpsEngageIcs,
   type SpsEvent,
 } from "@workspace/api-client-react";
+import { isFunEvent } from "@/lib/sps-events";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,7 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Plus, Pencil, Loader2, Send, CalendarCheck2, List, LayoutGrid, ExternalLink } from "lucide-react";
+import { Trash2, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Plus, Pencil, Loader2, Send, CalendarCheck2, List, LayoutGrid, ExternalLink, PartyPopper } from "lucide-react";
 import { format } from "date-fns";
 
 const DAYS_ORDER: DayOfWeek[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
@@ -127,13 +128,17 @@ export default function Schedule() {
 
   const previewSpsIcs = usePreviewSpsEngageIcs();
   const [spsEvents, setSpsEvents] = useState<SpsEvent[] | null>(null);
+  const [spsFunOnly, setSpsFunOnly] = useState(false);
+  const spsDisplayed = spsFunOnly && spsEvents
+    ? spsEvents.filter((ev) => isFunEvent(ev.title))
+    : spsEvents ?? [];
   useEffect(() => {
     const icsUrl = localStorage.getItem("spsIcsUrl");
     if (!icsUrl) return;
     previewSpsIcs.mutate(
       { data: { icsUrl } },
       {
-        onSuccess: (events) => setSpsEvents(events.slice(0, 6)),
+        onSuccess: (events) => setSpsEvents(events.slice(0, 10)),
         onError: () => {},
       },
     );
@@ -416,31 +421,43 @@ export default function Schedule() {
           <div className="rounded-2xl border-2 border-blue-400 dark:border-blue-700 bg-blue-50/60 dark:bg-blue-950/25 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
             <div className="flex items-center gap-2.5 px-4 py-3 border-b border-blue-300 dark:border-blue-700 bg-blue-600 text-white">
               <CalendarIcon className="w-4 h-4" />
-              <span className="font-bold text-sm tracking-wide">SPS Engage — Upcoming Events</span>
+              <span className="font-bold text-sm tracking-wide flex-1">SPS Engage — Upcoming Events</span>
+              <button
+                type="button"
+                onClick={() => setSpsFunOnly((v) => !v)}
+                className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border transition-colors font-medium ${spsFunOnly ? "bg-white text-blue-700 border-white" : "border-white/50 text-white/80 hover:border-white hover:text-white"}`}
+              >
+                <PartyPopper className="w-3 h-3" />
+                {spsFunOnly ? "Fun only" : "All"}
+              </button>
             </div>
-            <div className="divide-y divide-blue-100 dark:divide-blue-900">
-              {spsEvents.map((ev) => {
-                const start = new Date(ev.startIso);
-                const end = new Date(ev.endIso);
-                const dateStr = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-                const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-                const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-                return (
-                  <div key={ev.uid} className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-100/60 dark:hover:bg-blue-900/30 transition-colors">
-                    <p className="text-xs text-blue-700 dark:text-blue-300 w-40 shrink-0 tabular-nums font-medium">{dateStr} · {startTime}–{endTime}</p>
-                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate flex-1">{ev.title}</p>
-                    {ev.location && (
-                      <p className="text-xs text-blue-600 dark:text-blue-400 hidden sm:block shrink-0 max-w-32 truncate">{ev.location}</p>
-                    )}
-                    {ev.url && (
-                      <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 shrink-0">
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            {spsDisplayed.length === 0 ? (
+              <p className="px-4 py-3 text-sm text-blue-700 dark:text-blue-300">No fun events in the next 14 days — <button type="button" className="underline" onClick={() => setSpsFunOnly(false)}>show all</button>.</p>
+            ) : (
+              <div className="divide-y divide-blue-100 dark:divide-blue-900">
+                {spsDisplayed.map((ev) => {
+                  const start = new Date(ev.startIso);
+                  const end = new Date(ev.endIso);
+                  const dateStr = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+                  const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+                  const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+                  return (
+                    <div key={ev.uid} className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-100/60 dark:hover:bg-blue-900/30 transition-colors">
+                      <p className="text-xs text-blue-700 dark:text-blue-300 w-40 shrink-0 tabular-nums font-medium">{dateStr} · {startTime}–{endTime}</p>
+                      <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate flex-1">{ev.title}</p>
+                      {ev.location && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 hidden sm:block shrink-0 max-w-32 truncate">{ev.location}</p>
+                      )}
+                      {ev.url && (
+                        <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 shrink-0">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

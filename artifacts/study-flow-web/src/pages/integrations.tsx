@@ -43,7 +43,10 @@ import {
   ChevronDown,
   ChevronUp,
   Calendar,
+  PartyPopper,
 } from "lucide-react";
+
+import { isFunEvent } from "@/lib/sps-events";
 
 function formatDue(dueDate: string): string {
   const parsed = new Date(dueDate);
@@ -76,8 +79,13 @@ export default function Integrations() {
   const [spsIcsUrl, setSpsIcsUrl] = useState("");
   const [spsEvents, setSpsEvents] = useState<SpsEvent[] | null>(null);
   const [spsSelected, setSpsSelected] = useState<Set<string>>(new Set());
+  const [spsFunOnly, setSpsFunOnly] = useState(false);
   const previewSpsIcs = usePreviewSpsEngageIcs();
   const importSpsEvents = useImportSpsEngageEvents();
+
+  const spsDisplayed = spsFunOnly && spsEvents
+    ? spsEvents.filter((ev) => isFunEvent(ev.title))
+    : spsEvents ?? [];
 
   const handleGenerateCode = () => {
     if (!deviceId) return;
@@ -443,61 +451,91 @@ export default function Integrations() {
                 <p className="text-sm text-muted-foreground">No events found in the next 14 days.</p>
               ) : (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">{spsEvents.length} event{spsEvents.length !== 1 ? "s" : ""} found (next 14 days)</p>
-                    <button
-                      type="button"
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                      onClick={() =>
-                        setSpsSelected(
-                          spsSelected.size === spsEvents.length
-                            ? new Set()
-                            : new Set(spsEvents.map((ev) => ev.uid)),
-                        )
-                      }
-                    >
-                      {spsSelected.size === spsEvents.length ? "Deselect all" : "Select all"}
-                    </button>
+                  {/* Filter row */}
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <p className="text-sm font-medium">
+                      {spsFunOnly
+                        ? `${spsDisplayed.length} fun event${spsDisplayed.length !== 1 ? "s" : ""} (of ${spsEvents.length} total)`
+                        : `${spsEvents.length} event${spsEvents.length !== 1 ? "s" : ""} found (next 14 days)`}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors font-medium ${spsFunOnly ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/40"}`}
+                        onClick={() => {
+                          const next = !spsFunOnly;
+                          setSpsFunOnly(next);
+                          if (next) {
+                            setSpsSelected(new Set(spsEvents.filter((ev) => isFunEvent(ev.title)).map((ev) => ev.uid)));
+                          } else {
+                            setSpsSelected(new Set(spsEvents.map((ev) => ev.uid)));
+                          }
+                        }}
+                      >
+                        <PartyPopper className="w-3 h-3" />
+                        Fun events only
+                      </button>
+                      <button
+                        type="button"
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                        onClick={() =>
+                          setSpsSelected(
+                            spsSelected.size === spsDisplayed.length
+                              ? new Set()
+                              : new Set(spsDisplayed.map((ev) => ev.uid)),
+                          )
+                        }
+                      >
+                        {spsSelected.size === spsDisplayed.length ? "Deselect all" : "Select all"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="max-h-60 overflow-y-auto space-y-1 rounded-lg border border-blue-200 dark:border-blue-800 p-2 bg-white/60 dark:bg-blue-950/20">
-                    {spsEvents.map((ev) => {
-                      const start = new Date(ev.startIso);
-                      const end = new Date(ev.endIso);
-                      const dateStr = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-                      const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-                      const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-                      const checked = spsSelected.has(ev.uid);
-                      return (
-                        <label
-                          key={ev.uid}
-                          className={`flex items-start gap-3 p-2 rounded-lg cursor-pointer transition-colors ${checked ? "bg-blue-100 dark:bg-blue-900/50" : "hover:bg-blue-50 dark:hover:bg-blue-950/40"}`}
-                        >
-                          <input
-                            type="checkbox"
-                            className="mt-0.5 accent-blue-600 shrink-0"
-                            checked={checked}
-                            onChange={() => {
-                              const next = new Set(spsSelected);
-                              if (checked) next.delete(ev.uid); else next.add(ev.uid);
-                              setSpsSelected(next);
-                            }}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium leading-snug">{ev.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {dateStr} · {startTime}–{endTime}
-                              {ev.location ? ` · ${ev.location}` : ""}
-                            </p>
-                          </div>
-                          {ev.url && (
-                            <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 shrink-0 mt-0.5">
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                        </label>
-                      );
-                    })}
-                  </div>
+
+                  {spsDisplayed.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No fun events detected — try turning off the filter to see all events.
+                    </p>
+                  ) : (
+                    <div className="max-h-60 overflow-y-auto space-y-1 rounded-lg border border-blue-200 dark:border-blue-800 p-2 bg-white/60 dark:bg-blue-950/20">
+                      {spsDisplayed.map((ev) => {
+                        const start = new Date(ev.startIso);
+                        const end = new Date(ev.endIso);
+                        const dateStr = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+                        const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+                        const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+                        const checked = spsSelected.has(ev.uid);
+                        return (
+                          <label
+                            key={ev.uid}
+                            className={`flex items-start gap-3 p-2 rounded-lg cursor-pointer transition-colors ${checked ? "bg-blue-100 dark:bg-blue-900/50" : "hover:bg-blue-50 dark:hover:bg-blue-950/40"}`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-0.5 accent-blue-600 shrink-0"
+                              checked={checked}
+                              onChange={() => {
+                                const next = new Set(spsSelected);
+                                if (checked) next.delete(ev.uid); else next.add(ev.uid);
+                                setSpsSelected(next);
+                              }}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium leading-snug">{ev.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {dateStr} · {startTime}–{endTime}
+                                {ev.location ? ` · ${ev.location}` : ""}
+                              </p>
+                            </div>
+                            {ev.url && (
+                              <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 shrink-0 mt-0.5">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
                   <Button
                     className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
                     disabled={spsSelected.size === 0 || importSpsEvents.isPending}
