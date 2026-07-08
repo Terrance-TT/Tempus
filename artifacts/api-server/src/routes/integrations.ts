@@ -142,6 +142,7 @@ async function upsertAssignments(
     title: string;
     dueDate: string;
     url: string | null;
+    description: string | null;
   }>,
 ): Promise<{ importedCount: number }> {
   if (items.length === 0) return { importedCount: 0 };
@@ -173,6 +174,7 @@ async function upsertAssignments(
         title: item.title,
         dueDate: item.dueDate,
         url: item.url,
+        description: item.description,
       })
       .onConflictDoUpdate({
         target: [assignments.deviceId, assignments.source, assignments.externalId],
@@ -181,6 +183,7 @@ async function upsertAssignments(
           title: item.title,
           dueDate: item.dueDate,
           url: item.url,
+          description: item.description,
         },
       });
   }
@@ -268,7 +271,25 @@ type CanvasAssignment = {
   name: string;
   due_at: string | null;
   html_url?: string;
+  description?: string | null;
 };
+
+function stripHtml(html: string | null | undefined): string | null {
+  if (!html) return null;
+  const text = html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return text || null;
+}
 
 router.post("/integrations/canvas/import", async (req, res) => {
   const body = ImportCanvasAssignmentsBody.parse(req.body);
@@ -331,6 +352,7 @@ router.post("/integrations/canvas/import", async (req, res) => {
         title: a.name,
         dueDate: a.due_at,
         url: a.html_url ?? null,
+        description: stripHtml(a.description),
       });
     }
   }
@@ -343,6 +365,7 @@ type ClassroomCourse = { id: string; name?: string; courseState?: string };
 type ClassroomCourseWork = {
   id: string;
   title?: string;
+  description?: string;
   alternateLink?: string;
   dueDate?: { year: number; month: number; day: number };
   dueTime?: { hours?: number; minutes?: number };
@@ -446,6 +469,7 @@ router.post("/integrations/classroom/import", async (req, res) => {
         title: work.title,
         dueDate: dueIso,
         url: work.alternateLink ?? null,
+        description: work.description?.trim() || null,
       });
     }
   }

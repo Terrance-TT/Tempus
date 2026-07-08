@@ -1032,6 +1032,10 @@ components:
           type: string
           nullable: true
           description: Link to the assignment in the source system.
+        description:
+          type: string
+          nullable: true
+          description: Assignment description or instructions (plain text).
         createdAt:
           type: string
           format: date-time

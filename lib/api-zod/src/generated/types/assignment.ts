@@ -18,5 +18,7 @@ export interface Assignment {
   dueDate: string;
   /** Link to the assignment in the source system. */
   url?: string | null;
+  /** Assignment description or instructions (plain text). */
+  description?: string | null;
   createdAt: Date;
 }

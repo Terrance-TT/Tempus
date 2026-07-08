@@ -24,6 +24,7 @@ export const assignments = pgTable(
     title: text("title").notNull(),
     dueDate: text("due_date").notNull(), // ISO date or datetime string
     url: text("url"),
+    description: text("description"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

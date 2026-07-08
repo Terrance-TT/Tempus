@@ -497,6 +497,7 @@ export const ImportCanvasAssignmentsResponse = zod.object({
   "title": zod.string(),
   "dueDate": zod.string().describe('ISO date or datetime when the assignment is due.'),
   "url": zod.string().nullish().describe('Link to the assignment in the source system.'),
+  "description": zod.string().nullish().describe('Assignment description or instructions (plain text).'),
   "createdAt": zod.coerce.date()
 }))
 })
@@ -521,6 +522,7 @@ export const ImportClassroomAssignmentsResponse = zod.object({
   "title": zod.string(),
   "dueDate": zod.string().describe('ISO date or datetime when the assignment is due.'),
   "url": zod.string().nullish().describe('Link to the assignment in the source system.'),
+  "description": zod.string().nullish().describe('Assignment description or instructions (plain text).'),
   "createdAt": zod.coerce.date()
 }))
 })
@@ -542,6 +544,7 @@ export const ListAssignmentsResponseItem = zod.object({
   "title": zod.string(),
   "dueDate": zod.string().describe('ISO date or datetime when the assignment is due.'),
   "url": zod.string().nullish().describe('Link to the assignment in the source system.'),
+  "description": zod.string().nullish().describe('Assignment description or instructions (plain text).'),
   "createdAt": zod.coerce.date()
 })
 export const ListAssignmentsResponse = zod.array(ListAssignmentsResponseItem)

@@ -37,6 +37,8 @@ import {
   Download,
   Copy,
   Check,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 function formatDue(dueDate: string): string {
@@ -61,6 +63,7 @@ export default function Integrations() {
 
   const [connectionCode, setConnectionCode] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const createExtensionToken = useCreateExtensionToken();
 
   const handleGenerateCode = () => {
@@ -248,6 +251,92 @@ export default function Integrations() {
           </p>
         </header>
 
+        {/* Imported assignments — shown at top when assignments exist */}
+        {(isLoadingAssignments || assignments.length > 0) && (
+          <section className="space-y-3">
+            <h2 className="font-semibold text-xl flex items-center gap-2">
+              Imported Assignments
+              {assignments.length > 0 && <Badge variant="secondary">{assignments.length}</Badge>}
+            </h2>
+            {isLoadingAssignments ? (
+              <Skeleton className="h-20 w-full" />
+            ) : (
+              <div className="space-y-3">
+                <Card className="border-primary/30 bg-primary/5 shadow-sm" data-testid="card-generate-from-imports">
+                  <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-primary shrink-0">
+                        <Sparkles className="w-5 h-5" />
+                      </div>
+                      <p className="text-sm">
+                        Ready to plan? Turn these {assignments.length} assignment{assignments.length === 1 ? "" : "s"} into a balanced schedule.
+                      </p>
+                    </div>
+                    <Button onClick={() => setLocation("/create?fromImport=1")} data-testid="button-generate-from-imports">
+                      Generate schedule <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </CardContent>
+                </Card>
+                {assignments.map((a) => (
+                  <div key={a.id} className="bg-card border rounded-xl overflow-hidden">
+                    <div className="p-4 flex items-center justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{a.title}</p>
+                        <p className="text-sm text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2">
+                          {a.courseName && <span>{a.courseName}</span>}
+                          <span>Due {formatDue(a.dueDate)}</span>
+                          <Badge variant="outline" className="text-[10px] uppercase">
+                            {a.source === "canvas" ? "Canvas" : "Classroom"}
+                          </Badge>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground"
+                          onClick={() => setExpandedId(expandedId === a.id ? null : a.id)}
+                          title={expandedId === a.id ? "Hide details" : "Preview details"}
+                        >
+                          {expandedId === a.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </Button>
+                        {a.url && (
+                          <a href={a.url} target="_blank" rel="noopener noreferrer">
+                            <Button variant="ghost" size="icon" className="text-muted-foreground" title="Open in Canvas">
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          </a>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          onClick={() => handleDeleteAssignment(a.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    {expandedId === a.id && (
+                      <div className="px-4 pb-4 pt-0 border-t bg-muted/30">
+                        {a.description ? (
+                          <p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed pt-3">
+                            {a.description}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic pt-3">
+                            No description available for this assignment.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         <div className="grid gap-6 md:grid-cols-2">
           {/* Canvas LMS */}
           <Card className="border shadow-sm">
@@ -424,70 +513,12 @@ export default function Integrations() {
           </CardContent>
         </Card>
 
-        {/* Imported assignments */}
-        <section className="space-y-3">
-          <h2 className="font-semibold text-xl flex items-center gap-2">
-            Imported Assignments
-            {assignments.length > 0 && <Badge variant="secondary">{assignments.length}</Badge>}
-          </h2>
-          {isLoadingAssignments ? (
-            <Skeleton className="h-20 w-full" />
-          ) : assignments.length === 0 ? (
-            <p className="text-muted-foreground">
-              Nothing imported yet. Connect a tool above and import your assignments — they'll show up here and in the
-              New Plan flow.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              <Card className="border-primary/30 bg-primary/5 shadow-sm" data-testid="card-generate-from-imports">
-                <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-primary shrink-0">
-                      <Sparkles className="w-5 h-5" />
-                    </div>
-                    <p className="text-sm">
-                      Ready to plan? Turn these {assignments.length} assignment{assignments.length === 1 ? "" : "s"} into a balanced schedule.
-                    </p>
-                  </div>
-                  <Button onClick={() => setLocation("/create?fromImport=1")} data-testid="button-generate-from-imports">
-                    Generate schedule <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </CardContent>
-              </Card>
-              {assignments.map((a) => (
-                <div key={a.id} className="bg-card border rounded-xl p-4 flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{a.title}</p>
-                    <p className="text-sm text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2">
-                      {a.courseName && <span>{a.courseName}</span>}
-                      <span>Due {formatDue(a.dueDate)}</span>
-                      <Badge variant="outline" className="text-[10px] uppercase">
-                        {a.source === "canvas" ? "Canvas" : "Classroom"}
-                      </Badge>
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {a.url && (
-                      <a href={a.url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="icon" className="text-muted-foreground">
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      </a>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive"
-                      onClick={() => handleDeleteAssignment(a.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+        {/* Empty state when no assignments and not loading */}
+        {!isLoadingAssignments && assignments.length === 0 && (
+          <p className="text-muted-foreground text-sm">
+            Nothing imported yet. Connect a tool above and import your assignments — they'll show up here and in the New Plan flow.
+          </p>
+        )}
       </div>
     </Layout>
   );
