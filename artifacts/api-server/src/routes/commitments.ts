@@ -128,7 +128,12 @@ Rules:
     throw new Error("No content returned from commitment extraction model");
   }
 
-  const parsed = JSON.parse(raw) as { commitments: ExtractedCommitment[] };
+  let parsed: { commitments: ExtractedCommitment[] };
+  try {
+    parsed = JSON.parse(raw) as { commitments: ExtractedCommitment[] };
+  } catch {
+    throw new Error("Commitment extraction model returned malformed JSON");
+  }
   const extracted = parsed.commitments ?? [];
 
   if (extracted.length === 0) {
@@ -136,10 +141,14 @@ Rules:
     return;
   }
 
-  // Skip any that already exist with the same title+startTime+endTime
+  // Skip exact duplicates: same title + startTime + endTime + sorted days already exist
   const existing = await db.select().from(commitments).where(eq(commitments.deviceId, ownerId));
-  const existingKeys = new Set(existing.map((r) => `${r.title.toLowerCase()}|||${r.startTime ?? ""}|||${r.endTime ?? ""}`));
-  const newOnes = extracted.filter((c) => !existingKeys.has(`${c.title.toLowerCase()}|||${c.startTime}|||${c.endTime}`));
+  const existingKeys = new Set(
+    existing.map((r) => `${r.title.toLowerCase()}|||${r.startTime ?? ""}|||${r.endTime ?? ""}|||${[...(r.daysOfWeek ?? [])].sort().join(",")}`)
+  );
+  const newOnes = extracted.filter((c) =>
+    !existingKeys.has(`${c.title.toLowerCase()}|||${c.startTime}|||${c.endTime}|||${[...c.daysOfWeek].sort().join(",")}`)
+  );
 
   if (newOnes.length === 0) {
     res.status(201).json([]);
@@ -207,7 +216,12 @@ Rules:
     throw new Error("No content returned from commitment extraction model");
   }
 
-  const parsed = JSON.parse(raw) as { commitments: ExtractedCommitment[] };
+  let parsed: { commitments: ExtractedCommitment[] };
+  try {
+    parsed = JSON.parse(raw) as { commitments: ExtractedCommitment[] };
+  } catch {
+    throw new Error("Commitment extraction model returned malformed JSON");
+  }
   const extracted = parsed.commitments ?? [];
 
   if (extracted.length === 0) {
@@ -215,10 +229,14 @@ Rules:
     return;
   }
 
-  // Skip any that already exist with the same title+startTime+endTime
+  // Skip exact duplicates: same title + startTime + endTime + sorted days already exist
   const existing = await db.select().from(commitments).where(eq(commitments.deviceId, ownerId));
-  const existingKeys = new Set(existing.map((r) => `${r.title.toLowerCase()}|||${r.startTime ?? ""}|||${r.endTime ?? ""}`));
-  const newOnes = extracted.filter((c) => !existingKeys.has(`${c.title.toLowerCase()}|||${c.startTime}|||${c.endTime}`));
+  const existingKeys = new Set(
+    existing.map((r) => `${r.title.toLowerCase()}|||${r.startTime ?? ""}|||${r.endTime ?? ""}|||${[...(r.daysOfWeek ?? [])].sort().join(",")}`)
+  );
+  const newOnes = extracted.filter((c) =>
+    !existingKeys.has(`${c.title.toLowerCase()}|||${c.startTime}|||${c.endTime}|||${[...c.daysOfWeek].sort().join(",")}`)
+  );
 
   if (newOnes.length === 0) {
     res.status(201).json([]);

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { Component, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
 import { ArrowLeft, UserCircle, Loader2 } from "lucide-react";
 import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from "@clerk/react";
@@ -235,6 +235,28 @@ function GuestDataClaimer() {
   );
 }
 
+class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8 text-center">
+          <p className="text-2xl font-heading font-semibold">Something went wrong</p>
+          <p className="text-muted-foreground max-w-sm">An unexpected error occurred. Try refreshing the page.</p>
+          <button
+            className="text-sm underline text-muted-foreground"
+            onClick={() => { this.setState({ error: null }); window.location.reload(); }}
+          >
+            Reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function HomeRedirect() {
   const { user, isLoaded } = useUser();
   if (!isLoaded) return null;
@@ -294,9 +316,11 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
-    </WouterRouter>
+    <AppErrorBoundary>
+      <WouterRouter base={basePath}>
+        <ClerkProviderWithRoutes />
+      </WouterRouter>
+    </AppErrorBoundary>
   );
 }
 
