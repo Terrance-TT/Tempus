@@ -413,12 +413,12 @@ export default function Schedule() {
 
         {/* SPS Engage upcoming events */}
         {spsEvents && spsEvents.length > 0 && (
-          <div className="rounded-2xl border bg-card shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
-            <div className="flex items-center gap-2.5 px-4 py-3 border-b bg-muted/30">
-              <CalendarIcon className="w-4 h-4 text-primary" />
-              <span className="font-semibold text-sm">SPS Engage — Upcoming Events</span>
+          <div className="rounded-2xl border-2 border-blue-400 dark:border-blue-700 bg-blue-50/60 dark:bg-blue-950/25 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
+            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-blue-300 dark:border-blue-700 bg-blue-600 text-white">
+              <CalendarIcon className="w-4 h-4" />
+              <span className="font-bold text-sm tracking-wide">SPS Engage — Upcoming Events</span>
             </div>
-            <div className="divide-y">
+            <div className="divide-y divide-blue-100 dark:divide-blue-900">
               {spsEvents.map((ev) => {
                 const start = new Date(ev.startIso);
                 const end = new Date(ev.endIso);
@@ -426,14 +426,14 @@ export default function Schedule() {
                 const startTime = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
                 const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
                 return (
-                  <div key={ev.uid} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors">
-                    <p className="text-xs text-muted-foreground w-40 shrink-0 tabular-nums">{dateStr} · {startTime}–{endTime}</p>
-                    <p className="text-sm font-medium truncate flex-1">{ev.title}</p>
+                  <div key={ev.uid} className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-100/60 dark:hover:bg-blue-900/30 transition-colors">
+                    <p className="text-xs text-blue-700 dark:text-blue-300 w-40 shrink-0 tabular-nums font-medium">{dateStr} · {startTime}–{endTime}</p>
+                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate flex-1">{ev.title}</p>
                     {ev.location && (
-                      <p className="text-xs text-muted-foreground hidden sm:block shrink-0 max-w-32 truncate">{ev.location}</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 hidden sm:block shrink-0 max-w-32 truncate">{ev.location}</p>
                     )}
                     {ev.url && (
-                      <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground shrink-0">
+                      <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 shrink-0">
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     )}
