@@ -141,6 +141,41 @@ export default function Create() {
   const generateSchedule = useGenerateSchedule();
   const updatePreferences = useUpdatePreferences();
 
+  // Columbia preset: auto-extract the known class schedule when ?columbia=1
+  const columbiaHandledRef = useRef(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("columbia") || columbiaHandledRef.current || !deviceId) return;
+    columbiaHandledRef.current = true;
+    window.history.replaceState(null, "", window.location.pathname);
+    setInputMode("describe");
+    setIsExtracting(true);
+    setExtractionError(false);
+    const columbiaSchedule =
+      "I have a class called Entrepreneurship with Daniel every weekday (Monday–Friday) from 9:10 AM to 11:00 AM, and again from 1:10 PM to 3:00 PM. Lunch is every day from 11:00 AM to 1:00 PM.";
+    // Clear any existing commitments first, then extract
+    Promise.all(commitments.map(
+      (c) => new Promise<void>((resolve) => {
+        deleteCommitment.mutate({ id: c.id, params: { deviceId } }, { onSettled: () => resolve() });
+      })
+    )).then(() => {
+      extractFromText.mutate(
+        { data: { deviceId, description: columbiaSchedule } },
+        {
+          onSuccess: (newCommitments) => {
+            onExtractionSuccess(newCommitments.length);
+            if (newCommitments.length > 0) setStep(2);
+          },
+          onError: () => {
+            setIsExtracting(false);
+            setExtractionError(true);
+          },
+        },
+      );
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deviceId]);
+
   // Arriving from Integrations with imported assignments: jump straight to
   // tasks and pre-fill them.
   const importHandledRef = useRef(false);

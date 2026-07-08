@@ -57,7 +57,10 @@ export default function Integrations() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [canvasUrl, setCanvasUrl] = useState("");
+  const isColumbiaPreset = !!sessionStorage.getItem("columbiaPreset");
+  const [canvasUrl, setCanvasUrl] = useState(
+    isColumbiaPreset ? "https://courseworks2.columbia.edu/" : ""
+  );
   const [canvasToken, setCanvasToken] = useState("");
   const autoImportTriggered = useRef(false);
 
@@ -179,6 +182,7 @@ export default function Integrations() {
       {
         onSuccess: () => {
           setCanvasToken("");
+          sessionStorage.removeItem("columbiaPreset");
           invalidate();
           toast({ title: "Canvas connected", description: "You can now import your assignments." });
         },
@@ -396,9 +400,23 @@ export default function Integrations() {
                       onChange={(e) => setCanvasToken(e.target.value)}
                       required
                     />
-                    <p className="text-xs text-muted-foreground">
-                      In Canvas: Account → Settings → New Access Token
-                    </p>
+                    {isColumbiaPreset ? (
+                      <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5">
+                        <p className="text-xs font-medium text-foreground">How to get your CourseWorks2 token:</p>
+                        <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                          <li>Sign in to <span className="font-mono bg-background px-1 rounded">courseworks2.columbia.edu</span></li>
+                          <li>Click your profile picture (top-right) → <strong>Settings</strong></li>
+                          <li>Scroll down to <strong>Approved Integrations</strong></li>
+                          <li>Click <strong>+ New Access Token</strong></li>
+                          <li>Enter a purpose (e.g. <em>Tempus</em>) — leave expiry blank</li>
+                          <li>Click <strong>Generate Token</strong> and copy it immediately — it won't be shown again</li>
+                        </ol>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        In Canvas: Account → Settings → New Access Token
+                      </p>
+                    )}
                   </div>
                   <Button type="submit" className="w-full" disabled={connectCanvas.isPending}>
                     {connectCanvas.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

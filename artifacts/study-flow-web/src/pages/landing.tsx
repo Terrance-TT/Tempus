@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Calendar, Camera, Sparkles, CalendarCheck2, ArrowRight, BookOpen, BedDouble, Coffee, Download, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Calendar, Camera, Sparkles, CalendarCheck2, ArrowRight, BookOpen, BedDouble, Coffee, Download, CheckCircle2, ShieldCheck, GraduationCap } from "lucide-react";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
@@ -64,7 +64,24 @@ export default function Landing() {
                 Try it without an account
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground mt-4">
+
+            {/* Columbia shortcut */}
+            <div className="pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground gap-2 rounded-full px-5 h-10 border border-border/60 hover:border-border bg-background/60 hover:bg-secondary/40 transition-all"
+                onClick={() => {
+                  sessionStorage.setItem("columbiaPreset", "1");
+                  setLocation("/create?columbia=1");
+                }}
+              >
+                <GraduationCap className="w-4 h-4" />
+                I'm a Columbia Entrepreneur Student
+              </Button>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
               Guests can build a schedule right away — only sign in when you're ready to save it.
             </p>
           </div>
