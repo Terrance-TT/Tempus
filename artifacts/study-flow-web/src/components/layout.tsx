@@ -1,10 +1,16 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, CalendarDays, PlusCircle, Plug, ShieldCheck, LogOut } from "lucide-react";
+import { Calendar, CalendarDays, PlusCircle, Plug, ShieldCheck, LogOut, MessageSquarePlus, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
 import { useIsSignedIn, useDeviceId } from "@/hooks/use-device-id";
-import { useListSchedules, getListSchedulesQueryKey } from "@workspace/api-client-react";
+import {
+  useListSchedules,
+  getListSchedulesQueryKey,
+  useGetAdminStatus,
+  getGetAdminStatusQueryKey,
+} from "@workspace/api-client-react";
+import { FeedbackDialog } from "@/components/feedback-dialog";
 
 interface LayoutProps {
   children: ReactNode;
@@ -15,6 +21,12 @@ export function Layout({ children }: LayoutProps) {
   const { signOut } = useClerk();
   const isSignedIn = useIsSignedIn();
   const deviceId = useDeviceId();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+
+  const { data: adminStatus } = useGetAdminStatus({
+    query: { enabled: !!isSignedIn, queryKey: getGetAdminStatusQueryKey() },
+  });
+  const isAdmin = adminStatus?.isAdmin === true;
 
   const { data: schedules } = useListSchedules(
     { deviceId: deviceId || "" },
@@ -31,6 +43,7 @@ export function Layout({ children }: LayoutProps) {
     { href: "/create", label: "New Plan", icon: PlusCircle },
     { href: "/integrations", label: "Integrations", icon: Plug },
     { href: "/focus-guard", label: "Focus Guard", icon: ShieldCheck },
+    ...(isAdmin ? [{ href: "/admin/feedback", label: "Feedback Inbox", icon: Inbox }] : []),
   ];
 
   return (
@@ -68,6 +81,15 @@ export function Layout({ children }: LayoutProps) {
             );
           })}
         </nav>
+
+        <button
+          onClick={() => setFeedbackOpen(true)}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground w-full mt-2"
+          data-testid="button-open-feedback"
+        >
+          <MessageSquarePlus className="w-5 h-5" />
+          Feedback
+        </button>
 
         {isSignedIn && (
           <button
@@ -108,6 +130,14 @@ export function Layout({ children }: LayoutProps) {
               </Link>
             );
           })}
+          <button
+            onClick={() => setFeedbackOpen(true)}
+            className="flex flex-col items-center justify-center p-2 rounded-lg min-w-[4rem] transition-all duration-200 text-muted-foreground hover:text-foreground"
+            data-testid="button-open-feedback-mobile"
+          >
+            <MessageSquarePlus className="w-5 h-5 mb-1" />
+            <span className="text-[10px] font-medium">Feedback</span>
+          </button>
           {isSignedIn && (
             <button
               onClick={handleSignOut}
@@ -119,6 +149,8 @@ export function Layout({ children }: LayoutProps) {
           )}
         </div>
       </nav>
+
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </div>
   );
 }

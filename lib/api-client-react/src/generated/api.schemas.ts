@@ -382,6 +382,76 @@ export interface SpsImportEventsInput {
   events: SpsEvent[];
 }
 
+export interface OkResult {
+  ok: boolean;
+}
+
+export interface AdminStatus {
+  isAdmin: boolean;
+}
+
+export interface SurveyAnswer {
+  question: string;
+  answer: string;
+}
+
+export type SubmitFeedbackInputType = typeof SubmitFeedbackInputType[keyof typeof SubmitFeedbackInputType];
+
+
+export const SubmitFeedbackInputType = {
+  bug: 'bug',
+  survey: 'survey',
+} as const;
+
+export interface SubmitFeedbackInput {
+  deviceId: string;
+  type: SubmitFeedbackInputType;
+  /** Bug description (for type=bug). */
+  message?: string;
+  /** Survey responses (for type=survey). */
+  answers?: SurveyAnswer[];
+  page?: string;
+}
+
+export type FeedbackItemType = typeof FeedbackItemType[keyof typeof FeedbackItemType];
+
+
+export const FeedbackItemType = {
+  bug: 'bug',
+  survey: 'survey',
+} as const;
+
+export type FeedbackItemStatus = typeof FeedbackItemStatus[keyof typeof FeedbackItemStatus];
+
+
+export const FeedbackItemStatus = {
+  new: 'new',
+  resolved: 'resolved',
+} as const;
+
+export interface FeedbackItem {
+  id: string;
+  email?: string | null;
+  type: FeedbackItemType;
+  message?: string | null;
+  answers?: SurveyAnswer[] | null;
+  page?: string | null;
+  status: FeedbackItemStatus;
+  createdAt: string;
+}
+
+export type UpdateFeedbackStatusInputStatus = typeof UpdateFeedbackStatusInputStatus[keyof typeof UpdateFeedbackStatusInputStatus];
+
+
+export const UpdateFeedbackStatusInputStatus = {
+  new: 'new',
+  resolved: 'resolved',
+} as const;
+
+export interface UpdateFeedbackStatusInput {
+  status: UpdateFeedbackStatusInputStatus;
+}
+
 export type ListCommitmentsParams = {
 deviceId: string;
 };

@@ -24,6 +24,7 @@ import Create from "@/pages/create";
 import Schedule from "@/pages/schedule";
 import Integrations from "@/pages/integrations";
 import FocusGuard from "@/pages/focus-guard";
+import AdminFeedback from "@/pages/admin-feedback";
 import Pricing from "@/pages/pricing";
 import CheckoutSuccess from "@/pages/checkout-success";
 import NotFound from "@/pages/not-found";
@@ -311,6 +312,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/schedule/:id" component={Schedule} />
             <Route path="/integrations" component={Integrations} />
             <Route path="/focus-guard" component={FocusGuard} />
+            <Route path="/admin/feedback" component={AdminFeedback} />
             <Route path="/pricing" component={Pricing} />
             <Route path="/checkout/success" component={CheckoutSuccess} />
             <Route component={NotFound} />

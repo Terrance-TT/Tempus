@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminStatus';
 export * from './assignment';
 export * from './assignmentSource';
 export * from './claimGuestDataInput';
@@ -26,6 +27,9 @@ export * from './disconnectSchoologyParams';
 export * from './extensionTokenResult';
 export * from './extractCommitmentsInput';
 export * from './extractCommitmentsTextInput';
+export * from './feedbackItem';
+export * from './feedbackItemStatus';
+export * from './feedbackItemType';
 export * from './focusGuardAnalytics';
 export * from './focusGuardSettings';
 export * from './focusGuardSettingsBlockMode';
@@ -45,6 +49,7 @@ export * from './integrationsStatus';
 export * from './listAssignmentsParams';
 export * from './listCommitmentsParams';
 export * from './listSchedulesParams';
+export * from './okResult';
 export * from './reviseScheduleInput';
 export * from './schedule';
 export * from './scheduleBlock';
@@ -57,10 +62,15 @@ export * from './scheduleSummary';
 export * from './spsEvent';
 export * from './spsImportEventsInput';
 export * from './spsPreviewIcsInput';
+export * from './submitFeedbackInput';
+export * from './submitFeedbackInputType';
+export * from './surveyAnswer';
 export * from './syncScheduleGoogleCalendarInput';
 export * from './syncScheduleGoogleCalendarResult';
 export * from './task';
 export * from './updateCommitmentInput';
+export * from './updateFeedbackStatusInput';
+export * from './updateFeedbackStatusInputStatus';
 export * from './updateFocusGuardSettingsInput';
 export * from './updateFocusGuardSettingsInputBlockMode';
 export * from './updatePreferencesInput';

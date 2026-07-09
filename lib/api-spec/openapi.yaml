@@ -226,6 +226,78 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FocusGuardAnalytics"
+  /feedback:
+    post:
+      operationId: submitFeedback
+      tags: [feedback]
+      summary: Submit user feedback (quick bug report or the full survey)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitFeedbackInput"
+      responses:
+        "200":
+          description: Acknowledgement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResult"
+  /admin/status:
+    get:
+      operationId: getAdminStatus
+      tags: [feedback]
+      summary: Whether the signed-in user is a staff admin
+      responses:
+        "200":
+          description: Admin status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStatus"
+  /admin/feedback:
+    get:
+      operationId: listFeedback
+      tags: [feedback]
+      summary: List all feedback submissions (admin only)
+      responses:
+        "200":
+          description: Feedback list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeedbackItem"
+        "403":
+          description: Not an admin
+  /admin/feedback/{id}/status:
+    put:
+      operationId: updateFeedbackStatus
+      tags: [feedback]
+      summary: Mark a feedback item as resolved or new (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFeedbackStatusInput"
+      responses:
+        "200":
+          description: Updated feedback item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackItem"
+        "403":
+          description: Not an admin
   /claim-guest-data:
     post:
       operationId: claimGuestData
@@ -1383,3 +1455,88 @@ components:
             $ref: "#/components/schemas/SpsEvent"
       required:
         - events
+    OkResult:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required:
+        - ok
+    AdminStatus:
+      type: object
+      properties:
+        isAdmin:
+          type: boolean
+      required:
+        - isAdmin
+    SurveyAnswer:
+      type: object
+      properties:
+        question:
+          type: string
+        answer:
+          type: string
+      required:
+        - question
+        - answer
+    SubmitFeedbackInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        type:
+          type: string
+          enum: [bug, survey]
+        message:
+          type: string
+          description: Bug description (for type=bug).
+        answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/SurveyAnswer"
+          description: Survey responses (for type=survey).
+        page:
+          type: string
+      required:
+        - deviceId
+        - type
+    FeedbackItem:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [bug, survey]
+        message:
+          type: string
+          nullable: true
+        answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/SurveyAnswer"
+          nullable: true
+        page:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [new, resolved]
+        createdAt:
+          type: string
+      required:
+        - id
+        - type
+        - status
+        - createdAt
+    UpdateFeedbackStatusInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [new, resolved]
+      required:
+        - status

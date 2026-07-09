@@ -212,6 +212,78 @@ export const GetFocusGuardAnalyticsResponse = zod.object({
 
 
 /**
+ * @summary Submit user feedback (quick bug report or the full survey)
+ */
+export const SubmitFeedbackBody = zod.object({
+  "deviceId": zod.string(),
+  "type": zod.enum(['bug', 'survey']),
+  "message": zod.string().optional().describe('Bug description (for type=bug).'),
+  "answers": zod.array(zod.object({
+  "question": zod.string(),
+  "answer": zod.string()
+})).optional().describe('Survey responses (for type=survey).'),
+  "page": zod.string().optional()
+})
+
+export const SubmitFeedbackResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Whether the signed-in user is a staff admin
+ */
+export const GetAdminStatusResponse = zod.object({
+  "isAdmin": zod.boolean()
+})
+
+
+/**
+ * @summary List all feedback submissions (admin only)
+ */
+export const ListFeedbackResponseItem = zod.object({
+  "id": zod.string(),
+  "email": zod.string().nullish(),
+  "type": zod.enum(['bug', 'survey']),
+  "message": zod.string().nullish(),
+  "answers": zod.array(zod.object({
+  "question": zod.string(),
+  "answer": zod.string()
+})).nullish(),
+  "page": zod.string().nullish(),
+  "status": zod.enum(['new', 'resolved']),
+  "createdAt": zod.string()
+})
+export const ListFeedbackResponse = zod.array(ListFeedbackResponseItem)
+
+
+/**
+ * @summary Mark a feedback item as resolved or new (admin only)
+ */
+export const UpdateFeedbackStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateFeedbackStatusBody = zod.object({
+  "status": zod.enum(['new', 'resolved'])
+})
+
+export const UpdateFeedbackStatusResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string().nullish(),
+  "type": zod.enum(['bug', 'survey']),
+  "message": zod.string().nullish(),
+  "answers": zod.array(zod.object({
+  "question": zod.string(),
+  "answer": zod.string()
+})).nullish(),
+  "page": zod.string().nullish(),
+  "status": zod.enum(['new', 'resolved']),
+  "createdAt": zod.string()
+})
+
+
+/**
  * After a guest signs in, transfers commitments, schedules, assignments and preferences owned by the anonymous guest device id to the signed-in user's account. Requires an authenticated session.
  * @summary Reassign data created as a signed-out guest to the signed-in user
  */
