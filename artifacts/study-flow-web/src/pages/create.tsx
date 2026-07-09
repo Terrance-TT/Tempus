@@ -771,7 +771,7 @@ export default function Create() {
                         <p className="text-destructive text-sm">We couldn't find any commitments in that. Include days and times, like "soccer Tuesdays 4-5:30pm".</p>
                       )}
                       <Button type="submit" size="lg" className="w-full rounded-xl" disabled={!describeText.trim()} data-testid="button-extract-text">
-                        <Sparkles className="mr-2 w-5 h-5" /> Add to my schedule
+                        Continue <ArrowRight className="ml-2 w-5 h-5" />
                       </Button>
                     </form>
                   )}
@@ -779,79 +779,13 @@ export default function Create() {
               </Card>
             )}
 
-            {commitments.length > 0 && (
-              <Card className="border-primary/30 bg-primary/5 shadow-sm" data-testid="card-commitments-summary">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-primary shrink-0">
-                        <CheckCircle2 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="font-semibold">
-                          {commitments.length} commitment{commitments.length === 1 ? "" : "s"} in your week
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {lastExtractedCount !== null ? "Schedule captured — you're ready to continue." : "From your saved schedule."}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleClearAllCommitments}
-                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        data-testid="button-clear-commitments"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Start fresh
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowCommitmentDetails(v => !v)}
-                        className="text-muted-foreground"
-                        data-testid="button-toggle-commitments"
-                      >
-                        {showCommitmentDetails ? (
-                          <>Hide details <ChevronUp className="ml-1 w-4 h-4" /></>
-                        ) : (
-                          <>Review & edit <ChevronDown className="ml-1 w-4 h-4" /></>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {showCommitmentDetails && (
-                    <div className="grid gap-2 pt-2 border-t border-primary/10 animate-in fade-in duration-200">
-                      {commitments.map((c) => (
-                        <div key={c.id} className="bg-background border rounded-xl px-4 py-3 flex justify-between items-center group">
-                          <div>
-                            <p className="font-medium text-sm">{c.title}</p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                              <CalendarDays className="w-3 h-3" />
-                              <span className="uppercase tracking-wider">{c.daysOfWeek.join(", ")}</span>
-                              <span className="opacity-50">•</span>
-                              <Clock className="w-3 h-3" />
-                              <span>{c.startTime} - {c.endTime}</span>
-                            </p>
-                          </div>
-                          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8" onClick={() => handleDeleteCommitment(c.id)}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+            {commitments.length > 0 && !describeText.trim() && (
+              <div className="flex justify-end pt-6">
+                <Button size="lg" onClick={() => setStep(2)} disabled={isExtracting} className="rounded-xl" data-testid="button-continue-step1">
+                  Continue <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </div>
             )}
-
-            <div className="flex justify-end pt-6">
-              <Button size="lg" onClick={() => setStep(2)} disabled={commitments.length === 0 || isExtracting} className="rounded-xl" data-testid="button-continue-step1">
-                Continue <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </div>
           </div>
         )}
 
