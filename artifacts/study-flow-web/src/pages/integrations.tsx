@@ -511,8 +511,8 @@ export default function Integrations() {
                   aria-expanded={isOpen}
                   data-testid={`tile-${tool.id}`}
                   className={cn(
-                    "relative aspect-[2/1] rounded-2xl flex flex-col items-center justify-center gap-2 p-3 transition-all duration-200 group",
-                    isOpen && "ring-1 ring-primary/40",
+                    "relative aspect-[2/1] rounded-2xl border border-border flex flex-col items-center justify-center gap-2 p-3 transition-all duration-200 group hover:border-primary/40",
+                    isOpen && "border-primary ring-1 ring-primary/40",
                   )}
                 >
                   {tool.connected && (
