@@ -520,10 +520,10 @@ export default function Integrations() {
                       <CheckCircle2 className="w-4 h-4" />
                     </span>
                   )}
-                  <span className={cn("w-9 h-9 rounded-xl flex items-center justify-center", tool.iconClass)}>
-                    <tool.icon className="w-5 h-5" />
+                  <span className={cn("w-12 h-12 rounded-xl flex items-center justify-center", tool.iconClass)}>
+                    <tool.icon className="w-7 h-7" />
                   </span>
-                  <span className="text-sm font-medium leading-tight text-center">{tool.name}</span>
+                  <span className="text-base font-medium leading-tight text-center">{tool.name}</span>
                 </button>
               );
             })}
@@ -870,12 +870,6 @@ export default function Integrations() {
           )}
         </section>
 
-        {/* Empty state */}
-        {!isLoadingAssignments && assignments.length === 0 && (
-          <p className="text-muted-foreground text-sm">
-            Nothing imported yet. Connect a tool above and import your assignments — they'll show up here and in the New Plan flow.
-          </p>
-        )}
       </div>
     </Layout>
   );
