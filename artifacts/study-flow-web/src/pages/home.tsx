@@ -74,10 +74,11 @@ export default function Home() {
   return (
     <Layout>
       <div className="max-w-3xl mx-auto space-y-10 pt-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <header>
+        <header className="space-y-1">
           <h1 className="text-4xl font-heading font-bold text-foreground tracking-tight">
             {activeSchedule ? "Today" : "Welcome to Tempus"}
           </h1>
+          <p className="text-muted-foreground text-lg">Your AI-powered study planner.</p>
         </header>
 
         {activeSchedule ? (
@@ -85,14 +86,14 @@ export default function Home() {
             <div className="rounded-2xl border border-primary/20 bg-card/60 backdrop-blur-sm shadow-xl shadow-primary/5 overflow-hidden p-8 flex flex-col gap-8">
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
-                  className="flex-1 text-lg py-7 rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
+                  className="flex-1 text-xl py-7 rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
                   onClick={() => setLocation(`/schedule/${activeSchedule.id}`)}
                 >
                   Open <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1 py-7 rounded-xl bg-background/50 hover:bg-secondary/50 text-lg border-border/60"
+                  className="flex-1 py-7 rounded-xl bg-background/50 hover:bg-secondary/50 text-xl border-border/60"
                   onClick={() => setLocation("/create")}
                 >
                   <PlusCircle className="mr-2 w-5 h-5" /> New
@@ -158,7 +159,7 @@ export default function Home() {
                         onClick={() => setLocation(`/schedule/${plan.id}`)}
                       >
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-foreground">
+                          <span className="text-lg font-semibold text-foreground">
                             {plan.scope === "week" ? "Weekly plan" : "Daily plan"}
                           </span>
                           {plan.status !== "complete" && (

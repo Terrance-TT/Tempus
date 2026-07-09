@@ -122,27 +122,31 @@ export function Layout({ children }: LayoutProps) {
       <main className="flex-1 pb-20 md:pb-0 overflow-y-auto relative">
         {/* Background art */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none" aria-hidden>
-          {/* Dot grid */}
-          <svg className="absolute inset-0 w-full h-full text-foreground opacity-[0.045]" xmlns="http://www.w3.org/2000/svg">
+          {/* Diagonal crosshatch grid */}
+          <svg className="absolute inset-0 w-full h-full text-primary opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="dot-grid" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
-                <circle cx="1.5" cy="1.5" r="1.5" fill="currentColor" />
+              <pattern id="crosshatch" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="40" stroke="currentColor" strokeWidth="0.6"/>
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#dot-grid)" />
+            <rect width="100%" height="100%" fill="url(#crosshatch)" />
           </svg>
-          {/* Glowing orbs */}
-          <div className="absolute -top-40 -right-40 w-[520px] h-[520px] bg-primary/10 rounded-full blur-[110px]" />
-          <div className="absolute bottom-0 left-1/4 w-[380px] h-[380px] bg-primary/6 rounded-full blur-[90px] translate-y-1/3" />
-          {/* Subtle arcs */}
-          <svg className="absolute top-0 right-0 w-[480px] h-[480px] text-primary opacity-[0.05]" viewBox="0 0 480 480" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="480" cy="0" r="200" stroke="currentColor" strokeWidth="1"/>
-            <circle cx="480" cy="0" r="320" stroke="currentColor" strokeWidth="0.8"/>
-            <circle cx="480" cy="0" r="440" stroke="currentColor" strokeWidth="0.6"/>
+          {/* Primary glow — bottom left */}
+          <div className="absolute -bottom-48 -left-24 w-[600px] h-[600px] bg-primary/12 rounded-full blur-[130px]" />
+          {/* Secondary glow — top right */}
+          <div className="absolute -top-24 right-0 w-[350px] h-[350px] bg-primary/7 rounded-full blur-[80px]" />
+          {/* Starburst lines from bottom-left corner */}
+          <svg className="absolute bottom-0 left-0 w-[560px] h-[560px] text-primary opacity-[0.06]" viewBox="0 0 560 560" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {[0,15,30,45,60,75,90].map((deg, i) => {
+              const rad = (deg * Math.PI) / 180;
+              return <line key={i} x1="0" y1="560" x2={Math.cos(rad) * 800} y2={560 - Math.sin(rad) * 800} stroke="currentColor" strokeWidth="0.8"/>;
+            })}
           </svg>
-          <svg className="absolute bottom-0 left-0 w-[360px] h-[360px] text-primary opacity-[0.04]" viewBox="0 0 360 360" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="0" cy="360" r="160" stroke="currentColor" strokeWidth="1"/>
-            <circle cx="0" cy="360" r="280" stroke="currentColor" strokeWidth="0.7"/>
+          {/* Floating geometric outline — top right */}
+          <svg className="absolute top-12 right-12 w-48 h-48 text-primary opacity-[0.06]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="50,4 96,28 96,72 50,96 4,72 4,28" stroke="currentColor" strokeWidth="1"/>
+            <polygon points="50,18 82,34 82,66 50,82 18,66 18,34" stroke="currentColor" strokeWidth="0.6"/>
+            <polygon points="50,32 68,41 68,59 50,68 32,59 32,41" stroke="currentColor" strokeWidth="0.4"/>
           </svg>
         </div>
         <div className="relative min-h-full w-full max-w-4xl mx-auto p-4 md:p-8 animate-in fade-in duration-500">
