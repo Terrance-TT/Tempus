@@ -198,7 +198,7 @@ export default function Home() {
                         onClick={() => !isRenaming && setLocation(`/schedule/${plan.id}`)}
                         aria-label="Open plan"
                       >
-                        <div className="w-8 h-8 rounded-full bg-primary/40 group-hover:bg-primary transition-colors duration-300" />
+                        <div className="w-8 h-8 rounded-full bg-primary/40 ring-0 ring-primary group-hover:bg-transparent group-hover:ring-2 group-hover:scale-150 transition-all duration-700" />
                       </button>
 
                       {/* Rolling name — expands out from the left circle on hover */}
@@ -220,7 +220,7 @@ export default function Home() {
                         </div>
                       ) : (
                         <div
-                          className="overflow-hidden max-w-0 group-hover:max-w-xs transition-all duration-700 ease-out h-full flex items-center cursor-pointer select-none"
+                          className="overflow-hidden max-w-0 group-hover:max-w-xs transition-all duration-1000 ease-out h-full flex items-center cursor-pointer select-none"
                           onClick={() => setLocation(`/schedule/${plan.id}`)}
                           onDoubleClick={(e) => { e.preventDefault(); startRename(plan); }}
                         >
