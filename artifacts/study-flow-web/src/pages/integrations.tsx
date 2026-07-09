@@ -21,6 +21,7 @@ import {
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { FocusGuardCard } from "@/components/focus-guard-card";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,11 +44,22 @@ import {
   ChevronUp,
   Calendar,
   PartyPopper,
+  ShieldCheck,
 } from "lucide-react";
 
 import { isFunEvent } from "@/lib/sps-events";
 
-type Panel = "canvas" | "sps" | "classroom" | "schoology" | null;
+type Panel = "canvas" | "sps" | "classroom" | "schoology" | "focusguard" | null;
+
+interface Tool {
+  id: Exclude<Panel, null>;
+  name: string;
+  icon: typeof BookOpen;
+  iconClass: string;
+  description: string;
+  connected: boolean;
+  badgeText?: string;
+}
 
 function formatDue(dueDate: string): string {
   const parsed = new Date(dueDate);
@@ -100,6 +112,51 @@ export default function Integrations() {
     { deviceId: deviceId || "" },
     { query: { enabled: !!deviceId, queryKey: getListAssignmentsQueryKey({ deviceId: deviceId || "" }) } },
   );
+
+  const tools: Tool[] = [
+    {
+      id: "canvas",
+      name: "Canvas LMS",
+      icon: BookOpen,
+      iconClass: "bg-primary/10 text-primary",
+      description: "Import upcoming assignments from your Canvas courses",
+      connected: !!status?.canvasConnected,
+    },
+    {
+      id: "sps",
+      name: "SPS Engage",
+      icon: Calendar,
+      iconClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+      description: "Add events from your SPS Engage calendar as fixed schedule blocks",
+      connected: false,
+      badgeText: "Columbia students",
+    },
+    {
+      id: "classroom",
+      name: "Google Classroom",
+      icon: GraduationCap,
+      iconClass: "bg-primary/10 text-primary",
+      description: "Import upcoming coursework from your Google Classroom classes",
+      connected: !!status?.classroomConnected,
+    },
+    {
+      id: "schoology",
+      name: "Schoology",
+      icon: GraduationCap,
+      iconClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+      description: "Import upcoming assignments from your Schoology courses",
+      connected: !!status?.schoologyConnected,
+    },
+    {
+      id: "focusguard",
+      name: "Focus Guard",
+      icon: ShieldCheck,
+      iconClass: "bg-primary/10 text-primary",
+      description: "Blocks distracting sites while you're supposed to be working",
+      connected: false,
+    },
+  ];
+  const activeTool = tools.find((t) => t.id === openPanel);
 
   const [schoologyDomain, setSchoologyDomain] = useState("api.schoology.com");
   const [schoologyKey, setSchoologyKey] = useState("");
@@ -439,44 +496,72 @@ export default function Integrations() {
           </section>
         )}
 
-        {/* Integration cards */}
+        {/* Integration tiles — minimal; details appear when a tile is clicked */}
         <section className="space-y-3">
           <h2 className="font-semibold text-xl">Connect a tool</h2>
-          <div className="space-y-3">
 
-            {/* ── Canvas LMS ── */}
-            <Card className="border shadow-sm overflow-hidden">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {tools.map((tool) => {
+              const isOpen = openPanel === tool.id;
+              return (
+                <button
+                  key={tool.id}
+                  type="button"
+                  onClick={() => togglePanel(tool.id)}
+                  aria-expanded={isOpen}
+                  data-testid={`tile-${tool.id}`}
+                  className={cn(
+                    "relative aspect-[2/1] rounded-2xl border bg-card flex flex-col items-center justify-center gap-1.5 p-3 transition-all duration-200 hover:shadow-sm hover:border-primary/40",
+                    isOpen && "border-primary ring-1 ring-primary/40 shadow-sm",
+                  )}
+                >
+                  {tool.connected && (
+                    <span className="absolute top-2 right-2 text-primary" title="Connected">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </span>
+                  )}
+                  <span className={cn("w-9 h-9 rounded-xl flex items-center justify-center", tool.iconClass)}>
+                    <tool.icon className="w-5 h-5" />
+                  </span>
+                  <span className="text-sm font-medium leading-tight text-center">{tool.name}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {activeTool && openPanel !== "focusguard" && (
+            <Card className="border shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
               <button
                 type="button"
                 className="w-full text-left hover:bg-muted/40 transition-colors"
-                onClick={() => togglePanel("canvas")}
-                aria-expanded={openPanel === "canvas"}
+                onClick={() => setOpenPanel(null)}
+                aria-expanded
               >
                 <div className="flex items-center gap-4 px-5 py-4">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <BookOpen className="w-5 h-5" />
+                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", activeTool.iconClass)}>
+                    <activeTool.icon className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">Canvas LMS</span>
-                      {status?.canvasConnected && (
+                      <span className="font-semibold">{activeTool.name}</span>
+                      {activeTool.badgeText && (
+                        <Badge className="text-xs bg-blue-600 text-white border-0 hover:bg-blue-600">{activeTool.badgeText}</Badge>
+                      )}
+                      {activeTool.connected && (
                         <Badge variant="secondary" className="flex items-center gap-1 text-xs">
                           <CheckCircle2 className="w-3 h-3" /> Connected
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Import upcoming assignments from your Canvas courses
-                    </p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{activeTool.description}</p>
                   </div>
-                  {openPanel === "canvas"
-                    ? <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
-                    : <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />}
+                  <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
                 </div>
               </button>
 
-              {openPanel === "canvas" && (
-                <div className="px-5 pb-5 border-t pt-5 space-y-4">
+              <div className="px-5 pb-5 border-t pt-5">
+                {openPanel === "canvas" && (
+                  <div className="space-y-4">
                   {isLoadingStatus ? (
                     <Skeleton className="h-24 w-full" />
                   ) : status?.canvasConnected ? (
@@ -543,39 +628,11 @@ export default function Integrations() {
                       </Button>
                     </form>
                   )}
-                </div>
-              )}
-            </Card>
-
-            {/* ── SPS Engage ── */}
-            <Card className="border shadow-sm overflow-hidden">
-              <button
-                type="button"
-                className="w-full text-left hover:bg-muted/40 transition-colors"
-                onClick={() => togglePanel("sps")}
-                aria-expanded={openPanel === "sps"}
-              >
-                <div className="flex items-center gap-4 px-5 py-4">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
-                    <Calendar className="w-5 h-5" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">SPS Engage</span>
-                      <Badge className="text-xs bg-blue-600 text-white border-0 hover:bg-blue-600">Columbia students</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Add events from your SPS Engage calendar as fixed schedule blocks
-                    </p>
-                  </div>
-                  {openPanel === "sps"
-                    ? <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
-                    : <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />}
-                </div>
-              </button>
+                )}
 
-              {openPanel === "sps" && (
-                <div className="px-5 pb-5 border-t pt-5 space-y-4">
+                {openPanel === "sps" && (
+                  <div className="space-y-4">
                   <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5">
                     <p className="text-xs font-medium">How to get your ICS feed URL:</p>
                     <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
@@ -706,43 +763,11 @@ export default function Integrations() {
                       </div>
                     )
                   )}
-                </div>
-              )}
-            </Card>
-
-            {/* ── Google Classroom ── */}
-            <Card className="border shadow-sm overflow-hidden">
-              <button
-                type="button"
-                className="w-full text-left hover:bg-muted/40 transition-colors"
-                onClick={() => togglePanel("classroom")}
-                aria-expanded={openPanel === "classroom"}
-              >
-                <div className="flex items-center gap-4 px-5 py-4">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <GraduationCap className="w-5 h-5" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">Google Classroom</span>
-                      {status?.classroomConnected && (
-                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
-                          <CheckCircle2 className="w-3 h-3" /> Connected
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Import upcoming coursework from your Google Classroom classes
-                    </p>
-                  </div>
-                  {openPanel === "classroom"
-                    ? <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
-                    : <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />}
-                </div>
-              </button>
+                )}
 
-              {openPanel === "classroom" && (
-                <div className="px-5 pb-5 border-t pt-5 space-y-3">
+                {openPanel === "classroom" && (
+                  <div className="space-y-3">
                   {isLoadingStatus ? (
                     <Skeleton className="h-16 w-full" />
                   ) : (
@@ -760,43 +785,11 @@ export default function Integrations() {
                       </Button>
                     </>
                   )}
-                </div>
-              )}
-            </Card>
-
-            {/* ── Schoology ── */}
-            <Card className="border shadow-sm overflow-hidden">
-              <button
-                type="button"
-                className="w-full text-left hover:bg-muted/40 transition-colors"
-                onClick={() => togglePanel("schoology")}
-                aria-expanded={openPanel === "schoology"}
-              >
-                <div className="flex items-center gap-4 px-5 py-4">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                    <GraduationCap className="w-5 h-5" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">Schoology</span>
-                      {status?.schoologyConnected && (
-                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
-                          <CheckCircle2 className="w-3 h-3" /> Connected
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Import upcoming assignments from your Schoology courses
-                    </p>
-                  </div>
-                  {openPanel === "schoology"
-                    ? <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
-                    : <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />}
-                </div>
-              </button>
+                )}
 
-              {openPanel === "schoology" && (
-                <div className="px-5 pb-5 border-t pt-5 space-y-4">
+                {openPanel === "schoology" && (
+                  <div className="space-y-4">
                   {isLoadingStatus ? (
                     <Skeleton className="h-24 w-full" />
                   ) : status?.schoologyConnected ? (
@@ -864,15 +857,18 @@ export default function Integrations() {
                       </Button>
                     </form>
                   )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </Card>
+          )}
 
-          </div>
+          {openPanel === "focusguard" && (
+            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+              <FocusGuardCard />
+            </div>
+          )}
         </section>
-
-        {/* Focus Guard extension — full controls also live on the Focus Guard tab */}
-        <FocusGuardCard />
 
         {/* Empty state */}
         {!isLoadingAssignments && assignments.length === 0 && (
