@@ -1,4 +1,4 @@
-// Tempus Focus 3 popup — deliberately minimal.
+// Tempus Focus 4 popup — deliberately minimal.
 // A clock counting down the current work block, and a Home button.
 // Everything else is configured on the Tempus website.
 
@@ -59,7 +59,7 @@ function render() {
   } else if (s.nextBlock && showClock) {
     idleText.textContent = `Next: ${s.nextBlock.title} — ${DAY_LABELS[s.nextBlock.day] || s.nextBlock.day} ${s.nextBlock.startTime}`;
   } else {
-    idleText.textContent = "Tempus Focus 3";
+    idleText.textContent = "Tempus Focus 4";
   }
 }
 

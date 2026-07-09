@@ -1,4 +1,4 @@
-// Tempus Focus 3 — service worker.
+// Tempus Focus 4 — service worker.
 // The extension is a thin client: every setting (blocked sites, blocking
 // mode, on/off, clock visibility) lives on the Tempus website and is fetched
 // from the server. Nothing can be changed from the extension itself.

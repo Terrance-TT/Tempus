@@ -157,7 +157,7 @@ export function FocusGuardCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
           <ShieldCheck className="w-5 h-5 text-primary" />
-          Tempus Focus 3
+          Tempus Focus 4
           <Badge variant="outline" className="ml-auto rounded-full">Chrome extension</Badge>
         </CardTitle>
         <CardDescription>
@@ -177,7 +177,7 @@ export function FocusGuardCard() {
             <li>Generate your connection code and paste it into the extension popup.</li>
           </ol>
           <div className="flex flex-wrap gap-3">
-            <a href={`${import.meta.env.BASE_URL}tempus-focus-3.zip`} download>
+            <a href={`${import.meta.env.BASE_URL}tempus-focus-4.zip`} download>
               <Button variant="outline" data-testid="button-download-extension">
                 <Download className="w-4 h-4 mr-2" />
                 Download extension

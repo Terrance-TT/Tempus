@@ -1,16 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Tempus Focus 3",
-  "version": "3.0.0",
+  "name": "Tempus Focus 4",
+  "version": "4.0.0",
   "description": "Blocks distracting websites during your Tempus schedule. All settings are managed on the Tempus website.",
   "permissions": ["storage", "alarms", "declarativeNetRequest", "tabs"],
-  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Tempus Focus 3"
+    "default_title": "Tempus Focus 4"
   },
   "icons": {
     "16": "icons/icon16.png",
