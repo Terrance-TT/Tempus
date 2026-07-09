@@ -64,6 +64,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function Create() {
   const deviceId = useDeviceId();
@@ -669,22 +670,32 @@ export default function Create() {
             </header>
 
             <div className="flex items-stretch p-1.5 bg-secondary/40 rounded-full border-2 border-border/70 mx-auto w-fit" data-testid="tabs-input-mode">
-              <button
-                type="button"
-                onClick={() => setInputMode("photo")}
-                data-testid="tab-photo"
-                className={`flex items-center justify-center px-8 py-3 rounded-full font-medium transition-all border-2 ${inputMode === "photo" ? "bg-background shadow-sm text-foreground border-border/70" : "text-muted-foreground hover:text-foreground border-transparent"}`}
-              >
-                <Camera className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setInputMode("describe")}
-                data-testid="tab-describe"
-                className={`flex items-center justify-center px-8 py-3 rounded-full font-medium transition-all border-2 ${inputMode === "describe" ? "bg-background shadow-sm text-foreground border-border/70" : "text-muted-foreground hover:text-foreground border-transparent"}`}
-              >
-                <MessageSquareText className="w-5 h-5" />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setInputMode("photo")}
+                    data-testid="tab-photo"
+                    className={`flex items-center justify-center px-8 py-3 rounded-full font-medium transition-all border-2 ${inputMode === "photo" ? "bg-background shadow-sm text-foreground border-border/70" : "text-muted-foreground hover:text-foreground border-transparent"}`}
+                  >
+                    <Camera className="w-5 h-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Take or upload a photo of your schedule</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setInputMode("describe")}
+                    data-testid="tab-describe"
+                    className={`flex items-center justify-center px-8 py-3 rounded-full font-medium transition-all border-2 ${inputMode === "describe" ? "bg-background shadow-sm text-foreground border-border/70" : "text-muted-foreground hover:text-foreground border-transparent"}`}
+                  >
+                    <MessageSquareText className="w-5 h-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Describe your week in your own words</TooltipContent>
+              </Tooltip>
             </div>
 
             {inputMode === "photo" && (
