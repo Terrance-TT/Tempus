@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, CalendarDays, PlusCircle, History, Plug, LogOut } from "lucide-react";
+import { Calendar, CalendarDays, PlusCircle, Plug, ShieldCheck, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/react";
 import { useIsSignedIn, useDeviceId } from "@/hooks/use-device-id";
@@ -29,8 +29,8 @@ export function Layout({ children }: LayoutProps) {
       ? { href: "/", label: "Today", icon: Calendar }
       : { href: "/", label: "Plans", icon: CalendarDays },
     { href: "/create", label: "New Plan", icon: PlusCircle },
-    { href: "/history", label: "History", icon: History },
     { href: "/integrations", label: "Integrations", icon: Plug },
+    { href: "/focus-guard", label: "Focus Guard", icon: ShieldCheck },
   ];
 
   return (

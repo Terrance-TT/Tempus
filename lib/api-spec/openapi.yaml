@@ -167,6 +167,65 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExtensionTokenResult"
+  /focus-guard/settings:
+    get:
+      operationId: getFocusGuardSettings
+      tags: [focusGuard]
+      summary: Get the Focus Guard extension settings for a user/device
+      parameters:
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Focus Guard settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FocusGuardSettings"
+    put:
+      operationId: updateFocusGuardSettings
+      tags: [focusGuard]
+      summary: Update the Focus Guard extension settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFocusGuardSettingsInput"
+      responses:
+        "200":
+          description: Updated Focus Guard settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FocusGuardSettings"
+  /focus-guard/analytics:
+    get:
+      operationId: getFocusGuardAnalytics
+      tags: [focusGuard]
+      summary: Get per-site time analytics reported by the extension (Pro)
+      parameters:
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            description: Look-back window in days (default 7).
+      responses:
+        "200":
+          description: Per-site usage totals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FocusGuardAnalytics"
   /claim-guest-data:
     post:
       operationId: claimGuestData
@@ -832,6 +891,74 @@ components:
           type: string
       required:
         - token
+    FocusGuardSettings:
+      type: object
+      properties:
+        blockedSites:
+          type: array
+          items:
+            type: string
+        blockMode:
+          type: string
+          enum: [work_blocks, non_free]
+          description: >
+            work_blocks — block only during homework/study blocks.
+            non_free — block whenever any non-free block (class, work, etc.) is active.
+        active:
+          type: boolean
+        hideActivateSwitch:
+          type: boolean
+        showClock:
+          type: boolean
+      required:
+        - blockedSites
+        - blockMode
+        - active
+        - hideActivateSwitch
+        - showClock
+    UpdateFocusGuardSettingsInput:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        blockedSites:
+          type: array
+          items:
+            type: string
+        blockMode:
+          type: string
+          enum: [work_blocks, non_free]
+        active:
+          type: boolean
+        hideActivateSwitch:
+          type: boolean
+        showClock:
+          type: boolean
+      required:
+        - deviceId
+    FocusGuardUsageTotal:
+      type: object
+      properties:
+        domain:
+          type: string
+        seconds:
+          type: integer
+      required:
+        - domain
+        - seconds
+    FocusGuardAnalytics:
+      type: object
+      properties:
+        isPro:
+          type: boolean
+        totals:
+          type: array
+          description: Per-domain total seconds, descending. Empty unless isPro.
+          items:
+            $ref: "#/components/schemas/FocusGuardUsageTotal"
+      required:
+        - isPro
+        - totals
     ClaimGuestDataInput:
       type: object
       properties:

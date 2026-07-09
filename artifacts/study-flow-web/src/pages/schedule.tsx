@@ -207,7 +207,7 @@ export default function Schedule() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListSchedulesQueryKey({ deviceId }) });
           toast({ title: "Schedule deleted" });
-          setLocation("/history");
+          setLocation("/");
         },
         onError: (err: any) => {
           toast({ title: "Error", description: err?.data?.message, variant: "destructive" });

@@ -26,3 +26,4 @@ export * from "./users";
 export * from "./staffRoles";
 export * from "./manualRequests";
 export * from "./extensionTokens";
+export * from "./focusGuard";

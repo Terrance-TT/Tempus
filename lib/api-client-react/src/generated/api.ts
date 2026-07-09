@@ -36,8 +36,12 @@ import type {
   ExtensionTokenResult,
   ExtractCommitmentsInput,
   ExtractCommitmentsTextInput,
+  FocusGuardAnalytics,
+  FocusGuardSettings,
   GenerateScheduleInput,
   GenerateScheduleResult,
+  GetFocusGuardAnalyticsParams,
+  GetFocusGuardSettingsParams,
   GetIntegrationsStatusParams,
   GetPreferencesParams,
   GetScheduleParams,
@@ -59,6 +63,7 @@ import type {
   SyncScheduleGoogleCalendarInput,
   SyncScheduleGoogleCalendarResult,
   UpdateCommitmentInput,
+  UpdateFocusGuardSettingsInput,
   UpdatePreferencesInput,
   UpdateScheduleInput,
   UserPreferences
@@ -688,6 +693,244 @@ export const useCreateExtensionToken = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getCreateExtensionTokenMutationOptions(options));
     }
+
+export const getGetFocusGuardSettingsUrl = (params: GetFocusGuardSettingsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/focus-guard/settings?${stringifiedParams}` : `/api/focus-guard/settings`
+}
+
+/**
+ * @summary Get the Focus Guard extension settings for a user/device
+ */
+export const getFocusGuardSettings = async (params: GetFocusGuardSettingsParams, options?: RequestInit): Promise<FocusGuardSettings> => {
+
+  return customFetch<FocusGuardSettings>(getGetFocusGuardSettingsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFocusGuardSettingsQueryKey = (params?: GetFocusGuardSettingsParams,) => {
+    return [
+    `/api/focus-guard/settings`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetFocusGuardSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getFocusGuardSettings>>, TError = ErrorType<unknown>>(params: GetFocusGuardSettingsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFocusGuardSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFocusGuardSettingsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFocusGuardSettings>>> = ({ signal }) => getFocusGuardSettings(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFocusGuardSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFocusGuardSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getFocusGuardSettings>>>
+export type GetFocusGuardSettingsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the Focus Guard extension settings for a user/device
+ */
+
+export function useGetFocusGuardSettings<TData = Awaited<ReturnType<typeof getFocusGuardSettings>>, TError = ErrorType<unknown>>(
+ params: GetFocusGuardSettingsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFocusGuardSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFocusGuardSettingsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateFocusGuardSettingsUrl = () => {
+
+
+
+
+  return `/api/focus-guard/settings`
+}
+
+/**
+ * @summary Update the Focus Guard extension settings
+ */
+export const updateFocusGuardSettings = async (updateFocusGuardSettingsInput: UpdateFocusGuardSettingsInput, options?: RequestInit): Promise<FocusGuardSettings> => {
+
+  return customFetch<FocusGuardSettings>(getUpdateFocusGuardSettingsUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateFocusGuardSettingsInput)
+  }
+);}
+
+
+
+
+export const getUpdateFocusGuardSettingsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFocusGuardSettings>>, TError,{data: BodyType<UpdateFocusGuardSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateFocusGuardSettings>>, TError,{data: BodyType<UpdateFocusGuardSettingsInput>}, TContext> => {
+
+const mutationKey = ['updateFocusGuardSettings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateFocusGuardSettings>>, {data: BodyType<UpdateFocusGuardSettingsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateFocusGuardSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateFocusGuardSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateFocusGuardSettings>>>
+    export type UpdateFocusGuardSettingsMutationBody = BodyType<UpdateFocusGuardSettingsInput>
+    export type UpdateFocusGuardSettingsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update the Focus Guard extension settings
+ */
+export const useUpdateFocusGuardSettings = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFocusGuardSettings>>, TError,{data: BodyType<UpdateFocusGuardSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateFocusGuardSettings>>,
+        TError,
+        {data: BodyType<UpdateFocusGuardSettingsInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateFocusGuardSettingsMutationOptions(options));
+    }
+
+export const getGetFocusGuardAnalyticsUrl = (params: GetFocusGuardAnalyticsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/focus-guard/analytics?${stringifiedParams}` : `/api/focus-guard/analytics`
+}
+
+/**
+ * @summary Get per-site time analytics reported by the extension (Pro)
+ */
+export const getFocusGuardAnalytics = async (params: GetFocusGuardAnalyticsParams, options?: RequestInit): Promise<FocusGuardAnalytics> => {
+
+  return customFetch<FocusGuardAnalytics>(getGetFocusGuardAnalyticsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFocusGuardAnalyticsQueryKey = (params?: GetFocusGuardAnalyticsParams,) => {
+    return [
+    `/api/focus-guard/analytics`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetFocusGuardAnalyticsQueryOptions = <TData = Awaited<ReturnType<typeof getFocusGuardAnalytics>>, TError = ErrorType<unknown>>(params: GetFocusGuardAnalyticsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFocusGuardAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFocusGuardAnalyticsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFocusGuardAnalytics>>> = ({ signal }) => getFocusGuardAnalytics(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFocusGuardAnalytics>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFocusGuardAnalyticsQueryResult = NonNullable<Awaited<ReturnType<typeof getFocusGuardAnalytics>>>
+export type GetFocusGuardAnalyticsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get per-site time analytics reported by the extension (Pro)
+ */
+
+export function useGetFocusGuardAnalytics<TData = Awaited<ReturnType<typeof getFocusGuardAnalytics>>, TError = ErrorType<unknown>>(
+ params: GetFocusGuardAnalyticsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFocusGuardAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFocusGuardAnalyticsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getClaimGuestDataUrl = () => {
 

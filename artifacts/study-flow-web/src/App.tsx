@@ -22,8 +22,8 @@ import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Create from "@/pages/create";
 import Schedule from "@/pages/schedule";
-import History from "@/pages/history";
 import Integrations from "@/pages/integrations";
+import FocusGuard from "@/pages/focus-guard";
 import Pricing from "@/pages/pricing";
 import CheckoutSuccess from "@/pages/checkout-success";
 import NotFound from "@/pages/not-found";
@@ -309,8 +309,8 @@ function ClerkProviderWithRoutes() {
             {/* Guests may build a schedule without an account */}
             <Route path="/create" component={Create} />
             <Route path="/schedule/:id" component={Schedule} />
-            <Route path="/history" component={History} />
             <Route path="/integrations" component={Integrations} />
+            <Route path="/focus-guard" component={FocusGuard} />
             <Route path="/pricing" component={Pricing} />
             <Route path="/checkout/success" component={CheckoutSuccess} />
             <Route component={NotFound} />

@@ -158,6 +158,60 @@ export const CreateExtensionTokenResponse = zod.object({
 
 
 /**
+ * @summary Get the Focus Guard extension settings for a user/device
+ */
+export const GetFocusGuardSettingsQueryParams = zod.object({
+  "deviceId": zod.coerce.string()
+})
+
+export const GetFocusGuardSettingsResponse = zod.object({
+  "blockedSites": zod.array(zod.string()),
+  "blockMode": zod.enum(['work_blocks', 'non_free']).describe('work_blocks — block only during homework\/study blocks. non_free — block whenever any non-free block (class, work, etc.) is active.\n'),
+  "active": zod.boolean(),
+  "hideActivateSwitch": zod.boolean(),
+  "showClock": zod.boolean()
+})
+
+
+/**
+ * @summary Update the Focus Guard extension settings
+ */
+export const UpdateFocusGuardSettingsBody = zod.object({
+  "deviceId": zod.string(),
+  "blockedSites": zod.array(zod.string()).optional(),
+  "blockMode": zod.enum(['work_blocks', 'non_free']).optional(),
+  "active": zod.boolean().optional(),
+  "hideActivateSwitch": zod.boolean().optional(),
+  "showClock": zod.boolean().optional()
+})
+
+export const UpdateFocusGuardSettingsResponse = zod.object({
+  "blockedSites": zod.array(zod.string()),
+  "blockMode": zod.enum(['work_blocks', 'non_free']).describe('work_blocks — block only during homework\/study blocks. non_free — block whenever any non-free block (class, work, etc.) is active.\n'),
+  "active": zod.boolean(),
+  "hideActivateSwitch": zod.boolean(),
+  "showClock": zod.boolean()
+})
+
+
+/**
+ * @summary Get per-site time analytics reported by the extension (Pro)
+ */
+export const GetFocusGuardAnalyticsQueryParams = zod.object({
+  "deviceId": zod.coerce.string(),
+  "days": zod.coerce.number().optional()
+})
+
+export const GetFocusGuardAnalyticsResponse = zod.object({
+  "isPro": zod.boolean(),
+  "totals": zod.array(zod.object({
+  "domain": zod.string(),
+  "seconds": zod.number()
+})).describe('Per-domain total seconds, descending. Empty unless isPro.')
+})
+
+
+/**
  * After a guest signs in, transfers commitments, schedules, assignments and preferences owned by the anonymous guest device id to the signed-in user's account. Requires an authenticated session.
  * @summary Reassign data created as a signed-out guest to the signed-in user
  */

@@ -1,0 +1,77 @@
+body {
+  width: 240px;
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #1d3a2e;
+  background: #fafaf7;
+}
+.view {
+  padding: 20px 18px 18px;
+  text-align: center;
+}
+.brand {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.hint {
+  font-size: 12px;
+  color: #6b7d73;
+  margin: 0 0 10px;
+  text-align: left;
+}
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cfd8d2;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 12px;
+  font-family: inherit;
+  background: #fff;
+}
+button {
+  margin-top: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #4d8a6a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+button:hover {
+  background: #427a5c;
+}
+button:disabled {
+  background: #a9c4b5;
+  cursor: default;
+}
+.error {
+  color: #b3372f;
+  font-size: 12px;
+  margin: 8px 0 0;
+  text-align: left;
+}
+#clock-time {
+  font-size: 44px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+#clock-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7d73;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#idle-text {
+  font-size: 12px;
+  color: #6b7d73;
+  line-height: 1.5;
+}

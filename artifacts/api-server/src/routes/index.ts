@@ -7,6 +7,7 @@ import integrationsRouter from "./integrations";
 import preferencesRouter from "./preferences";
 import stripeRouter from "./stripe";
 import extensionRouter from "./extension";
+import focusGuardRouter from "./focusGuard";
 import spsEngageRouter from "./sps-engage";
 
 const router: IRouter = Router();
@@ -19,6 +20,7 @@ router.use(integrationsRouter);
 router.use(preferencesRouter);
 router.use(stripeRouter);
 router.use(extensionRouter);
+router.use(focusGuardRouter);
 router.use(spsEngageRouter);
 
 export default router;

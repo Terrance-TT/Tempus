@@ -106,6 +106,54 @@ export interface ExtensionTokenResult {
   token: string;
 }
 
+/**
+ * work_blocks — block only during homework/study blocks. non_free — block whenever any non-free block (class, work, etc.) is active.
+ */
+export type FocusGuardSettingsBlockMode = typeof FocusGuardSettingsBlockMode[keyof typeof FocusGuardSettingsBlockMode];
+
+
+export const FocusGuardSettingsBlockMode = {
+  work_blocks: 'work_blocks',
+  non_free: 'non_free',
+} as const;
+
+export interface FocusGuardSettings {
+  blockedSites: string[];
+  /** work_blocks — block only during homework/study blocks. non_free — block whenever any non-free block (class, work, etc.) is active. */
+  blockMode: FocusGuardSettingsBlockMode;
+  active: boolean;
+  hideActivateSwitch: boolean;
+  showClock: boolean;
+}
+
+export type UpdateFocusGuardSettingsInputBlockMode = typeof UpdateFocusGuardSettingsInputBlockMode[keyof typeof UpdateFocusGuardSettingsInputBlockMode];
+
+
+export const UpdateFocusGuardSettingsInputBlockMode = {
+  work_blocks: 'work_blocks',
+  non_free: 'non_free',
+} as const;
+
+export interface UpdateFocusGuardSettingsInput {
+  deviceId: string;
+  blockedSites?: string[];
+  blockMode?: UpdateFocusGuardSettingsInputBlockMode;
+  active?: boolean;
+  hideActivateSwitch?: boolean;
+  showClock?: boolean;
+}
+
+export interface FocusGuardUsageTotal {
+  domain: string;
+  seconds: number;
+}
+
+export interface FocusGuardAnalytics {
+  isPro: boolean;
+  /** Per-domain total seconds, descending. Empty unless isPro. */
+  totals: FocusGuardUsageTotal[];
+}
+
 export interface ClaimGuestDataInput {
   /** The anonymous device id whose data should be claimed. */
   guestDeviceId: string;
@@ -338,6 +386,18 @@ deviceId: string;
 
 export type GetPreferencesParams = {
 deviceId: string;
+};
+
+export type GetFocusGuardSettingsParams = {
+deviceId: string;
+};
+
+export type GetFocusGuardAnalyticsParams = {
+deviceId: string;
+/**
+ * Look-back window in days (default 7).
+ */
+days?: number;
 };
 
 export type DeleteCommitmentParams = {
