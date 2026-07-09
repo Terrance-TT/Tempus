@@ -1,5 +1,5 @@
 kind = "web"
-previewPath = "/web/"
+previewPath = "/"
 title = "StudyFlow Web"
 version = "1.0.0"
 id = "artifacts/study-flow-web"
@@ -11,7 +11,7 @@ version = "1.0.0"
 
 [[services]]
 name = "web"
-paths = [ "/web/" ]
+paths = [ "/" ]
 localPort = 25418
 
 [services.development]
@@ -28,4 +28,4 @@ to = "/index.html"
 
 [services.env]
 PORT = "25418"
-BASE_PATH = "/web/"
+BASE_PATH = "/"

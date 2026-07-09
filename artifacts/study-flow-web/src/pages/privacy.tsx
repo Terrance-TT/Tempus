@@ -120,8 +120,8 @@ export default function Privacy() {
             <p className="text-muted-foreground leading-relaxed">
               If you have questions about this Privacy Policy or want to request deletion of your data, contact
               us at{" "}
-              <a href="mailto:support@tempusapp.co" className="text-primary underline">
-                support@tempusapp.co
+              <a href="mailto:yungyungadam@gmail.com" className="text-primary underline">
+                yungyungadam@gmail.com
               </a>
               .
             </p>
