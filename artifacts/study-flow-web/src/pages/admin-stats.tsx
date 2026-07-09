@@ -29,6 +29,22 @@ function StatCard({
   );
 }
 
+type EvalBlock = {
+  day: string;
+  startTime: string;
+  endTime: string;
+  title: string;
+  category: string;
+  notes?: string | null;
+};
+
+type EvalPrompt = {
+  scope?: string;
+  commitments?: Array<{ title: string; type: string; daysOfWeek: string[]; startTime: string; endTime: string }>;
+  tasks?: Array<{ title: string; dueDate?: string; estimatedMinutes?: number; notes?: string | null }>;
+  priorAnswers?: Array<{ question: string; answer: string }>;
+};
+
 type EvalResult = {
   name: string;
   scope: string;
@@ -37,19 +53,160 @@ type EvalResult = {
   blockCount?: number;
   distinctDays?: number;
   overlaps?: string[];
-  missingCommitments?: string[];
   tasksRequested?: number;
   tasksScheduled?: number;
   durationMs?: number;
   promptTokens?: number | null;
   completionTokens?: number | null;
-  sampleBlocks?: Array<{ day: string; startTime: string; endTime: string; title: string; category: string }>;
+  userPrompt?: EvalPrompt;
+  blocks?: EvalBlock[];
   error?: string;
 };
 
+const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+const DAY_LABELS: Record<string, string> = {
+  mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun",
+};
+
+function getCategoryColor(category: string) {
+  switch (category) {
+    case "class": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800/50";
+    case "homework": return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800/50";
+    case "extracurricular": return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-800/50";
+    case "routine": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800/50";
+    case "break": return "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300 border-rose-200 dark:border-rose-800/50";
+    case "free": return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700";
+    default: return "bg-secondary text-secondary-foreground border-border";
+  }
+}
+
+function toMinutes(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function MiniWeekGrid({ blocks }: { blocks: EvalBlock[] }) {
+  const days = DAY_ORDER.filter((d) => blocks.some((b) => b.day === d));
+  if (days.length === 0) return null;
+
+  const startMin = Math.max(0, Math.min(...blocks.map((b) => toMinutes(b.startTime))) - 30);
+  const endMin = Math.min(24 * 60, Math.max(...blocks.map((b) => toMinutes(b.endTime))) + 30);
+  const span = Math.max(1, endMin - startMin);
+  const gridHeight = Math.max(420, Math.round(span * 0.55));
+
+  const hourMarks: number[] = [];
+  for (let m = Math.ceil(startMin / 120) * 120; m < endMin; m += 120) hourMarks.push(m);
+
+  return (
+    <div className="overflow-x-auto rounded-lg border">
+      <div className="min-w-[560px]">
+        <div
+          className="grid border-b bg-secondary/30"
+          style={{ gridTemplateColumns: `3rem repeat(${days.length}, 1fr)` }}
+        >
+          <div />
+          {days.map((d) => (
+            <div key={d} className="px-2 py-1.5 text-xs font-medium text-center border-l">
+              {DAY_LABELS[d]}
+            </div>
+          ))}
+        </div>
+        <div
+          className="grid relative"
+          style={{ gridTemplateColumns: `3rem repeat(${days.length}, 1fr)`, height: gridHeight }}
+        >
+          <div className="relative">
+            {hourMarks.map((m) => (
+              <span
+                key={m}
+                className="absolute right-1 -translate-y-1/2 text-[10px] text-muted-foreground"
+                style={{ top: `${((m - startMin) / span) * 100}%` }}
+              >
+                {Math.floor(m / 60)}:00
+              </span>
+            ))}
+          </div>
+          {days.map((d) => (
+            <div key={d} className="relative border-l">
+              {hourMarks.map((m) => (
+                <div
+                  key={m}
+                  className="absolute left-0 right-0 border-t border-dashed border-border/60"
+                  style={{ top: `${((m - startMin) / span) * 100}%` }}
+                />
+              ))}
+              {blocks
+                .filter((b) => b.day === d)
+                .map((b, i) => {
+                  const top = ((toMinutes(b.startTime) - startMin) / span) * 100;
+                  const height = ((toMinutes(b.endTime) - toMinutes(b.startTime)) / span) * 100;
+                  return (
+                    <div
+                      key={i}
+                      className={`absolute left-0.5 right-0.5 rounded border px-1 py-0.5 overflow-hidden ${getCategoryColor(b.category)}`}
+                      style={{ top: `${top}%`, height: `calc(${height}% - 2px)` }}
+                      title={`${b.title} (${b.startTime}–${b.endTime})`}
+                    >
+                      <p className="text-[10px] font-medium leading-tight truncate">{b.title}</p>
+                      {height > 4 && (
+                        <p className="text-[9px] opacity-70 leading-tight truncate">
+                          {b.startTime}–{b.endTime}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UserPromptSummary({ prompt }: { prompt: EvalPrompt }) {
+  return (
+    <div className="rounded-lg border bg-secondary/20 p-3 space-y-2 text-sm">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">User prompt</p>
+      {prompt.commitments && prompt.commitments.length > 0 && (
+        <div>
+          <p className="text-xs font-medium mb-0.5">Commitments</p>
+          {prompt.commitments.map((c, i) => (
+            <p key={i} className="text-xs text-muted-foreground">
+              • {c.title} — {c.daysOfWeek.map((d) => DAY_LABELS[d] ?? d).join(", ")} {c.startTime}–{c.endTime} ({c.type})
+            </p>
+          ))}
+        </div>
+      )}
+      {prompt.tasks && prompt.tasks.length > 0 && (
+        <div>
+          <p className="text-xs font-medium mb-0.5">Tasks</p>
+          {prompt.tasks.map((t, i) => (
+            <p key={i} className="text-xs text-muted-foreground">
+              • {t.title}
+              {t.dueDate ? ` — due ${t.dueDate}` : ""}
+              {t.estimatedMinutes ? ` (~${t.estimatedMinutes} min)` : ""}
+              {t.notes ? ` — "${t.notes}"` : ""}
+            </p>
+          ))}
+        </div>
+      )}
+      {prompt.priorAnswers && prompt.priorAnswers.length > 0 && (
+        <div>
+          <p className="text-xs font-medium mb-0.5">Preferences</p>
+          {prompt.priorAnswers.map((a, i) => (
+            <p key={i} className="text-xs text-muted-foreground">
+              • {a.question} {a.answer}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EvalResultCard({ result, index }: { result: EvalResult; index: number }) {
   const isComplete = result.status === "complete";
-  const isClarify = result.status === "needs_clarification";
   const hasOverlaps = (result.overlaps?.length ?? 0) > 0;
 
   return (
@@ -72,13 +229,15 @@ function EvalResultCard({ result, index }: { result: EvalResult; index: number }
         </div>
         <p className="font-semibold">{result.name}</p>
 
+        {result.userPrompt && <UserPromptSummary prompt={result.userPrompt} />}
+
         {result.error ? (
           <p className="text-sm text-destructive">{result.error}</p>
         ) : isComplete ? (
           <div className="space-y-2 text-sm">
             <div className="flex flex-wrap gap-x-5 gap-y-1 text-muted-foreground">
               <span>{result.blockCount} blocks</span>
-              <span>{result.distinctDays}/7 days covered</span>
+              <span>{result.distinctDays}/{result.scope === "day" ? 1 : 7} days covered</span>
               <span className={hasOverlaps ? "text-destructive font-medium" : ""}>
                 {result.overlaps?.length ?? 0} overlaps
               </span>
@@ -97,25 +256,16 @@ function EvalResultCard({ result, index }: { result: EvalResult; index: number }
                 <span>{result.overlaps!.join("; ")}</span>
               </div>
             )}
-            {result.sampleBlocks && result.sampleBlocks.length > 0 && (
-              <div className="rounded-lg border bg-secondary/20 p-3 space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sample blocks</p>
-                {result.sampleBlocks.map((b, i) => (
-                  <p key={i} className="text-xs font-mono">
-                    {b.day} {b.startTime}–{b.endTime} · {b.title} <span className="text-muted-foreground">({b.category})</span>
-                  </p>
-                ))}
-              </div>
-            )}
+            {result.blocks && result.blocks.length > 0 && <MiniWeekGrid blocks={result.blocks} />}
           </div>
-        ) : isClarify ? (
+        ) : (
           <div className="rounded-lg border bg-secondary/20 p-3 space-y-1">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Questions it asked</p>
             {result.questions?.map((q, i) => (
               <p key={i} className="text-sm">• {q}</p>
             ))}
           </div>
-        ) : null}
+        )}
       </CardContent>
     </Card>
   );

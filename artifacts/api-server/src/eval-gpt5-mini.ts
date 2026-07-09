@@ -235,7 +235,8 @@ async function runScenario(s: (typeof scenarios)[number]) {
     durationMs,
     promptTokens: usage?.prompt_tokens ?? null,
     completionTokens: usage?.completion_tokens ?? null,
-    sampleBlocks: blocks.slice(0, 6),
+    userPrompt: s.payload,
+    blocks,
   };
 }
 
