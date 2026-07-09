@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "oeGNTNsYCqPViYRGf43K_"
+uri = "file://artifacts/study-flow-web/public/tempus-focus-guard.zip"
+type = "unspecified"
+title = "Tempus Focus Guard Extension"
