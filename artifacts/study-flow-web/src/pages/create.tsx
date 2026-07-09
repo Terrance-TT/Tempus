@@ -642,7 +642,17 @@ export default function Create() {
     const preferences = buildPreferences();
 
     // Persist preferences so they're remembered next time (fire-and-forget).
-    updatePreferences.mutate({ data: { deviceId, ...preferences } });
+    // Important: persist the raw, user-typed notes here — not the
+    // hint-augmented `preferences.notes` — so the "Preferred study
+    // time"/"Focus session length" hints (derived from studyPref/focusLength
+    // toggles) never get baked permanently into the saved notes text. If we
+    // saved the combined text, reloading it next session would re-seed
+    // prefNotes with those hints already embedded, and buildPreferences()
+    // would then append them again, duplicating the text on every
+    // generation.
+    updatePreferences.mutate({
+      data: { deviceId, wakeTime: preferences.wakeTime, bedTime: preferences.bedTime, mealTimes: preferences.mealTimes, notes: prefNotes.trim() || null },
+    });
 
     generateSchedule.mutate(
       { data: { deviceId, scope: selectedScope, tasks, preferences } },
