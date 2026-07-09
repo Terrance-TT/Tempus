@@ -187,11 +187,11 @@ export default function Home() {
                       )}
                     >
                       {/* Vertical pill to the left of the circle */}
-                      <div className="w-3 h-9 rounded-full bg-primary/60 self-center shrink-0 ml-2" />
+                      <div className="w-3 h-9 rounded-full bg-primary/60 self-center shrink-0 ml-2 translate-x-1" />
 
                       {/* Left circle cap — indicator dot, click to open */}
                       <button
-                        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
+                        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 -ml-2"
                         onClick={() => !isRenaming && setLocation(`/schedule/${plan.id}`)}
                         aria-label="Open plan"
                       >
