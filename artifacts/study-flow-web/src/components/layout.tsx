@@ -35,7 +35,15 @@ export function Layout({ children }: LayoutProps) {
   );
   const hasGeneratedSchedule = !!schedules?.some((s) => s.status === "complete");
 
-  const handleSignOut = () => signOut(() => setLocation("/"));
+  const handleSignOut = () =>
+    signOut(() => {
+      // Clear all locally-persisted app state (theme, guest device id, drafts,
+      // etc.) so signing out is a true reset rather than leaving customization
+      // or leftover guest data behind for the next person to use this browser.
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = "/";
+    });
 
   const navItems = [
     hasGeneratedSchedule
