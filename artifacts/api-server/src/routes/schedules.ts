@@ -434,7 +434,7 @@ router.patch("/schedules/:id/name", async (req, res) => {
   const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
   const { name, deviceId } = z.object({
     name: z.string().trim().min(1).max(100),
-    deviceId: z.string().optional(),
+    deviceId: z.string().default(""),
   }).parse(req.body);
   const ownerId = resolveOwnerId(req, deviceId);
 
