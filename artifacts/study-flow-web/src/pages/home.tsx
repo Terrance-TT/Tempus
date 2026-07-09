@@ -198,19 +198,16 @@ export default function Home() {
                         "hover:border-primary/40 hover:shadow-sm"
                       )}
                     >
-                      {/* Crossed double pill to the left of the circle */}
-                      <div className="flex items-center gap-0.5 self-center shrink-0 ml-2 translate-x-1 rotate-[18deg] origin-bottom transition-transform duration-1000 ease-out group-hover:translate-x-3 group-hover:rotate-[32deg]">
-                        <div className="w-2.5 h-9 rounded-full bg-primary/60" />
-                        <div className="w-2.5 h-9 rounded-full bg-primary/40" />
-                      </div>
+                      {/* Vertical pill to the left of the circle */}
+                      <div className="w-3 h-9 rounded-full bg-primary/60 self-center shrink-0 ml-2 translate-x-1 origin-bottom transition-transform duration-1000 ease-out group-hover:translate-x-3 group-hover:rotate-[18deg]" />
 
                       {/* Left circle cap — indicator dot, click to open */}
                       <button
-                        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 -ml-3 -mr-4 transition-transform duration-1000 ease-out group-hover:translate-x-1"
+                        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 -ml-2 -mr-4 transition-transform duration-1000 ease-out group-hover:translate-x-1"
                         onClick={() => !isRenaming && setLocation(`/schedule/${plan.id}`)}
                         aria-label="Open plan"
                       >
-                        <div className="w-8 h-8 rounded-full bg-primary/20" />
+                        <div className="w-8 h-8 rounded-full bg-primary/40" />
                       </button>
 
                       {/* Rolling name — expands out from the left circle on hover */}
@@ -236,7 +233,7 @@ export default function Home() {
                           onClick={() => setLocation(`/schedule/${plan.id}`)}
                           onDoubleClick={(e) => { e.preventDefault(); startRename(plan); }}
                         >
-                          <span className="pl-2 pr-4 text-lg font-bold text-foreground whitespace-nowrap">
+                          <span className="pr-4 text-lg font-bold text-foreground whitespace-nowrap">
                             {displayName}
                           </span>
                         </div>
