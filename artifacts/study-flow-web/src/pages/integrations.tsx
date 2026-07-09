@@ -511,7 +511,7 @@ export default function Integrations() {
                   aria-expanded={isOpen}
                   data-testid={`tile-${tool.id}`}
                   className={cn(
-                    "relative aspect-[2/1] rounded-2xl flex flex-col items-center justify-center gap-2 p-3 transition-all duration-200",
+                    "relative aspect-[2/1] rounded-2xl flex flex-col items-center justify-center gap-2 p-3 transition-all duration-200 group",
                     isOpen && "ring-1 ring-primary/40",
                   )}
                 >
@@ -520,7 +520,10 @@ export default function Integrations() {
                       <CheckCircle2 className="w-4 h-4" />
                     </span>
                   )}
-                  <span className={cn("w-20 h-20 rounded-3xl flex items-center justify-center", tool.iconClass)}>
+                  <span className={cn(
+                    "w-20 h-20 rounded-3xl flex items-center justify-center border border-white/10 transition-all duration-200 group-hover:brightness-125 group-hover:scale-105 group-hover:border-white/25",
+                    tool.iconClass
+                  )}>
                     <tool.icon className="w-10 h-10" />
                   </span>
                   <span className="text-base font-medium leading-tight text-center">{tool.name}</span>
