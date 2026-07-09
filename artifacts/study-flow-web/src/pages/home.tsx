@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Sparkles, Loader2, MoreHorizontal } from "lucide-react";
+import { PlusCircle, Sparkles, Loader2, MoreHorizontal, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
@@ -121,10 +121,13 @@ export default function Home() {
         {activeSchedule ? (
           <div>
             <button
-              className="aspect-[2/1] w-1/2 rounded-2xl border bg-card flex items-center justify-center transition-all duration-200 hover:border-primary/40 hover:shadow-sm"
+              className="aspect-[2/1] w-1/2 rounded-2xl bg-card flex items-center justify-center transition-all duration-200 hover:shadow-sm"
               onClick={() => setLocation("/create")}
+              aria-label="New plan"
             >
-              <span className="text-xl font-bold text-foreground">New</span>
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Plus className="w-7 h-7 text-primary" />
+              </div>
             </button>
           </div>
         ) : currentPlans.length === 0 ? (
