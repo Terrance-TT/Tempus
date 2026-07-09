@@ -1,7 +1,7 @@
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { writeFileSync } from "fs";
 
-const MODEL = "gpt-5.4-mini";
+const MODEL = process.env.EVAL_MODEL || "gpt-5.4-mini";
 
 const generationResultSchema = {
   type: "object",
@@ -258,7 +258,7 @@ async function main() {
     ranAt: new Date().toISOString(),
     results,
   };
-  writeFileSync("../study-flow-web/src/data/gpt5-mini-eval.json", JSON.stringify(out, null, 2));
+  writeFileSync(process.env.EVAL_OUT || "../study-flow-web/src/data/gpt5-mini-eval.json", JSON.stringify(out, null, 2));
   console.log("Wrote eval results.");
 }
 

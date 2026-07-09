@@ -1,0 +1,1235 @@
+{
+  "model": "gpt-5.4",
+  "ranAt": "2026-07-09T23:56:25.154Z",
+  "results": [
+    {
+      "name": "Columbia student, Canvas assignments, week",
+      "scope": "week",
+      "status": "complete",
+      "questions": [],
+      "blockCount": 56,
+      "distinctDays": 7,
+      "overlaps": [],
+      "missingCommitments": [],
+      "tasksRequested": 3,
+      "tasksScheduled": 3,
+      "durationMs": 8671,
+      "promptTokens": 1176,
+      "completionTokens": 1788,
+      "userPrompt": {
+        "scope": "week",
+        "commitments": [
+          {
+            "title": "Entrepreneurship with Daniel",
+            "type": "class",
+            "daysOfWeek": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri"
+            ],
+            "startTime": "09:10",
+            "endTime": "11:00",
+            "notes": null
+          },
+          {
+            "title": "Entrepreneurship with Daniel",
+            "type": "class",
+            "daysOfWeek": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri"
+            ],
+            "startTime": "13:10",
+            "endTime": "15:00",
+            "notes": null
+          },
+          {
+            "title": "Lunch",
+            "type": "routine",
+            "daysOfWeek": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri"
+            ],
+            "startTime": "11:00",
+            "endTime": "13:00",
+            "notes": null
+          }
+        ],
+        "tasks": [
+          {
+            "title": "Entrepreneurship: Market research memo",
+            "dueDate": "2026-07-13",
+            "estimatedMinutes": 120,
+            "notes": null
+          },
+          {
+            "title": "Entrepreneurship: Pitch deck draft",
+            "dueDate": "2026-07-15",
+            "estimatedMinutes": 180,
+            "notes": null
+          },
+          {
+            "title": "Personal: Internship applications",
+            "dueDate": "2026-07-17",
+            "estimatedMinutes": 90,
+            "notes": null
+          }
+        ],
+        "priorAnswers": [
+          {
+            "question": "Wake-up time?",
+            "answer": "7:30"
+          },
+          {
+            "question": "Bedtime?",
+            "answer": "23:00"
+          },
+          {
+            "question": "Anything else?",
+            "answer": "Preferred study time: evening. Focus session length: 90 minutes"
+          }
+        ]
+      },
+      "blocks": [
+        {
+          "day": "mon",
+          "startTime": "07:30",
+          "endTime": "08:00",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "08:00",
+          "endTime": "09:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "09:10",
+          "endTime": "11:00",
+          "title": "Entrepreneurship with Daniel",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "11:00",
+          "endTime": "13:00",
+          "title": "Lunch",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "13:10",
+          "endTime": "15:00",
+          "title": "Entrepreneurship with Daniel",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "15:00",
+          "endTime": "16:00",
+          "title": "Break",
+          "category": "break",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "16:00",
+          "endTime": "18:00",
+          "title": "Work on Market research memo",
+          "category": "homework",
+          "notes": "Due today"
+        },
+        {
+          "day": "mon",
+          "startTime": "18:00",
+          "endTime": "18:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "18:30",
+          "endTime": "23:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "07:30",
+          "endTime": "08:00",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "08:00",
+          "endTime": "09:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "09:10",
+          "endTime": "11:00",
+          "title": "Entrepreneurship with Daniel",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "11:00",
+          "endTime": "13:00",
+          "title": "Lunch",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "13:10",
+          "endTime": "15:00",
+          "title": "Entrepreneurship with Daniel",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "15:00",
+          "endTime": "17:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "17:30",
+          "endTime": "19:00",
+          "title": "Work on Pitch deck draft",
+          "category": "homework",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "19:00",
+          "endTime": "19:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "19:30",
+          "endTime": "23:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "07:30",
+          "endTime": "08:00",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "08:00",
+          "endTime": "09:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "09:10",
+          "endTime": "11:00",
+          "title": "Entrepreneurship with Daniel",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "11:00",
+          "endTime": "13:00",
+          "title": "Lunch",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "13:10",
+          "endTime": "15:00",
+          "title": "Entrepreneurship with Daniel",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "15:00",
+          "endTime": "16:30",
+          "title": "Break",
+          "category": "break",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "16:30",
+          "endTime": "18:00",
+          "title": "Work on Pitch deck draft",
+          "category": "homework",
+          "notes": "Due today"
+        },
+        {
+          "day": "wed",
+          "startTime": "18:00",
+          "endTime": "18:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "18:30",
+          "endTime": "23:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "07:30",
+          "endTime": "08:00",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "08:00",
+          "endTime": "09:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "09:10",
+          "endTime": "11:00",
+          "title": "Entrepreneurship with Daniel",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "11:00",
+          "endTime": "13:00",
+          "title": "Lunch",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "13:10",
+          "endTime": "15:00",
+          "title": "Entrepreneurship with Daniel",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "15:00",
+          "endTime": "18:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "18:00",
+          "endTime": "18:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "18:30",
+          "endTime": "23:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "07:30",
+          "endTime": "08:00",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "08:00",
+          "endTime": "09:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "09:10",
+          "endTime": "11:00",
+          "title": "Entrepreneurship with Daniel",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "11:00",
+          "endTime": "13:00",
+          "title": "Lunch",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "13:10",
+          "endTime": "15:00",
+          "title": "Entrepreneurship with Daniel",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "15:00",
+          "endTime": "16:00",
+          "title": "Break",
+          "category": "break",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "16:00",
+          "endTime": "17:30",
+          "title": "Internship applications",
+          "category": "homework",
+          "notes": "Due today"
+        },
+        {
+          "day": "fri",
+          "startTime": "17:30",
+          "endTime": "18:00",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "18:00",
+          "endTime": "23:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "sat",
+          "startTime": "07:30",
+          "endTime": "08:00",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "sat",
+          "startTime": "08:00",
+          "endTime": "12:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "sat",
+          "startTime": "12:30",
+          "endTime": "13:00",
+          "title": "Lunch",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "sat",
+          "startTime": "13:00",
+          "endTime": "18:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "sat",
+          "startTime": "18:00",
+          "endTime": "18:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "sat",
+          "startTime": "18:30",
+          "endTime": "23:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "sun",
+          "startTime": "07:30",
+          "endTime": "08:00",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "sun",
+          "startTime": "08:00",
+          "endTime": "12:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "sun",
+          "startTime": "12:30",
+          "endTime": "13:00",
+          "title": "Lunch",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "sun",
+          "startTime": "13:00",
+          "endTime": "18:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "sun",
+          "startTime": "18:00",
+          "endTime": "18:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "sun",
+          "startTime": "18:30",
+          "endTime": "23:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        }
+      ]
+    },
+    {
+      "name": "High schooler with sports, week",
+      "scope": "week",
+      "status": "complete",
+      "questions": [],
+      "blockCount": 43,
+      "distinctDays": 7,
+      "overlaps": [],
+      "missingCommitments": [],
+      "tasksRequested": 3,
+      "tasksScheduled": 3,
+      "durationMs": 8124,
+      "promptTokens": 1106,
+      "completionTokens": 1362,
+      "userPrompt": {
+        "scope": "week",
+        "commitments": [
+          {
+            "title": "School",
+            "type": "class",
+            "daysOfWeek": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri"
+            ],
+            "startTime": "08:00",
+            "endTime": "15:00",
+            "notes": null
+          },
+          {
+            "title": "Soccer practice",
+            "type": "extracurricular",
+            "daysOfWeek": [
+              "tue",
+              "thu"
+            ],
+            "startTime": "16:00",
+            "endTime": "17:30",
+            "notes": null
+          },
+          {
+            "title": "Piano lesson",
+            "type": "extracurricular",
+            "daysOfWeek": [
+              "wed"
+            ],
+            "startTime": "18:00",
+            "endTime": "19:00",
+            "notes": null
+          }
+        ],
+        "tasks": [
+          {
+            "title": "Math worksheet",
+            "dueDate": "2026-07-10",
+            "estimatedMinutes": 45,
+            "notes": null
+          },
+          {
+            "title": "Biology essay",
+            "dueDate": "2026-07-14",
+            "estimatedMinutes": 120,
+            "notes": null
+          },
+          {
+            "title": "History reading ch. 7",
+            "dueDate": "2026-07-13",
+            "estimatedMinutes": 60,
+            "notes": null
+          }
+        ],
+        "priorAnswers": []
+      },
+      "blocks": [
+        {
+          "day": "mon",
+          "startTime": "07:00",
+          "endTime": "07:30",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "08:00",
+          "endTime": "15:00",
+          "title": "School",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "15:15",
+          "endTime": "16:15",
+          "title": "History reading ch. 7",
+          "category": "homework",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "16:15",
+          "endTime": "17:15",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "18:00",
+          "endTime": "18:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "19:00",
+          "endTime": "20:00",
+          "title": "Biology essay",
+          "category": "homework",
+          "notes": "Part 1"
+        },
+        {
+          "day": "mon",
+          "startTime": "20:00",
+          "endTime": "22:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "07:00",
+          "endTime": "07:30",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "08:00",
+          "endTime": "15:00",
+          "title": "School",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "15:00",
+          "endTime": "15:45",
+          "title": "Math worksheet",
+          "category": "homework",
+          "notes": "Due today"
+        },
+        {
+          "day": "tue",
+          "startTime": "16:00",
+          "endTime": "17:30",
+          "title": "Soccer practice",
+          "category": "extracurricular",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "18:00",
+          "endTime": "18:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "tue",
+          "startTime": "19:00",
+          "endTime": "20:00",
+          "title": "Biology essay",
+          "category": "homework",
+          "notes": "Part 2"
+        },
+        {
+          "day": "tue",
+          "startTime": "20:00",
+          "endTime": "22:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "07:00",
+          "endTime": "07:30",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "08:00",
+          "endTime": "15:00",
+          "title": "School",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "15:30",
+          "endTime": "16:15",
+          "title": "Break",
+          "category": "break",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "18:00",
+          "endTime": "19:00",
+          "title": "Piano lesson",
+          "category": "extracurricular",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "19:15",
+          "endTime": "19:45",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "wed",
+          "startTime": "19:45",
+          "endTime": "22:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "07:00",
+          "endTime": "07:30",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "08:00",
+          "endTime": "15:00",
+          "title": "School",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "15:00",
+          "endTime": "15:45",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "16:00",
+          "endTime": "17:30",
+          "title": "Soccer practice",
+          "category": "extracurricular",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "18:00",
+          "endTime": "18:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "thu",
+          "startTime": "18:30",
+          "endTime": "22:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "07:00",
+          "endTime": "07:30",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "08:00",
+          "endTime": "15:00",
+          "title": "School",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "15:30",
+          "endTime": "16:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "18:00",
+          "endTime": "18:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "fri",
+          "startTime": "18:30",
+          "endTime": "22:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "sat",
+          "startTime": "08:00",
+          "endTime": "08:30",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "sat",
+          "startTime": "09:00",
+          "endTime": "11:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "sat",
+          "startTime": "12:30",
+          "endTime": "13:00",
+          "title": "Lunch",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "sat",
+          "startTime": "13:00",
+          "endTime": "18:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "sat",
+          "startTime": "18:00",
+          "endTime": "18:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "sat",
+          "startTime": "18:30",
+          "endTime": "22:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "sun",
+          "startTime": "08:00",
+          "endTime": "08:30",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "sun",
+          "startTime": "10:00",
+          "endTime": "11:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "sun",
+          "startTime": "12:30",
+          "endTime": "13:00",
+          "title": "Lunch",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "sun",
+          "startTime": "13:00",
+          "endTime": "15:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "sun",
+          "startTime": "18:00",
+          "endTime": "18:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "sun",
+          "startTime": "18:30",
+          "endTime": "22:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        }
+      ]
+    },
+    {
+      "name": "Packed single day, tight gaps",
+      "scope": "day",
+      "status": "complete",
+      "questions": [],
+      "blockCount": 10,
+      "distinctDays": 1,
+      "overlaps": [],
+      "missingCommitments": [],
+      "tasksRequested": 2,
+      "tasksScheduled": 2,
+      "durationMs": 2477,
+      "promptTokens": 1034,
+      "completionTokens": 338,
+      "userPrompt": {
+        "scope": "day",
+        "commitments": [
+          {
+            "title": "Chem lecture",
+            "type": "class",
+            "daysOfWeek": [
+              "mon"
+            ],
+            "startTime": "09:00",
+            "endTime": "10:30",
+            "notes": null
+          },
+          {
+            "title": "Calc recitation",
+            "type": "class",
+            "daysOfWeek": [
+              "mon"
+            ],
+            "startTime": "11:00",
+            "endTime": "12:00",
+            "notes": null
+          },
+          {
+            "title": "Work shift (library)",
+            "type": "extracurricular",
+            "daysOfWeek": [
+              "mon"
+            ],
+            "startTime": "14:00",
+            "endTime": "18:00",
+            "notes": null
+          }
+        ],
+        "tasks": [
+          {
+            "title": "Chem problem set",
+            "dueDate": "2026-07-10",
+            "estimatedMinutes": 90,
+            "notes": null
+          },
+          {
+            "title": "Calc homework 12",
+            "dueDate": "2026-07-10",
+            "estimatedMinutes": 60,
+            "notes": null
+          }
+        ],
+        "priorAnswers": [
+          {
+            "question": "Wake-up time?",
+            "answer": "8:00"
+          },
+          {
+            "question": "Bedtime?",
+            "answer": "23:30"
+          }
+        ]
+      },
+      "blocks": [
+        {
+          "day": "mon",
+          "startTime": "08:00",
+          "endTime": "08:30",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "09:00",
+          "endTime": "10:30",
+          "title": "Chem lecture",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "10:30",
+          "endTime": "11:00",
+          "title": "Break",
+          "category": "break",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "11:00",
+          "endTime": "12:00",
+          "title": "Calc recitation",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "12:00",
+          "endTime": "13:00",
+          "title": "Calc homework 12",
+          "category": "homework",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "13:00",
+          "endTime": "13:45",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "14:00",
+          "endTime": "18:00",
+          "title": "Work shift (library)",
+          "category": "extracurricular",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "18:15",
+          "endTime": "18:45",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "19:00",
+          "endTime": "20:30",
+          "title": "Chem problem set",
+          "category": "homework",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "20:30",
+          "endTime": "23:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        }
+      ]
+    },
+    {
+      "name": "Deadline mismatch trap (should ask, not silently fix)",
+      "scope": "week",
+      "status": "needs_clarification",
+      "questions": [
+        "You mentioned your English essay is due Wednesday (2026-07-15), but English on your schedule only meets Monday and Friday. Did you mean it’s due Friday instead, or is Wednesday correct for online submission?"
+      ],
+      "blockCount": 0,
+      "distinctDays": 0,
+      "overlaps": [],
+      "missingCommitments": [
+        "English (mon 10:00-11:00)",
+        "English (fri 10:00-11:00)",
+        "Math (tue 09:00-10:00)",
+        "Math (thu 09:00-10:00)"
+      ],
+      "tasksRequested": 1,
+      "tasksScheduled": 0,
+      "durationMs": 1258,
+      "promptTokens": 1006,
+      "completionTokens": 66,
+      "userPrompt": {
+        "scope": "week",
+        "commitments": [
+          {
+            "title": "English",
+            "type": "class",
+            "daysOfWeek": [
+              "mon",
+              "fri"
+            ],
+            "startTime": "10:00",
+            "endTime": "11:00",
+            "notes": null
+          },
+          {
+            "title": "Math",
+            "type": "class",
+            "daysOfWeek": [
+              "tue",
+              "thu"
+            ],
+            "startTime": "09:00",
+            "endTime": "10:00",
+            "notes": null
+          }
+        ],
+        "tasks": [
+          {
+            "title": "English essay",
+            "dueDate": "2026-07-15",
+            "estimatedMinutes": 120,
+            "notes": "due Wednesday"
+          }
+        ],
+        "priorAnswers": []
+      },
+      "blocks": []
+    },
+    {
+      "name": "Minimal input, sensible defaults expected",
+      "scope": "week",
+      "status": "needs_clarification",
+      "questions": [
+        "You mentioned a \"CS project milestone\" due 2026-07-16, but your CS class appears only on Monday and Wednesday. Did you mean a different due date, or is it an online submission due Thursday?"
+      ],
+      "blockCount": 0,
+      "distinctDays": 0,
+      "overlaps": [],
+      "missingCommitments": [
+        "CS lecture (mon 10:00-11:30)",
+        "CS lecture (wed 10:00-11:30)"
+      ],
+      "tasksRequested": 1,
+      "tasksScheduled": 0,
+      "durationMs": 1462,
+      "promptTokens": 971,
+      "completionTokens": 67,
+      "userPrompt": {
+        "scope": "week",
+        "commitments": [
+          {
+            "title": "CS lecture",
+            "type": "class",
+            "daysOfWeek": [
+              "mon",
+              "wed"
+            ],
+            "startTime": "10:00",
+            "endTime": "11:30",
+            "notes": null
+          }
+        ],
+        "tasks": [
+          {
+            "title": "CS project milestone",
+            "dueDate": "2026-07-16",
+            "estimatedMinutes": 240,
+            "notes": null
+          }
+        ],
+        "priorAnswers": []
+      },
+      "blocks": []
+    }
+  ]
+}

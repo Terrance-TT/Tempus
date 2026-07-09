@@ -3,7 +3,8 @@ import { useGetAdminStatus, getGetAdminStatusQueryKey, useGetAdminStats, getGetA
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import evalData from "@/data/gpt5-mini-eval.json";
+import miniEvalData from "@/data/gpt5-mini-eval.json";
+import fullEvalData from "@/data/gpt54-eval.json";
 
 function StatCard({
   icon: Icon,
@@ -99,7 +100,7 @@ function MiniWeekGrid({ blocks }: { blocks: EvalBlock[] }) {
 
   return (
     <div className="overflow-x-auto rounded-lg border">
-      <div className="min-w-[560px]">
+      <div className="min-w-[420px]">
         <div
           className="grid border-b bg-secondary/30"
           style={{ gridTemplateColumns: `3rem repeat(${days.length}, 1fr)` }}
@@ -137,6 +138,7 @@ function MiniWeekGrid({ blocks }: { blocks: EvalBlock[] }) {
               ))}
               {blocks
                 .filter((b) => b.day === d)
+                .sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime))
                 .map((b, i) => {
                   const top = ((toMinutes(b.startTime) - startMin) / span) * 100;
                   const height = ((toMinutes(b.endTime) - toMinutes(b.startTime)) / span) * 100;
@@ -205,95 +207,125 @@ function UserPromptSummary({ prompt }: { prompt: EvalPrompt }) {
   );
 }
 
-function EvalResultCard({ result, index }: { result: EvalResult; index: number }) {
+function ModelRunPanel({ result, modelLabel }: { result?: EvalResult; modelLabel: string }) {
+  if (!result) {
+    return (
+      <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+        No run recorded for {modelLabel}.
+      </div>
+    );
+  }
   const isComplete = result.status === "complete";
   const hasOverlaps = (result.overlaps?.length ?? 0) > 0;
 
   return (
-    <Card data-testid={`eval-result-${index}`}>
-      <CardContent className="pt-6 space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {result.error ? (
-            <Badge variant="destructive">error</Badge>
-          ) : isComplete ? (
-            <Badge className="bg-primary/15 text-primary hover:bg-primary/15 border-transparent">
-              <CheckCircle2 className="w-3 h-3 mr-1" /> complete
-            </Badge>
-          ) : (
-            <Badge variant="secondary">
-              <HelpCircle className="w-3 h-3 mr-1" /> asked for clarification
-            </Badge>
-          )}
-          <Badge variant="outline">{result.scope}</Badge>
-          {result.durationMs != null && <Badge variant="outline">{(result.durationMs / 1000).toFixed(1)}s</Badge>}
-        </div>
-        <p className="font-semibold">{result.name}</p>
-
-        {result.userPrompt && <UserPromptSummary prompt={result.userPrompt} />}
-
+    <div className="space-y-2 min-w-0">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="outline" className="font-mono">{modelLabel}</Badge>
         {result.error ? (
-          <p className="text-sm text-destructive">{result.error}</p>
+          <Badge variant="destructive">error</Badge>
         ) : isComplete ? (
-          <div className="space-y-2 text-sm">
-            <div className="flex flex-wrap gap-x-5 gap-y-1 text-muted-foreground">
-              <span>{result.blockCount} blocks</span>
-              <span>{result.distinctDays}/{result.scope === "day" ? 1 : 7} days covered</span>
-              <span className={hasOverlaps ? "text-destructive font-medium" : ""}>
-                {result.overlaps?.length ?? 0} overlaps
-              </span>
-              <span>
-                tasks scheduled: {result.tasksScheduled}/{result.tasksRequested}
-              </span>
-              {result.promptTokens != null && (
-                <span>
-                  {result.promptTokens} in / {result.completionTokens} out tokens
-                </span>
-              )}
-            </div>
-            {hasOverlaps && (
-              <div className="flex items-start gap-2 text-destructive">
-                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>{result.overlaps!.join("; ")}</span>
-              </div>
-            )}
-            {result.blocks && result.blocks.length > 0 && <MiniWeekGrid blocks={result.blocks} />}
-          </div>
+          <Badge className="bg-primary/15 text-primary hover:bg-primary/15 border-transparent">
+            <CheckCircle2 className="w-3 h-3 mr-1" /> complete
+          </Badge>
         ) : (
-          <div className="rounded-lg border bg-secondary/20 p-3 space-y-1">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Questions it asked</p>
-            {result.questions?.map((q, i) => (
-              <p key={i} className="text-sm">• {q}</p>
-            ))}
-          </div>
+          <Badge variant="secondary">
+            <HelpCircle className="w-3 h-3 mr-1" /> asked for clarification
+          </Badge>
         )}
-      </CardContent>
-    </Card>
+        {result.durationMs != null && <Badge variant="outline">{(result.durationMs / 1000).toFixed(1)}s</Badge>}
+      </div>
+
+      {result.error ? (
+        <p className="text-sm text-destructive">{result.error}</p>
+      ) : isComplete ? (
+        <div className="space-y-2 text-sm">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
+            <span>{result.blockCount} blocks</span>
+            <span>{result.distinctDays}/{result.scope === "day" ? 1 : 7} days</span>
+            <span className={hasOverlaps ? "text-destructive font-medium" : ""}>
+              {result.overlaps?.length ?? 0} overlaps
+            </span>
+            <span>tasks {result.tasksScheduled}/{result.tasksRequested}</span>
+            {result.promptTokens != null && (
+              <span>{result.promptTokens} in / {result.completionTokens} out tok</span>
+            )}
+          </div>
+          {hasOverlaps && (
+            <div className="flex items-start gap-2 text-destructive text-xs">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{result.overlaps!.join("; ")}</span>
+            </div>
+          )}
+          {result.blocks && result.blocks.length > 0 && <MiniWeekGrid blocks={result.blocks} />}
+        </div>
+      ) : (
+        <div className="rounded-lg border bg-secondary/20 p-3 space-y-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Questions it asked</p>
+          {result.questions?.map((q, i) => (
+            <p key={i} className="text-sm">• {q}</p>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
 function Gpt5MiniTab() {
-  const results = (evalData.results ?? []) as EvalResult[];
-  const completed = results.filter((r) => r.status === "complete");
-  const overlapsTotal = completed.reduce((n, r) => n + (r.overlaps?.length ?? 0), 0);
-  const avgSeconds =
-    results.filter((r) => r.durationMs != null).reduce((n, r) => n + (r.durationMs ?? 0), 0) /
-    Math.max(1, results.filter((r) => r.durationMs != null).length) /
-    1000;
+  const miniResults = (miniEvalData.results ?? []) as EvalResult[];
+  const fullResults = (fullEvalData.results ?? []) as EvalResult[];
+  const fullByName = new Map(fullResults.map((r) => [r.name, r]));
+
+  const summarize = (results: EvalResult[]) => {
+    const completed = results.filter((r) => r.status === "complete");
+    const overlaps = completed.reduce((n, r) => n + (r.overlaps?.length ?? 0), 0);
+    const timed = results.filter((r) => r.durationMs != null);
+    const avgSeconds = timed.reduce((n, r) => n + (r.durationMs ?? 0), 0) / Math.max(1, timed.length) / 1000;
+    return { completed: completed.length, overlaps, avgSeconds };
+  };
+  const mini = summarize(miniResults);
+  const full = summarize(fullResults);
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Bot} label="Test runs" value={String(results.length)} testId="eval-stat-runs" />
-        <StatCard icon={CheckCircle2} label="Completed schedules" value={`${completed.length}/${results.length}`} testId="eval-stat-completed" />
-        <StatCard icon={AlertTriangle} label="Overlap violations" value={String(overlapsTotal)} testId="eval-stat-overlaps" />
-        <StatCard icon={Timer} label="Avg. response time" value={`${avgSeconds.toFixed(1)}s`} testId="eval-stat-avg-time" />
+        <StatCard icon={Bot} label="Test scenarios" value={String(miniResults.length)} testId="eval-stat-runs" />
+        <StatCard
+          icon={CheckCircle2}
+          label="Completed (mini vs 5.4)"
+          value={`${mini.completed} vs ${full.completed}`}
+          testId="eval-stat-completed"
+        />
+        <StatCard
+          icon={AlertTriangle}
+          label="Overlaps (mini vs 5.4)"
+          value={`${mini.overlaps} vs ${full.overlaps}`}
+          testId="eval-stat-overlaps"
+        />
+        <StatCard
+          icon={Timer}
+          label="Avg. time (mini vs 5.4)"
+          value={`${mini.avgSeconds.toFixed(1)}s vs ${full.avgSeconds.toFixed(1)}s`}
+          testId="eval-stat-avg-time"
+        />
       </div>
       <p className="text-sm text-muted-foreground">
-        Model: <span className="font-mono">{evalData.model}</span> · ran {new Date(evalData.ranAt).toLocaleString()}
+        Same 5 prompts run against <span className="font-mono">{miniEvalData.model}</span> (ran{" "}
+        {new Date(miniEvalData.ranAt).toLocaleString()}) and <span className="font-mono">{fullEvalData.model}</span>{" "}
+        (ran {new Date(fullEvalData.ranAt).toLocaleString()}).
       </p>
       <div className="grid gap-4">
-        {results.map((r, i) => (
-          <EvalResultCard key={i} result={r} index={i} />
+        {miniResults.map((r, i) => (
+          <Card key={i} data-testid={`eval-result-${i}`}>
+            <CardContent className="pt-6 space-y-3">
+              <p className="font-semibold">{r.name}</p>
+              {r.userPrompt && <UserPromptSummary prompt={r.userPrompt} />}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <ModelRunPanel result={r} modelLabel="gpt-5.4-mini" />
+                <ModelRunPanel result={fullByName.get(r.name)} modelLabel="gpt-5.4" />
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
