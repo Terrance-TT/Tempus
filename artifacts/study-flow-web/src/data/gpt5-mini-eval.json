@@ -1,0 +1,253 @@
+{
+  "model": "gpt-5.4-mini",
+  "ranAt": "2026-07-09T23:27:06.219Z",
+  "results": [
+    {
+      "name": "Columbia student, Canvas assignments, week",
+      "scope": "week",
+      "status": "complete",
+      "questions": [],
+      "blockCount": 77,
+      "distinctDays": 7,
+      "overlaps": [],
+      "missingCommitments": [],
+      "tasksRequested": 3,
+      "tasksScheduled": 3,
+      "durationMs": 10144,
+      "promptTokens": 1176,
+      "completionTokens": 2522,
+      "sampleBlocks": [
+        {
+          "day": "mon",
+          "startTime": "07:30",
+          "endTime": "08:15",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "08:15",
+          "endTime": "09:05",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "09:10",
+          "endTime": "11:00",
+          "title": "Entrepreneurship with Daniel",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "11:00",
+          "endTime": "13:00",
+          "title": "Lunch",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "13:10",
+          "endTime": "15:00",
+          "title": "Entrepreneurship with Daniel",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "15:15",
+          "endTime": "16:00",
+          "title": "Break",
+          "category": "break",
+          "notes": null
+        }
+      ]
+    },
+    {
+      "name": "High schooler with sports, week",
+      "scope": "week",
+      "status": "complete",
+      "questions": [],
+      "blockCount": 40,
+      "distinctDays": 7,
+      "overlaps": [],
+      "missingCommitments": [
+        "School (mon 08:00-15:00)",
+        "School (tue 08:00-15:00)",
+        "School (wed 08:00-15:00)",
+        "School (thu 08:00-15:00)",
+        "School (fri 08:00-15:00)"
+      ],
+      "tasksRequested": 3,
+      "tasksScheduled": 3,
+      "durationMs": 5705,
+      "promptTokens": 1106,
+      "completionTokens": 1303,
+      "sampleBlocks": [
+        {
+          "day": "mon",
+          "startTime": "07:00",
+          "endTime": "07:30",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "15:30",
+          "endTime": "16:15",
+          "title": "Math worksheet",
+          "category": "homework",
+          "notes": "Finish by due date."
+        },
+        {
+          "day": "mon",
+          "startTime": "16:15",
+          "endTime": "17:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "17:00",
+          "endTime": "17:30",
+          "title": "Dinner",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "17:30",
+          "endTime": "18:30",
+          "title": "History reading",
+          "category": "homework",
+          "notes": "Read chapter 7."
+        },
+        {
+          "day": "mon",
+          "startTime": "18:30",
+          "endTime": "22:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        }
+      ]
+    },
+    {
+      "name": "Packed single day, tight gaps",
+      "scope": "day",
+      "status": "needs_clarification",
+      "questions": [
+        "You have Chem problem set due on Friday, but Chem lecture only appears on Monday — did you mean a different due date or another Chem class day?",
+        "You have Calc homework 12 due on Friday, but Calc recitation only appears on Monday — did you mean a different due date or another Calc class day?"
+      ],
+      "blockCount": 0,
+      "distinctDays": 0,
+      "overlaps": [],
+      "missingCommitments": [
+        "Chem lecture (mon 09:00-10:30)",
+        "Calc recitation (mon 11:00-12:00)",
+        "Work shift (library) (mon 14:00-18:00)"
+      ],
+      "tasksRequested": 2,
+      "tasksScheduled": 0,
+      "durationMs": 1052,
+      "promptTokens": 1034,
+      "completionTokens": 85,
+      "sampleBlocks": []
+    },
+    {
+      "name": "Deadline mismatch trap (should ask, not silently fix)",
+      "scope": "week",
+      "status": "needs_clarification",
+      "questions": [
+        "You mentioned your English essay is due Wednesday, but English only meets on Monday and Friday — did you mean Friday?"
+      ],
+      "blockCount": 0,
+      "distinctDays": 0,
+      "overlaps": [],
+      "missingCommitments": [
+        "English (mon 10:00-11:00)",
+        "English (fri 10:00-11:00)",
+        "Math (tue 09:00-10:00)",
+        "Math (thu 09:00-10:00)"
+      ],
+      "tasksRequested": 1,
+      "tasksScheduled": 0,
+      "durationMs": 871,
+      "promptTokens": 1006,
+      "completionTokens": 46,
+      "sampleBlocks": []
+    },
+    {
+      "name": "Minimal input, sensible defaults expected",
+      "scope": "week",
+      "status": "complete",
+      "questions": [],
+      "blockCount": 50,
+      "distinctDays": 7,
+      "overlaps": [],
+      "missingCommitments": [],
+      "tasksRequested": 1,
+      "tasksScheduled": 1,
+      "durationMs": 6196,
+      "promptTokens": 971,
+      "completionTokens": 1576,
+      "sampleBlocks": [
+        {
+          "day": "mon",
+          "startTime": "07:00",
+          "endTime": "08:00",
+          "title": "Breakfast",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "08:00",
+          "endTime": "09:30",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "10:00",
+          "endTime": "11:30",
+          "title": "CS lecture",
+          "category": "class",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "11:30",
+          "endTime": "12:30",
+          "title": "Lunch",
+          "category": "routine",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "13:00",
+          "endTime": "15:00",
+          "title": "Work on CS project milestone",
+          "category": "homework",
+          "notes": null
+        },
+        {
+          "day": "mon",
+          "startTime": "15:00",
+          "endTime": "17:00",
+          "title": "Free time",
+          "category": "free",
+          "notes": null
+        }
+      ]
+    }
+  ]
+}
