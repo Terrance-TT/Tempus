@@ -4,10 +4,13 @@ body {
   font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
   color: #1d3a2e;
   background: #fafaf7;
+  border-radius: 20px;
+  overflow: hidden;
 }
 .view {
   padding: 20px 18px 18px;
   text-align: center;
+  border-radius: 20px;
 }
 .brand {
   font-size: 13px;
@@ -24,7 +27,7 @@ textarea {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid #cfd8d2;
-  border-radius: 8px;
+  border-radius: 14px;
   padding: 8px;
   font-size: 12px;
   font-family: inherit;
@@ -34,7 +37,7 @@ button {
   margin-top: 12px;
   width: 100%;
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   padding: 9px 10px;
   background: #4d8a6a;
   color: #fff;
