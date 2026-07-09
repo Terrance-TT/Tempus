@@ -203,7 +203,7 @@ export default function Home() {
 
                       {/* Left circle cap — indicator dot, click to open */}
                       <button
-                        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 -ml-2 transition-transform duration-1000 ease-out group-hover:translate-x-1"
+                        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 -ml-2 -mr-4 transition-transform duration-1000 ease-out group-hover:translate-x-1"
                         onClick={() => !isRenaming && setLocation(`/schedule/${plan.id}`)}
                         aria-label="Open plan"
                       >
@@ -240,7 +240,7 @@ export default function Home() {
                       )}
 
                       {/* Right circle cap — decorative, mirrors the left indicator circle */}
-                      <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 -mr-2 transition-transform duration-1000 ease-out group-hover:-translate-x-1">
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 -ml-4 -mr-2 transition-transform duration-1000 ease-out group-hover:-translate-x-1">
                         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary/50">
                           {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
                         </div>
@@ -250,12 +250,12 @@ export default function Home() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="w-3 h-9 rounded-full self-center shrink-0 -mr-2 -translate-x-1 origin-bottom transition-transform duration-1000 ease-out group-hover:-translate-x-3 group-hover:rotate-[-18deg] flex items-center justify-center gap-0.5 bg-transparent"
+                            className="w-7 h-9 rounded-full self-center shrink-0 -mr-2 -translate-x-1 origin-bottom transition-transform duration-1000 ease-out group-hover:-translate-x-3 group-hover:rotate-[-18deg] flex items-center justify-center gap-1 bg-transparent"
                             onClick={(e) => e.stopPropagation()}
                             aria-label="Plan options"
                           >
-                            <span className="w-1 h-6 rounded-full bg-primary/60" />
-                            <span className="w-1 h-6 rounded-full bg-primary/60" />
+                            <span className="w-3 h-9 rounded-full bg-primary/60" />
+                            <span className="w-3 h-9 rounded-full bg-primary/60" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
