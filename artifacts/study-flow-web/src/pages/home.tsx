@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Sparkles, Trash2, Loader2 } from "lucide-react";
+import { PlusCircle, Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
@@ -187,11 +187,11 @@ export default function Home() {
                       )}
                     >
                       {/* Vertical pill to the left of the circle */}
-                      <div className="w-3 h-9 rounded-full bg-primary/60 self-center shrink-0 ml-2 translate-x-1" />
+                      <div className="w-3 h-9 rounded-full bg-primary/60 self-center shrink-0 ml-2 translate-x-1 transition-transform duration-1000 ease-out group-hover:translate-x-3" />
 
                       {/* Left circle cap — indicator dot, click to open */}
                       <button
-                        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 -ml-2"
+                        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 -ml-2 transition-transform duration-1000 ease-out group-hover:translate-x-1"
                         onClick={() => !isRenaming && setLocation(`/schedule/${plan.id}`)}
                         aria-label="Open plan"
                       >
@@ -234,9 +234,7 @@ export default function Home() {
                         disabled={isDeleting}
                         aria-label="Delete plan"
                       >
-                        {isDeleting
-                          ? <Loader2 className="w-4 h-4 animate-spin" />
-                          : <Trash2 className="w-4 h-4" />}
+                        {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
                       </button>
                     </div>
                   </div>
