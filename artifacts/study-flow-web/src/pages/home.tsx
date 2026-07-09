@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Sparkles, Loader2, MoreVertical, Plus } from "lucide-react";
+import { PlusCircle, Sparkles, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
@@ -230,13 +230,14 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* Three dots — vertical, taller than the neighboring circles */}
+                      {/* Two vertical pills, taller than the neighboring circles */}
                       <button
-                        className="h-20 w-10 rounded-full flex items-center justify-center shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors duration-200"
+                        className="h-20 w-10 rounded-full flex items-center justify-center gap-1.5 shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors duration-200"
                         aria-hidden="true"
                         tabIndex={-1}
                       >
-                        <MoreVertical className="w-6 h-6" />
+                        <span className="w-2 h-8 rounded-full bg-current" />
+                        <span className="w-2 h-8 rounded-full bg-current" />
                       </button>
 
                       {/* Right circle cap — delete */}
