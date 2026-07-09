@@ -1,6 +1,5 @@
 import { Loader2, Users, Repeat, Timer, CalendarCheck } from "lucide-react";
 import { useGetAdminStatus, getGetAdminStatusQueryKey, useGetAdminStats, getGetAdminStatsQueryKey } from "@workspace/api-client-react";
-import { Layout } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
 
 function StatCard({
@@ -39,22 +38,22 @@ export default function AdminStats() {
 
   if (isLoadingStatus) {
     return (
-      <Layout>
+      <>
         <div className="flex justify-center py-20">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
-      </Layout>
+      </>
     );
   }
 
   if (!isAdmin) {
     return (
-      <Layout>
+      <>
         <div className="text-center py-20 space-y-2">
           <p className="text-xl font-heading font-semibold">Admins only</p>
           <p className="text-muted-foreground text-sm">This page is reserved for the Tempus team.</p>
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -64,7 +63,7 @@ export default function AdminStats() {
       : null;
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-heading font-bold flex items-center gap-2">
@@ -109,6 +108,6 @@ export default function AdminStats() {
           </div>
         )}
       </div>
-    </Layout>
+    </>
   );
 }

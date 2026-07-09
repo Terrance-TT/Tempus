@@ -9,6 +9,7 @@ import { useClaimGuestData, setBaseUrl } from "@workspace/api-client-react";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Layout } from "@/components/layout";
 import {
   peekGuestDeviceId,
   clearGuestDeviceId,
@@ -269,10 +270,39 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error
   }
 }
 
-function HomeRedirect() {
+// A single, persistent sidebar shared by all "app shell" pages. Rendering it
+// once here (rather than each page wrapping its own <Layout>) keeps it
+// mounted across client-side navigations, so nav items don't flicker/vanish
+// when the active route swaps out the page content underneath it.
+//
+// The one exception is "/" for signed-out visitors, who see the marketing
+// Landing page (no sidebar) instead of Home.
+function AppShell() {
+  const [location] = useLocation();
   const { user, isLoaded } = useUser();
-  if (!isLoaded) return null;
-  return user ? <Home /> : <Landing />;
+
+  if (location === "/") {
+    if (!isLoaded) return null;
+    if (!user) return <Landing />;
+  }
+
+  return (
+    <Layout>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/create" component={Create} />
+        <Route path="/schedule/:id" component={Schedule} />
+        <Route path="/integrations" component={Integrations} />
+        <Route path="/focus-guard" component={FocusGuard} />
+        <Route path="/admin/feedback" component={AdminFeedback} />
+        <Route path="/admin/stats" component={AdminStats} />
+        <Route path="/settings" component={Settings} />
+        <Route path="/pricing" component={Pricing} />
+        <Route path="/checkout/success" component={CheckoutSuccess} />
+        <Route component={NotFound} />
+      </Switch>
+    </Layout>
+  );
 }
 
 function ClerkProviderWithRoutes() {
@@ -307,21 +337,12 @@ function ClerkProviderWithRoutes() {
         <GuestDataClaimer />
         <TooltipProvider>
           <Switch>
-            <Route path="/" component={HomeRedirect} />
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />
-            {/* Guests may build a schedule without an account */}
-            <Route path="/create" component={Create} />
-            <Route path="/schedule/:id" component={Schedule} />
-            <Route path="/integrations" component={Integrations} />
-            <Route path="/focus-guard" component={FocusGuard} />
-            <Route path="/admin/feedback" component={AdminFeedback} />
-            <Route path="/admin/stats" component={AdminStats} />
-            <Route path="/settings" component={Settings} />
-            <Route path="/pricing" component={Pricing} />
             <Route path="/privacy" component={Privacy} />
-            <Route path="/checkout/success" component={CheckoutSuccess} />
-            <Route component={NotFound} />
+            {/* Everything else shares one persistent <AppShell> (sidebar + router)
+                so the nav doesn't remount/flicker between pages. */}
+            <Route component={AppShell} />
           </Switch>
           <Toaster />
         </TooltipProvider>

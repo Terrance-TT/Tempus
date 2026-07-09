@@ -21,7 +21,6 @@ import {
   type SpsEvent,
 } from "@workspace/api-client-react";
 import { isFunEvent } from "@/lib/sps-events";
-import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -343,7 +342,7 @@ export default function Schedule() {
 
   if (isLoading || !schedule) {
     return (
-      <Layout>
+      <>
         <div className="space-y-8 pt-8">
           <div className="flex gap-4 items-center">
             <Skeleton className="w-10 h-10 rounded-lg" />
@@ -355,7 +354,7 @@ export default function Schedule() {
           <Skeleton className="h-24 w-full rounded-xl" />
           <Skeleton className="h-96 w-full rounded-2xl" />
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -370,7 +369,7 @@ export default function Schedule() {
   });
 
   return (
-    <Layout>
+    <>
       <div className="max-w-4xl mx-auto space-y-8 pt-4 pb-12">
         <div className="flex items-center justify-between">
           <Button variant="ghost" className="-ml-4 text-muted-foreground" onClick={() => setLocation("/")}>
@@ -822,6 +821,6 @@ export default function Schedule() {
           </div>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </>
   );
 }

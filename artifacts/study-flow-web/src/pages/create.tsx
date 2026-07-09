@@ -31,7 +31,6 @@ import {
   UserPreferences,
   ScheduleBlock,
 } from "@workspace/api-client-react";
-import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -724,17 +723,17 @@ export default function Create() {
 
   if (!deviceId || isLoadingCommitments) {
     return (
-      <Layout>
+      <>
         <div className="space-y-6 pt-8">
           <Skeleton className="h-10 w-48" />
           <Skeleton className="h-64 w-full rounded-2xl" />
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
+    <>
       {/* Columbia sign-in nudge — fixed right panel, desktop only */}
       {isColumbiaMode && !isSignedIn && (
         <div className="hidden lg:flex fixed right-5 top-1/2 -translate-y-1/2 z-40 flex-col gap-3 w-52 rounded-2xl border bg-card shadow-lg shadow-black/5 p-4 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -1538,6 +1537,6 @@ export default function Create() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Layout>
+    </>
   );
 }

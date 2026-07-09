@@ -1,6 +1,5 @@
 import { useLocation } from "wouter";
 import { useUser } from "@clerk/react";
-import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +47,7 @@ export default function Pricing() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="max-w-3xl mx-auto pt-6 pb-16 space-y-10">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => setLocation("/")}>
@@ -200,6 +199,6 @@ export default function Pricing() {
           Cancel anytime. Payments are securely processed by Stripe.
         </p>
       </div>
-    </Layout>
+    </>
   );
 }

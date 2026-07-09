@@ -1,4 +1,3 @@
-import { Layout } from "@/components/layout";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/hooks/use-theme";
 import { Sun, Moon, Chrome, ArrowUpRight, Check } from "lucide-react";
@@ -20,7 +19,7 @@ export default function Settings() {
   const { mode, setMode, presetId, setPresetId, presets } = useTheme();
 
   return (
-    <Layout>
+    <>
       <div className="space-y-8 max-w-2xl">
         <div className="flex items-center gap-4">
           <SettingsIcon />
@@ -124,6 +123,6 @@ export default function Settings() {
           </button>
         </Card>
       </div>
-    </Layout>
+    </>
   );
 }

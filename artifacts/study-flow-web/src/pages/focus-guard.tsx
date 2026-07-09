@@ -1,9 +1,8 @@
-import { Layout } from "@/components/layout";
 import { FocusGuardCard } from "@/components/focus-guard-card";
 
 export default function FocusGuard() {
   return (
-    <Layout>
+    <>
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-heading font-bold mb-2" data-testid="text-focus-guard-title">
@@ -15,6 +14,6 @@ export default function FocusGuard() {
         </div>
         <FocusGuardCard />
       </div>
-    </Layout>
+    </>
   );
 }

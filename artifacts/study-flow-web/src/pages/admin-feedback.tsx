@@ -9,7 +9,6 @@ import {
   type FeedbackItem,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Layout } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,27 +119,27 @@ export default function AdminFeedback() {
 
   if (isLoadingStatus) {
     return (
-      <Layout>
+      <>
         <div className="flex justify-center py-20">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
-      </Layout>
+      </>
     );
   }
 
   if (!isAdmin) {
     return (
-      <Layout>
+      <>
         <div className="text-center py-20 space-y-2">
           <p className="text-xl font-heading font-semibold">Admins only</p>
           <p className="text-muted-foreground text-sm">This page is reserved for the Tempus team.</p>
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-heading font-bold flex items-center gap-2">
@@ -176,6 +175,6 @@ export default function AdminFeedback() {
           </div>
         )}
       </div>
-    </Layout>
+    </>
   );
 }

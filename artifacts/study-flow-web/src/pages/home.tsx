@@ -7,7 +7,6 @@ import {
   useDeleteSchedule,
   getListSchedulesQueryKey,
 } from "@workspace/api-client-react";
-import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -107,18 +106,18 @@ export default function Home() {
 
   if (!deviceId || isLoading) {
     return (
-      <Layout>
+      <>
         <div className="space-y-6 pt-12">
           <Skeleton className="h-10 w-48" />
           <Skeleton className="h-14 w-full rounded-full" />
           <Skeleton className="h-14 w-full rounded-full" />
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
+    <>
       <div className="max-w-3xl mx-auto space-y-10 pt-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <header className="space-y-1">
           <h1 className="text-4xl font-heading font-bold text-foreground tracking-tight">
@@ -305,6 +304,6 @@ export default function Home() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </Layout>
+    </>
   );
 }

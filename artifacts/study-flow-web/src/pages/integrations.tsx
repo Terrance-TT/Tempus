@@ -19,7 +19,6 @@ import {
   useImportSpsEngageEvents,
   type SpsEvent,
 } from "@workspace/api-client-react";
-import { Layout } from "@/components/layout";
 import { FocusGuardCard } from "@/components/focus-guard-card";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -396,7 +395,7 @@ export default function Integrations() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="space-y-8">
         <header className="space-y-2">
           <h1 className="text-3xl font-heading font-semibold text-foreground flex items-center gap-3">
@@ -874,6 +873,6 @@ export default function Integrations() {
         </section>
 
       </div>
-    </Layout>
+    </>
   );
 }
