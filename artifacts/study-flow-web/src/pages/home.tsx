@@ -188,17 +188,22 @@ export default function Home() {
                   <div key={plan.id} className="group relative">
                     <div
                       className={cn(
-                        "h-14 rounded-full border bg-card flex items-center overflow-hidden transition-all duration-200",
+                        "h-14 rounded-full border bg-card flex items-center transition-all duration-200",
                         "hover:border-primary/40 hover:shadow-sm"
                       )}
                     >
-                      {/* Left content — name (hidden until hover, shown in rename mode) */}
-                      <div
-                        className="flex-1 h-full flex items-center px-6 cursor-pointer select-none min-w-0"
+                      {/* Left circle cap — indicator dot, click to open */}
+                      <button
+                        className="w-14 h-14 rounded-full flex items-center justify-center shrink-0"
                         onClick={() => !isRenaming && setLocation(`/schedule/${plan.id}`)}
-                        onDoubleClick={(e) => { e.preventDefault(); startRename(plan); }}
+                        aria-label="Open plan"
                       >
-                        {isRenaming ? (
+                        <div className="w-3 h-3 rounded-full bg-primary/40 group-hover:bg-primary transition-colors duration-300" />
+                      </button>
+
+                      {/* Rolling name — expands out from the left circle on hover */}
+                      {isRenaming ? (
+                        <div className="flex-1 h-full flex items-center pr-2">
                           <input
                             ref={renameInputRef}
                             autoFocus
@@ -212,14 +217,27 @@ export default function Home() {
                             onBlur={() => submitRename(plan.id)}
                             onClick={(e) => e.stopPropagation()}
                           />
-                        ) : (
-                          <span className="text-lg font-bold text-foreground truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            {displayName}
-                          </span>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div
+                            className="overflow-hidden max-w-0 group-hover:max-w-xs transition-all duration-500 ease-out h-full flex items-center cursor-pointer select-none"
+                            onClick={() => setLocation(`/schedule/${plan.id}`)}
+                            onDoubleClick={(e) => { e.preventDefault(); startRename(plan); }}
+                          >
+                            <span className="pr-4 text-lg font-bold text-foreground whitespace-nowrap">
+                              {displayName}
+                            </span>
+                          </div>
+                          {/* Invisible flex-1 spacer so the delete button stays right-aligned */}
+                          <div
+                            className="flex-1 h-full cursor-pointer"
+                            onClick={() => setLocation(`/schedule/${plan.id}`)}
+                          />
+                        </>
+                      )}
 
-                      {/* Right circle cap */}
+                      {/* Right circle cap — delete */}
                       <button
                         className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary/50 hover:bg-destructive/15 hover:text-destructive transition-colors duration-200"
                         onClick={(e) => { e.stopPropagation(); setPendingDeleteId(plan.id); }}
