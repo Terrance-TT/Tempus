@@ -22,8 +22,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Sparkles, Loader2, Plus } from "lucide-react";
+import { PlusCircle, Sparkles, Loader2, Plus, Pencil, Trash2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 export default function Home() {
   const deviceId = useDeviceId();
@@ -230,27 +239,42 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* Two vertical pills, taller than the neighboring circles */}
-                      <button
-                        className="h-20 w-10 rounded-full flex items-center justify-center gap-1.5 shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors duration-200"
-                        aria-hidden="true"
-                        tabIndex={-1}
-                      >
-                        <span className="w-2 h-8 rounded-full bg-current" />
-                        <span className="w-2 h-8 rounded-full bg-current" />
-                      </button>
+                      {/* Two vertical pills — opens the options menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="h-20 w-10 rounded-full flex items-center justify-center gap-1.5 shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors duration-200"
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Plan options"
+                          >
+                            <span className="w-2 h-8 rounded-full bg-current" />
+                            <span className="w-2 h-8 rounded-full bg-current" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuItem onClick={() => startRename(plan)}>
+                            <Pencil className="w-4 h-4 mr-2" /> Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setPendingDeleteId(plan.id)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Delete
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel className="flex items-center gap-2 font-normal text-muted-foreground">
+                            <Clock className="w-4 h-4" />
+                            {format(new Date(plan.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                          </DropdownMenuLabel>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
 
-                      {/* Right circle cap — delete */}
-                      <button
-                        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
-                        onClick={(e) => { e.stopPropagation(); setPendingDeleteId(plan.id); }}
-                        disabled={isDeleting}
-                        aria-label="Delete plan"
-                      >
-                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary/50 hover:bg-destructive/15 hover:text-destructive transition-colors duration-200">
+                      {/* Right circle cap — decorative */}
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary/50">
                           {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
                         </div>
-                      </button>
+                      </div>
                     </div>
                   </div>
                 );
