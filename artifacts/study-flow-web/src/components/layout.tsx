@@ -56,14 +56,16 @@ export function Layout({ children }: LayoutProps) {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col md:flex-row">
-      {/* Desktop Sidebar */}
+    <div className="min-h-[100dvh] bg-background">
+      {/* Desktop Sidebar — a floating, self-contained pill that's fixed to
+          the viewport rather than anchored/stretched into the page layout,
+          so it's always fully visible no matter how long the page is. */}
       <TooltipProvider delayDuration={200}>
-        <aside className="hidden md:flex w-20 flex-col border-r bg-card items-center py-5 gap-2 shrink-0">
+        <aside className="hidden md:flex fixed left-5 top-1/2 -translate-y-1/2 z-50 flex-col bg-card border rounded-full shadow-lg items-center py-5 px-2.5 gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Link href="/" className="mb-4 transition-all hover:scale-105">
-                <span className="w-12 h-12 rounded-[22px] bg-primary flex items-center justify-center text-primary-foreground shadow-md shadow-primary/30">
+                <span className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-md shadow-primary/30">
                   <Calendar className="w-7 h-7" />
                 </span>
               </Link>
@@ -71,7 +73,7 @@ export function Layout({ children }: LayoutProps) {
             <TooltipContent side="right">Home</TooltipContent>
           </Tooltip>
 
-          <nav className="flex-1 flex flex-col items-center gap-1">
+          <nav className="flex flex-col items-center gap-1">
             {navItems.map((item) => {
               const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
               return (
@@ -80,7 +82,7 @@ export function Layout({ children }: LayoutProps) {
                     <Link
                       href={item.href}
                       className={cn(
-                        "p-2.5 flex items-center justify-center rounded-[18px] transition-all duration-200",
+                        "p-2.5 flex items-center justify-center rounded-full transition-all duration-200",
                         isActive
                           ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                           : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -95,12 +97,12 @@ export function Layout({ children }: LayoutProps) {
             })}
           </nav>
 
-          <div className="flex flex-col items-center gap-1">
+          <div className="mt-4 flex flex-col items-center gap-1 border-t pt-4">
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setFeedbackOpen(true)}
-                  className="p-2.5 flex items-center justify-center rounded-[18px] transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  className="p-2.5 flex items-center justify-center rounded-full transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
                   data-testid="button-open-feedback"
                 >
                   <MessageSquarePlus className="w-8 h-8" />
@@ -114,7 +116,7 @@ export function Layout({ children }: LayoutProps) {
                 <Link
                   href="/settings"
                   className={cn(
-                    "p-2.5 flex items-center justify-center rounded-[18px] transition-all duration-200",
+                    "p-2.5 flex items-center justify-center rounded-full transition-all duration-200",
                     location === "/settings"
                       ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -132,7 +134,7 @@ export function Layout({ children }: LayoutProps) {
                 <TooltipTrigger asChild>
                   <button
                     onClick={handleSignOut}
-                    className="p-2.5 flex items-center justify-center rounded-[18px] transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    className="p-2.5 flex items-center justify-center rounded-full transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
                   >
                     <LogOut className="w-8 h-8" />
                   </button>
@@ -145,7 +147,7 @@ export function Layout({ children }: LayoutProps) {
       </TooltipProvider>
 
       {/* Main Content */}
-      <main className="flex-1 pb-20 md:pb-0 overflow-y-auto relative">
+      <main className="pb-20 md:pb-0 md:pl-28 relative">
         {/* Background dots */}
         <div className="absolute inset-0 pointer-events-none select-none" aria-hidden>
           <svg className="absolute inset-0 w-full h-full text-primary opacity-[0.18]" xmlns="http://www.w3.org/2000/svg">
@@ -157,7 +159,7 @@ export function Layout({ children }: LayoutProps) {
             <rect width="100%" height="100%" fill="url(#dots)" />
           </svg>
         </div>
-        <div className="relative min-h-full w-full max-w-4xl mx-auto p-4 md:p-8 animate-in fade-in duration-500">
+        <div className="relative min-h-[100dvh] w-full max-w-4xl mx-auto p-4 md:p-8 animate-in fade-in duration-500">
           {children}
         </div>
       </main>
