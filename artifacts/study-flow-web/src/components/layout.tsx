@@ -55,7 +55,7 @@ export function Layout({ children }: LayoutProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <Link href="/" className="mb-4 transition-all hover:scale-105">
-                <span className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-md shadow-primary/30">
+                <span className="w-12 h-12 rounded-[22px] bg-primary flex items-center justify-center text-primary-foreground shadow-md shadow-primary/30">
                   <Calendar className="w-7 h-7" />
                 </span>
               </Link>
@@ -72,7 +72,7 @@ export function Layout({ children }: LayoutProps) {
                     <Link
                       href={item.href}
                       className={cn(
-                        "p-2.5 flex items-center justify-center rounded-xl transition-all duration-200",
+                        "p-2.5 flex items-center justify-center rounded-[18px] transition-all duration-200",
                         isActive
                           ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                           : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -92,7 +92,7 @@ export function Layout({ children }: LayoutProps) {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setFeedbackOpen(true)}
-                  className="p-2.5 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  className="p-2.5 flex items-center justify-center rounded-[18px] transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
                   data-testid="button-open-feedback"
                 >
                   <MessageSquarePlus className="w-8 h-8" />
@@ -106,7 +106,7 @@ export function Layout({ children }: LayoutProps) {
                 <TooltipTrigger asChild>
                   <button
                     onClick={handleSignOut}
-                    className="p-2.5 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    className="p-2.5 flex items-center justify-center rounded-[18px] transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
                   >
                     <LogOut className="w-8 h-8" />
                   </button>

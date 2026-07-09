@@ -520,8 +520,8 @@ export default function Integrations() {
                       <CheckCircle2 className="w-4 h-4" />
                     </span>
                   )}
-                  <span className={cn("w-12 h-12 rounded-xl flex items-center justify-center", tool.iconClass)}>
-                    <tool.icon className="w-7 h-7" />
+                  <span className={cn("w-16 h-16 rounded-3xl flex items-center justify-center", tool.iconClass)}>
+                    <tool.icon className="w-8 h-8" />
                   </span>
                   <span className="text-base font-medium leading-tight text-center">{tool.name}</span>
                 </button>
