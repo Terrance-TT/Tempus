@@ -198,7 +198,7 @@ export default function Home() {
                         onClick={() => !isRenaming && setLocation(`/schedule/${plan.id}`)}
                         aria-label="Open plan"
                       >
-                        <div className="w-3 h-3 rounded-full bg-primary/40 group-hover:bg-primary transition-colors duration-300" />
+                        <div className="w-6 h-6 rounded-full bg-primary/40 group-hover:bg-primary transition-colors duration-300" />
                       </button>
 
                       {/* Rolling name — expands out from the left circle on hover */}
