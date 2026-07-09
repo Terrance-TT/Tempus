@@ -251,7 +251,7 @@ export default function Home() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
-                              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-45 w-4 h-9 rounded-full flex items-center justify-center gap-0.5 bg-transparent transition-transform duration-1000 ease-out group-hover:scale-110"
+                              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-9 rounded-full flex items-center justify-center gap-0.5 bg-transparent transition-transform duration-1000 ease-out group-hover:-rotate-45"
                               onClick={(e) => e.stopPropagation()}
                               aria-label="Plan options"
                             >
