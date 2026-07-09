@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, FolderOpen, Plus, Sparkles, Trash2, CalendarDays, Loader2, MoreHorizontal } from "lucide-react";
+import { Calendar, PlusCircle, ArrowRight, Sparkles, Trash2, CalendarDays, Loader2, MoreHorizontal } from "lucide-react";
 import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -86,19 +86,17 @@ export default function Home() {
             <div className="rounded-2xl border border-primary/20 bg-card/60 backdrop-blur-sm shadow-xl shadow-primary/5 overflow-hidden p-8 flex flex-col gap-8">
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
-                  className="flex-1 py-8 rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
+                  className="flex-1 text-xl font-bold py-7 rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
                   onClick={() => setLocation(`/schedule/${activeSchedule.id}`)}
-                  aria-label="Open schedule"
                 >
-                  <FolderOpen className="w-9 h-9" />
+                  Open
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1 py-8 rounded-xl bg-background/50 hover:bg-secondary/50 border-border/60"
+                  className="flex-1 py-7 rounded-xl bg-background/50 hover:bg-secondary/50 text-xl font-bold border-border/60"
                   onClick={() => setLocation("/create")}
-                  aria-label="Create new plan"
                 >
-                  <Plus className="w-9 h-9" />
+                  New
                 </Button>
               </div>
             </div>
@@ -153,9 +151,6 @@ export default function Home() {
                 return (
                   <Card key={plan.id} className="group hover:border-primary/40 transition-colors">
                     <CardContent className="p-4 flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-[14px] bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                        <CalendarDays className="w-5 h-5" />
-                      </div>
                       <button
                         className="flex-1 min-w-0 text-left cursor-pointer"
                         onClick={() => setLocation(`/schedule/${plan.id}`)}
