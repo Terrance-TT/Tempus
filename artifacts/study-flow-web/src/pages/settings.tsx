@@ -6,11 +6,11 @@ import { cn } from "@/lib/utils";
 
 function SettingsIcon() {
   return (
-    <span className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0 relative">
-      <span className="absolute top-2 right-3 w-1.5 h-1.5 rounded-full bg-primary/60" />
-      <span className="flex items-center gap-1.5">
-        <span className="w-2 h-5 rounded-full bg-primary/60" />
-        <span className="w-2 h-5 rounded-full bg-primary/60" />
+    <span className="w-14 h-14 rounded-full bg-primary/20 shrink-0 relative block">
+      <span className="absolute -top-0.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
+      <span className="absolute top-1/2 left-1/2 flex items-center gap-1.5 -translate-x-1/2 -translate-y-1/2 rotate-45">
+        <span className="w-2 h-16 rounded-full bg-primary" />
+        <span className="w-2 h-16 rounded-full bg-primary" />
       </span>
     </span>
   );
