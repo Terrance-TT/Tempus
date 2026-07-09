@@ -186,19 +186,17 @@ export default function Home() {
                         "hover:border-primary/40 hover:shadow-sm"
                       )}
                     >
+                      {/* Vertical pill to the left of the circle */}
+                      <div className="w-3 h-9 rounded-full bg-primary/60 self-center shrink-0 ml-2" />
+
                       {/* Left circle cap — indicator dot, click to open */}
                       <button
                         className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
                         onClick={() => !isRenaming && setLocation(`/schedule/${plan.id}`)}
                         aria-label="Open plan"
                       >
-                        <div className="w-8 h-8 rounded-full bg-primary/40 ring-0 ring-primary group-hover:bg-transparent group-hover:ring-2 group-hover:scale-[2] transition-all duration-700" />
+                        <div className="w-8 h-8 rounded-full bg-primary/40" />
                       </button>
-
-                      {/* Vertical pill — leans on the dot, pushed outward as dot expands */}
-                      {!isRenaming && (
-                        <div className="w-1.5 h-9 rounded-full bg-primary/25 self-center shrink-0 -translate-x-1 group-hover:translate-x-4 transition-all duration-700" />
-                      )}
 
                       {/* Rolling name — expands out from the left circle on hover */}
                       {isRenaming ? (
