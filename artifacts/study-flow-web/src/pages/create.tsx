@@ -913,7 +913,7 @@ export default function Create() {
               </Card>
             )}
 
-            {commitments.length > 0 && (
+            {inputMode === "photo" && commitments.length > 0 && (
               <div className="flex justify-end pt-6">
                 <Button size="lg" onClick={() => setStep(2)} disabled={isExtracting} className="rounded-xl" data-testid="button-continue-step1">
                   Continue <ArrowRight className="ml-2 w-5 h-5" />
