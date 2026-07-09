@@ -102,6 +102,9 @@ function shouldBlock(settings, blocks) {
   // Commit mode (hidden switch) always forces blocking on, even if a stale
   // config somehow carries active=false.
   if (!settings.active && !settings.hideActivateSwitch) return { blocking: false, reasonBlock: null };
+  if (settings.blockMode === "always") {
+    return { blocking: true, reasonBlock: { title: "All-day focus", category: "homework" } };
+  }
   const active = currentBlocks(blocks);
   if (settings.blockMode === "non_free") {
     const busy = active.find((b) => !FREE_CATEGORIES.includes(b.category));

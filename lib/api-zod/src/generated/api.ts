@@ -166,7 +166,7 @@ export const GetFocusGuardSettingsQueryParams = zod.object({
 
 export const GetFocusGuardSettingsResponse = zod.object({
   "blockedSites": zod.array(zod.string()),
-  "blockMode": zod.enum(['work_blocks', 'non_free']).describe('work_blocks — block only during homework\/study blocks. non_free — block whenever any non-free block (class, work, etc.) is active.\n'),
+  "blockMode": zod.enum(['work_blocks', 'non_free', 'always']).describe('work_blocks — block only during homework\/study blocks. non_free — block whenever any non-free block (class, work, etc.) is active. always — block all day regardless of schedule (useful for testing).\n'),
   "active": zod.boolean(),
   "hideActivateSwitch": zod.boolean(),
   "showClock": zod.boolean()
@@ -179,7 +179,7 @@ export const GetFocusGuardSettingsResponse = zod.object({
 export const UpdateFocusGuardSettingsBody = zod.object({
   "deviceId": zod.string(),
   "blockedSites": zod.array(zod.string()).optional(),
-  "blockMode": zod.enum(['work_blocks', 'non_free']).optional(),
+  "blockMode": zod.enum(['work_blocks', 'non_free', 'always']).optional(),
   "active": zod.boolean().optional(),
   "hideActivateSwitch": zod.boolean().optional(),
   "showClock": zod.boolean().optional()
@@ -187,7 +187,7 @@ export const UpdateFocusGuardSettingsBody = zod.object({
 
 export const UpdateFocusGuardSettingsResponse = zod.object({
   "blockedSites": zod.array(zod.string()),
-  "blockMode": zod.enum(['work_blocks', 'non_free']).describe('work_blocks — block only during homework\/study blocks. non_free — block whenever any non-free block (class, work, etc.) is active.\n'),
+  "blockMode": zod.enum(['work_blocks', 'non_free', 'always']).describe('work_blocks — block only during homework\/study blocks. non_free — block whenever any non-free block (class, work, etc.) is active. always — block all day regardless of schedule (useful for testing).\n'),
   "active": zod.boolean(),
   "hideActivateSwitch": zod.boolean(),
   "showClock": zod.boolean()

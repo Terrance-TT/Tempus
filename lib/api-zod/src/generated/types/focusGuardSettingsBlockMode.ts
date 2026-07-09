@@ -7,7 +7,7 @@
  */
 
 /**
- * work_blocks — block only during homework/study blocks. non_free — block whenever any non-free block (class, work, etc.) is active.
+ * work_blocks — block only during homework/study blocks. non_free — block whenever any non-free block (class, work, etc.) is active. always — block all day regardless of schedule (useful for testing).
  */
 export type FocusGuardSettingsBlockMode = typeof FocusGuardSettingsBlockMode[keyof typeof FocusGuardSettingsBlockMode];
 
@@ -15,4 +15,5 @@ export type FocusGuardSettingsBlockMode = typeof FocusGuardSettingsBlockMode[key
 export const FocusGuardSettingsBlockMode = {
   work_blocks: 'work_blocks',
   non_free: 'non_free',
+  always: 'always',
 } as const;

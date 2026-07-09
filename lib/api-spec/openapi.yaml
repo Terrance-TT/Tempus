@@ -900,10 +900,11 @@ components:
             type: string
         blockMode:
           type: string
-          enum: [work_blocks, non_free]
+          enum: [work_blocks, non_free, always]
           description: >
             work_blocks — block only during homework/study blocks.
             non_free — block whenever any non-free block (class, work, etc.) is active.
+            always — block all day regardless of schedule (useful for testing).
         active:
           type: boolean
         hideActivateSwitch:
@@ -927,7 +928,7 @@ components:
             type: string
         blockMode:
           type: string
-          enum: [work_blocks, non_free]
+          enum: [work_blocks, non_free, always]
         active:
           type: boolean
         hideActivateSwitch:

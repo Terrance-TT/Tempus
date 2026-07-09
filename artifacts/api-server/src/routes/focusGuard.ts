@@ -33,7 +33,7 @@ function toSettingsResponse(row: {
 }) {
   return {
     blockedSites: Array.isArray(row.blockedSites) ? row.blockedSites : DEFAULT_BLOCKED_SITES,
-    blockMode: row.blockMode === "non_free" ? "non_free" : "work_blocks",
+    blockMode: row.blockMode === "non_free" || row.blockMode === "always" ? row.blockMode : "work_blocks",
     active: row.active,
     hideActivateSwitch: row.hideActivateSwitch,
     showClock: row.showClock,

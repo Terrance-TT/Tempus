@@ -285,6 +285,13 @@ export function FocusGuardCard() {
                     <span className="text-xs text-muted-foreground">Blocked during class, work blocks — anything that isn't a break.</span>
                   </span>
                 </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <RadioGroupItem value="always" id="mode-always" className="mt-0.5" data-testid="radio-mode-always" />
+                  <span>
+                    <span className="text-sm font-medium block">All day</span>
+                    <span className="text-xs text-muted-foreground">Blocked around the clock, no schedule needed — great for testing the extension.</span>
+                  </span>
+                </label>
               </RadioGroup>
             </div>
 

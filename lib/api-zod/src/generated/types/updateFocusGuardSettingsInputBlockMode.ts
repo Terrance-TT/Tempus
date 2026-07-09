@@ -12,4 +12,5 @@ export type UpdateFocusGuardSettingsInputBlockMode = typeof UpdateFocusGuardSett
 export const UpdateFocusGuardSettingsInputBlockMode = {
   work_blocks: 'work_blocks',
   non_free: 'non_free',
+  always: 'always',
 } as const;
