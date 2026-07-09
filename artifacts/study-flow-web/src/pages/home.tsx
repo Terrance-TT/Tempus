@@ -83,22 +83,19 @@ export default function Home() {
 
         {activeSchedule ? (
           <div className="space-y-8">
-            <div className="rounded-2xl border border-primary/20 bg-card/60 backdrop-blur-sm shadow-xl shadow-primary/5 overflow-hidden p-8 flex flex-col gap-8">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  className="flex-1 text-xl font-bold py-7 rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
-                  onClick={() => setLocation(`/schedule/${activeSchedule.id}`)}
-                >
-                  Open
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 py-7 rounded-xl bg-background/50 hover:bg-secondary/50 text-xl font-bold border-border/60"
-                  onClick={() => setLocation("/create")}
-                >
-                  New
-                </Button>
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                className="aspect-[2/1] rounded-2xl border border-primary/30 bg-primary/10 flex items-center justify-center transition-all duration-200 hover:border-primary/60 hover:bg-primary/15 hover:shadow-sm"
+                onClick={() => setLocation(`/schedule/${activeSchedule.id}`)}
+              >
+                <span className="text-xl font-bold text-foreground">Open</span>
+              </button>
+              <button
+                className="aspect-[2/1] rounded-2xl border bg-card flex items-center justify-center transition-all duration-200 hover:border-primary/40 hover:shadow-sm"
+                onClick={() => setLocation("/create")}
+              >
+                <span className="text-xl font-bold text-foreground">New</span>
+              </button>
             </div>
           </div>
         ) : currentPlans.length === 0 ? (
