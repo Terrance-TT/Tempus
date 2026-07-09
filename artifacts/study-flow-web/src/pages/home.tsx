@@ -195,6 +195,11 @@ export default function Home() {
                         <div className="w-8 h-8 rounded-full bg-primary/40 ring-0 ring-primary group-hover:bg-transparent group-hover:ring-2 group-hover:scale-[2] transition-all duration-700" />
                       </button>
 
+                      {/* Vertical pill — leans on the dot, pushed outward as dot expands */}
+                      {!isRenaming && (
+                        <div className="w-1.5 h-9 rounded-full bg-primary/25 self-center shrink-0 -translate-x-1 group-hover:translate-x-4 transition-all duration-700" />
+                      )}
+
                       {/* Rolling name — expands out from the left circle on hover */}
                       {isRenaming ? (
                         <div className="w-48 h-full flex items-center pr-2">
