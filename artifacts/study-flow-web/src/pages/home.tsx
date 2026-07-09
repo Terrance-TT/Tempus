@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Sparkles, Loader2, MoreHorizontal, Plus } from "lucide-react";
+import { PlusCircle, Sparkles, Loader2, MoreVertical, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
@@ -230,16 +230,13 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* Three dots — reveals a "Delete" label that expands to the right toward the circle */}
-                      <div className="flex items-center overflow-hidden max-w-0 group-hover:max-w-xs transition-all duration-700 ease-out">
-                        <span className="pl-3 pr-1 text-sm text-muted-foreground whitespace-nowrap">Delete</span>
-                      </div>
+                      {/* Three dots — vertical, taller than the neighboring circles */}
                       <button
-                        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors duration-200"
+                        className="h-20 w-10 rounded-full flex items-center justify-center shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors duration-200"
                         aria-hidden="true"
                         tabIndex={-1}
                       >
-                        <MoreHorizontal className="w-4 h-4" />
+                        <MoreVertical className="w-6 h-6" />
                       </button>
 
                       {/* Right circle cap — delete */}
