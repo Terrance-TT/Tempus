@@ -119,8 +119,33 @@ export function Layout({ children }: LayoutProps) {
       </TooltipProvider>
 
       {/* Main Content */}
-      <main className="flex-1 pb-20 md:pb-0 overflow-y-auto">
-        <div className="min-h-full w-full max-w-4xl mx-auto p-4 md:p-8 animate-in fade-in duration-500">
+      <main className="flex-1 pb-20 md:pb-0 overflow-y-auto relative">
+        {/* Background art */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none" aria-hidden>
+          {/* Dot grid */}
+          <svg className="absolute inset-0 w-full h-full text-foreground opacity-[0.045]" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="dot-grid" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
+                <circle cx="1.5" cy="1.5" r="1.5" fill="currentColor" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#dot-grid)" />
+          </svg>
+          {/* Glowing orbs */}
+          <div className="absolute -top-40 -right-40 w-[520px] h-[520px] bg-primary/10 rounded-full blur-[110px]" />
+          <div className="absolute bottom-0 left-1/4 w-[380px] h-[380px] bg-primary/6 rounded-full blur-[90px] translate-y-1/3" />
+          {/* Subtle arcs */}
+          <svg className="absolute top-0 right-0 w-[480px] h-[480px] text-primary opacity-[0.05]" viewBox="0 0 480 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="480" cy="0" r="200" stroke="currentColor" strokeWidth="1"/>
+            <circle cx="480" cy="0" r="320" stroke="currentColor" strokeWidth="0.8"/>
+            <circle cx="480" cy="0" r="440" stroke="currentColor" strokeWidth="0.6"/>
+          </svg>
+          <svg className="absolute bottom-0 left-0 w-[360px] h-[360px] text-primary opacity-[0.04]" viewBox="0 0 360 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="0" cy="360" r="160" stroke="currentColor" strokeWidth="1"/>
+            <circle cx="0" cy="360" r="280" stroke="currentColor" strokeWidth="0.7"/>
+          </svg>
+        </div>
+        <div className="relative min-h-full w-full max-w-4xl mx-auto p-4 md:p-8 animate-in fade-in duration-500">
           {children}
         </div>
       </main>

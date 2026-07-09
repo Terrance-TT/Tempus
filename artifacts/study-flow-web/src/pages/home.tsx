@@ -73,36 +73,32 @@ export default function Home() {
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto space-y-8 pt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-heading font-bold text-foreground">
+      <div className="max-w-3xl mx-auto space-y-10 pt-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <header>
+          <h1 className="text-4xl font-heading font-bold text-foreground tracking-tight">
             {activeSchedule ? "Today" : "Welcome to Tempus"}
           </h1>
-          <p className="text-muted-foreground text-lg">Your AI-powered study planner.</p>
         </header>
 
         {activeSchedule ? (
-          <div className="space-y-6">
-            <Card className="border-primary/20 bg-primary/5 shadow-sm overflow-hidden relative group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-primary/20 transition-colors" />
-              <CardContent className="relative z-10 pt-6">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button 
-                    className="flex-1 text-lg py-5 rounded-xl shadow-sm"
-                    onClick={() => setLocation(`/schedule/${activeSchedule.id}`)}
-                  >
-                    Open <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 py-5 rounded-xl bg-background hover:bg-secondary/50 text-lg"
-                    onClick={() => setLocation("/create")}
-                  >
-                    <PlusCircle className="mr-2 w-5 h-5" /> New
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="space-y-8">
+            <div className="rounded-2xl border border-primary/20 bg-card/60 backdrop-blur-sm shadow-xl shadow-primary/5 overflow-hidden p-8 flex flex-col gap-8">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button
+                  className="flex-1 text-lg py-7 rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
+                  onClick={() => setLocation(`/schedule/${activeSchedule.id}`)}
+                >
+                  Open <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 py-7 rounded-xl bg-background/50 hover:bg-secondary/50 text-lg border-border/60"
+                  onClick={() => setLocation("/create")}
+                >
+                  <PlusCircle className="mr-2 w-5 h-5" /> New
+                </Button>
+              </div>
+            </div>
           </div>
         ) : currentPlans.length === 0 ? (
           <Card className="text-center py-16 px-6 border-dashed bg-secondary/10 shadow-none relative overflow-hidden rounded-3xl">
