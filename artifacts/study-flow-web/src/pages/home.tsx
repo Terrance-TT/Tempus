@@ -169,9 +169,6 @@ export default function Home() {
                             <Badge variant="outline" className="text-xs">Needs details</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          Created {format(new Date(plan.createdAt), "MMM d, yyyy 'at' h:mm a")}
-                        </p>
                       </button>
                       <Popover>
                         <PopoverTrigger asChild>
