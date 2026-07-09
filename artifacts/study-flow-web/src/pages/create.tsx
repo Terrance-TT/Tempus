@@ -65,6 +65,70 @@ import {
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+const ASSIGNMENT_KEYWORDS = /\b(homework|assignment|essay|project|quiz|exam|midterm|final|paper|report|worksheet|reading|lab|due)\b/i;
+const WEEKDAY_RE = new RegExp(`\\b(${WEEKDAYS.join("|")})\\b`, "i");
+
+// Best-effort heuristic that scans a free-text schedule description for
+// clauses that look like they describe an assignment with a due date. This
+// is intentionally conservative: it only surfaces a suggestion when it can
+// resolve an actual due date, and the caller must get explicit user
+// confirmation before turning any of these into real tasks.
+function extractAssignmentHints(text: string, now: Date = new Date()): { title: string; dueDate: string }[] {
+  const clauses = text
+    .split(/(?<=[.!?;\n])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const results: { title: string; dueDate: string }[] = [];
+  const seen = new Set<string>();
+
+  for (const clause of clauses) {
+    if (!ASSIGNMENT_KEYWORDS.test(clause)) continue;
+
+    let dueDate: string | null = null;
+    if (/\btomorrow\b/i.test(clause)) {
+      const d = new Date(now);
+      d.setDate(d.getDate() + 1);
+      dueDate = d.toISOString().slice(0, 10);
+    } else if (/\btoday\b/i.test(clause)) {
+      dueDate = now.toISOString().slice(0, 10);
+    } else {
+      const match = clause.match(WEEKDAY_RE);
+      if (match) {
+        const targetDay = WEEKDAYS.indexOf(match[1].toLowerCase());
+        const d = new Date(now);
+        let diff = (targetDay - d.getDay() + 7) % 7;
+        if (diff === 0) diff = 7;
+        d.setDate(d.getDate() + diff);
+        dueDate = d.toISOString().slice(0, 10);
+      }
+    }
+
+    if (!dueDate) continue;
+
+    let title = clause.replace(/[.!?;]+$/, "").trim();
+    if (title.length > 80) title = `${title.slice(0, 80)}…`;
+    const key = title.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    results.push({ title, dueDate });
+    if (results.length >= 6) break;
+  }
+
+  return results;
+}
 
 export default function Create() {
   const deviceId = useDeviceId();
@@ -90,6 +154,7 @@ export default function Create() {
   const [describeText, setDescribeText] = useState("");
   const [showCommitmentDetails, setShowCommitmentDetails] = useState(false);
   const [lastExtractedCount, setLastExtractedCount] = useState<number | null>(null);
+  const [assignmentSuggestions, setAssignmentSuggestions] = useState<{ title: string; dueDate: string }[] | null>(null);
 
   // Step 2 State
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -429,8 +494,12 @@ export default function Create() {
         onSuccess: (newCommitments) => {
           onExtractionSuccess(newCommitments.length);
           if (newCommitments.length > 0) {
-            setDescribeText("");
-            setStep(2);
+            const hints = extractAssignmentHints(describeText);
+            if (hints.length > 0) {
+              setAssignmentSuggestions(hints);
+            } else {
+              setStep(2);
+            }
           }
         },
         onError: () => {
@@ -844,7 +913,7 @@ export default function Create() {
               </Card>
             )}
 
-            {commitments.length > 0 && !describeText.trim() && (
+            {commitments.length > 0 && (
               <div className="flex justify-end pt-6">
                 <Button size="lg" onClick={() => setStep(2)} disabled={isExtracting} className="rounded-xl" data-testid="button-continue-step1">
                   Continue <ArrowRight className="ml-2 w-5 h-5" />
@@ -1415,6 +1484,60 @@ export default function Create() {
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={!!assignmentSuggestions}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAssignmentSuggestions(null);
+            setStep(2);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add these assignments too?</AlertDialogTitle>
+            <AlertDialogDescription>
+              We noticed what looks like assignments with due dates in your description. Add them to your task list?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <ul className="space-y-1.5 text-sm max-h-56 overflow-y-auto">
+            {assignmentSuggestions?.map((hint, i) => (
+              <li key={i} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+                <span className="truncate">{hint.title}</span>
+                <span className="text-muted-foreground text-xs whitespace-nowrap">Due {hint.dueDate}</span>
+              </li>
+            ))}
+          </ul>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setAssignmentSuggestions(null);
+                setStep(2);
+              }}
+              data-testid="button-skip-assignment-suggestions"
+            >
+              Skip
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setTasks((prev) => {
+                  const existing = new Set(prev.map((t) => t.title));
+                  const added = (assignmentSuggestions ?? [])
+                    .filter((h) => !existing.has(h.title))
+                    .map((h) => ({ title: h.title, dueDate: h.dueDate, estimatedMinutes: null }));
+                  return [...prev, ...added];
+                });
+                setAssignmentSuggestions(null);
+                setStep(2);
+              }}
+              data-testid="button-confirm-assignment-suggestions"
+            >
+              Add them
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }
