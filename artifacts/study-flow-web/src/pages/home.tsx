@@ -86,17 +86,17 @@ export default function Home() {
             <div className="rounded-2xl border border-primary/20 bg-card/60 backdrop-blur-sm shadow-xl shadow-primary/5 overflow-hidden p-8 flex flex-col gap-8">
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
-                  className="flex-1 text-xl py-7 rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
+                  className="flex-1 text-xl font-bold py-7 rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
                   onClick={() => setLocation(`/schedule/${activeSchedule.id}`)}
                 >
-                  Open <ArrowRight className="ml-2 w-5 h-5" />
+                  Open
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1 py-7 rounded-xl bg-background/50 hover:bg-secondary/50 text-xl border-border/60"
+                  className="flex-1 py-7 rounded-xl bg-background/50 hover:bg-secondary/50 text-xl font-bold border-border/60"
                   onClick={() => setLocation("/create")}
                 >
-                  <PlusCircle className="mr-2 w-5 h-5" /> New
+                  New
                 </Button>
               </div>
             </div>
@@ -151,15 +151,12 @@ export default function Home() {
                 return (
                   <Card key={plan.id} className="group hover:border-primary/40 transition-colors">
                     <CardContent className="p-4 flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                        <CalendarDays className="w-5 h-5" />
-                      </div>
                       <button
                         className="flex-1 min-w-0 text-left cursor-pointer"
                         onClick={() => setLocation(`/schedule/${plan.id}`)}
                       >
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-lg font-semibold text-foreground">
+                          <span className="text-lg font-bold text-foreground">
                             {plan.scope === "week" ? "Weekly plan" : "Daily plan"}
                           </span>
                           {plan.status !== "complete" && (
