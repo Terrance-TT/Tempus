@@ -675,7 +675,7 @@ export default function Create() {
                 data-testid="tab-photo"
                 className={`flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all border-2 ${inputMode === "photo" ? "bg-background shadow-sm text-foreground border-border/70" : "text-muted-foreground hover:text-foreground border-transparent hover:border-border/40"}`}
               >
-                <Camera className="w-4 h-4" /> Snap a photo
+                <Camera className="w-4 h-4" />
               </button>
               <div className="w-px bg-border/70 my-1" />
               <button
@@ -684,7 +684,7 @@ export default function Create() {
                 data-testid="tab-describe"
                 className={`flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all border-2 ${inputMode === "describe" ? "bg-background shadow-sm text-foreground border-border/70" : "text-muted-foreground hover:text-foreground border-transparent hover:border-border/40"}`}
               >
-                <MessageSquareText className="w-4 h-4" /> Describe it
+                <MessageSquareText className="w-4 h-4" />
               </button>
             </div>
 
@@ -726,13 +726,12 @@ export default function Create() {
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-muted-foreground text-sm">Drag your timetable photo here, or</p>
                         <div className="flex flex-col sm:flex-row gap-3 justify-center">
                           <Button size="lg" onClick={() => fileInputRef.current?.click()} className="rounded-xl shadow-sm" data-testid="button-take-photo">
-                            <Camera className="mr-2 w-5 h-5" /> Take Photo
+                            <Camera className="w-5 h-5" />
                           </Button>
                           <Button size="lg" variant="outline" onClick={() => fileInputRef.current?.click()} className="rounded-xl bg-background" data-testid="button-upload-image">
-                            <Upload className="mr-2 w-5 h-5" /> Browse File
+                            <Upload className="w-5 h-5" />
                           </Button>
                         </div>
 
