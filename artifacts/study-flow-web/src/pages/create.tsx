@@ -668,21 +668,20 @@ export default function Create() {
               <h1 className="text-3xl font-heading font-semibold text-foreground">Tell us your week</h1>
             </header>
 
-            <div className="flex items-stretch p-1.5 bg-secondary/40 rounded-xl border-2 border-border/70" data-testid="tabs-input-mode">
+            <div className="inline-flex items-stretch p-1 bg-secondary/40 rounded-full border-2 border-border/70 self-start" data-testid="tabs-input-mode">
               <button
                 type="button"
                 onClick={() => setInputMode("photo")}
                 data-testid="tab-photo"
-                className={`flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all border-2 ${inputMode === "photo" ? "bg-background shadow-sm text-foreground border-border/70" : "text-muted-foreground hover:text-foreground border-transparent hover:border-border/40"}`}
+                className={`flex items-center justify-center px-5 py-2 rounded-full text-sm font-medium transition-all border-2 ${inputMode === "photo" ? "bg-background shadow-sm text-foreground border-border/70" : "text-muted-foreground hover:text-foreground border-transparent"}`}
               >
                 <Camera className="w-4 h-4" />
               </button>
-              <div className="w-px bg-border/70 my-1" />
               <button
                 type="button"
                 onClick={() => setInputMode("describe")}
                 data-testid="tab-describe"
-                className={`flex flex-1 items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all border-2 ${inputMode === "describe" ? "bg-background shadow-sm text-foreground border-border/70" : "text-muted-foreground hover:text-foreground border-transparent hover:border-border/40"}`}
+                className={`flex items-center justify-center px-5 py-2 rounded-full text-sm font-medium transition-all border-2 ${inputMode === "describe" ? "bg-background shadow-sm text-foreground border-border/70" : "text-muted-foreground hover:text-foreground border-transparent"}`}
               >
                 <MessageSquareText className="w-4 h-4" />
               </button>
