@@ -239,25 +239,26 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* Right circle cap — decorative, mirrors the left indicator circle */}
-                      <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 -ml-4 -mr-2 transition-transform duration-1000 ease-out group-hover:-translate-x-1">
-                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary/50">
-                          {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {/* Right circle cap — decorative, mirrors the left indicator circle, sliced through by the pills */}
+                      <div className="relative w-16 h-16 flex items-center justify-center shrink-0 -ml-4 -mr-2">
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center transition-transform duration-1000 ease-out group-hover:-translate-x-1">
+                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary/50">
+                            {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Vertical double-pill to the right of the circle — opens the options menu, mirrors the left pill */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            className="w-7 h-9 rounded-full self-center shrink-0 -mr-2 -translate-x-1 origin-bottom transition-transform duration-1000 ease-out group-hover:-translate-x-3 group-hover:rotate-[-18deg] flex items-center justify-center gap-1 bg-transparent"
-                            onClick={(e) => e.stopPropagation()}
-                            aria-label="Plan options"
-                          >
-                            <span className="w-3 h-9 rounded-full bg-primary/60" />
-                            <span className="w-3 h-9 rounded-full bg-primary/60" />
-                          </button>
-                        </DropdownMenuTrigger>
+                        {/* Vertical double-pill — opens the options menu, slices through the circle at 45deg */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45 w-7 h-16 rounded-full flex items-center justify-center gap-1 bg-transparent transition-transform duration-1000 ease-out group-hover:scale-110"
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label="Plan options"
+                            >
+                              <span className="w-3 h-16 rounded-full bg-primary/60" />
+                              <span className="w-3 h-16 rounded-full bg-primary/60" />
+                            </button>
+                          </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenuItem onClick={() => startRename(plan)}>
                             <Pencil className="w-4 h-4 mr-2" /> Rename
@@ -274,7 +275,8 @@ export default function Home() {
                             {format(new Date(plan.createdAt), "MMM d, yyyy 'at' h:mm a")}
                           </DropdownMenuLabel>
                         </DropdownMenuContent>
-                      </DropdownMenu>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </div>
                 );
