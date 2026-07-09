@@ -230,6 +230,7 @@ export interface Schedule {
   deviceId: string;
   scope: ScheduleScope;
   status: ScheduleStatus;
+  name?: string | null;
   blocks: ScheduleBlock[];
   clarifyingQuestions: string[];
   createdAt: string;
@@ -389,6 +390,15 @@ export interface OkResult {
 
 export interface AdminStatus {
   isAdmin: boolean;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  /** Users with schedules generated on more than one distinct calendar day. */
+  returningUsers: number;
+  /** Average time (ms) to generate a schedule, across schedules with recorded timing. Null if none recorded yet. */
+  averageGenerationTimeMs: number | null;
+  totalSchedulesGenerated: number;
 }
 
 export interface SurveyAnswer {

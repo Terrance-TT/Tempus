@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminStats';
 export * from './adminStatus';
 export * from './assignment';
 export * from './assignmentSource';

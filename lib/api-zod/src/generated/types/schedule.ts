@@ -14,6 +14,7 @@ export interface Schedule {
   deviceId: string;
   scope: ScheduleScope;
   status: ScheduleStatus;
+  name?: string | null;
   blocks: ScheduleBlock[];
   clarifyingQuestions: string[];
   createdAt: Date;

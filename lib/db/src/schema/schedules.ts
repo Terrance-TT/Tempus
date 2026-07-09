@@ -1,4 +1,4 @@
-import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 export const schedules = pgTable("schedules", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -11,6 +11,7 @@ export const schedules = pgTable("schedules", {
   tasks: jsonb("tasks").notNull().default([]), // Task[] (assignments) used to generate
   commitmentsSnapshot: jsonb("commitments_snapshot").notNull().default([]), // Commitment[] used to generate
   name: text("name"),
+  generationDurationMs: integer("generation_duration_ms"), // wall-clock time the AI took to generate this schedule
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

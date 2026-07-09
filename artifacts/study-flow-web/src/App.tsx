@@ -25,6 +25,7 @@ import Schedule from "@/pages/schedule";
 import Integrations from "@/pages/integrations";
 import FocusGuard from "@/pages/focus-guard";
 import AdminFeedback from "@/pages/admin-feedback";
+import AdminStats from "@/pages/admin-stats";
 import Settings from "@/pages/settings";
 import Pricing from "@/pages/pricing";
 import Privacy from "@/pages/privacy";
@@ -315,6 +316,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/integrations" component={Integrations} />
             <Route path="/focus-guard" component={FocusGuard} />
             <Route path="/admin/feedback" component={AdminFeedback} />
+            <Route path="/admin/stats" component={AdminStats} />
             <Route path="/settings" component={Settings} />
             <Route path="/pricing" component={Pricing} />
             <Route path="/privacy" component={Privacy} />

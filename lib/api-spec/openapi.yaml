@@ -256,6 +256,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminStatus"
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [feedback]
+      summary: Aggregate usage statistics (admin only)
+      responses:
+        "200":
+          description: Usage statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+        "403":
+          description: Not an admin
   /admin/feedback:
     get:
       operationId: listFeedback
@@ -1112,6 +1126,9 @@ components:
           $ref: "#/components/schemas/ScheduleScope"
         status:
           $ref: "#/components/schemas/ScheduleStatus"
+        name:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -1132,6 +1149,9 @@ components:
           $ref: "#/components/schemas/ScheduleScope"
         status:
           $ref: "#/components/schemas/ScheduleStatus"
+        name:
+          type: string
+          nullable: true
         blocks:
           type: array
           items:
@@ -1469,6 +1489,25 @@ components:
           type: boolean
       required:
         - isAdmin
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        returningUsers:
+          type: integer
+          description: Users with schedules generated on more than one distinct calendar day.
+        averageGenerationTimeMs:
+          type: number
+          nullable: true
+          description: Average time (ms) to generate a schedule, across schedules with recorded timing. Null if none recorded yet.
+        totalSchedulesGenerated:
+          type: integer
+      required:
+        - totalUsers
+        - returningUsers
+        - averageGenerationTimeMs
+        - totalSchedulesGenerated
     SurveyAnswer:
       type: object
       properties:

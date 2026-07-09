@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, CalendarDays, PlusCircle, Plug, ShieldCheck, LogOut, MessageSquarePlus, Inbox, Settings } from "lucide-react";
+import { Calendar, CalendarDays, PlusCircle, Plug, ShieldCheck, LogOut, MessageSquarePlus, Inbox, Settings, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useClerk } from "@clerk/react";
@@ -52,6 +52,7 @@ export function Layout({ children }: LayoutProps) {
     { href: "/integrations", label: "Integrations", icon: Plug },
     { href: "/focus-guard", label: "Focus Guard", icon: ShieldCheck },
     ...(isAdmin ? [{ href: "/admin/feedback", label: "Feedback Inbox", icon: Inbox }] : []),
+    ...(isAdmin ? [{ href: "/admin/stats", label: "Stats", icon: BarChart3 }] : []),
   ];
 
   return (

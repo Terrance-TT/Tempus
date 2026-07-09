@@ -616,12 +616,14 @@ router.post("/schedules/generate", async (req, res) => {
     ? (draftRow.scope as "day" | "week")
     : body.scope;
 
+  const generationStartedAt = Date.now();
   const result = await runScheduleGeneration(
     effectiveScope,
     commitmentsSnapshot,
     priorAnswers,
     taskList,
   );
+  const generationDurationMs = Date.now() - generationStartedAt;
 
   if (draftRow) {
     const [updated] = await db
@@ -631,6 +633,7 @@ router.post("/schedules/generate", async (req, res) => {
         blocks: result.blocks,
         clarifyingQuestions: result.questions,
         answers: priorAnswers,
+        ...(result.status === "complete" ? { generationDurationMs } : {}),
       })
       .where(eq(schedules.id, draftRow.id))
       .returning();
@@ -659,6 +662,7 @@ router.post("/schedules/generate", async (req, res) => {
       answers: priorAnswers,
       tasks: taskList,
       commitmentsSnapshot,
+      ...(result.status === "complete" ? { generationDurationMs } : {}),
     })
     .returning();
 

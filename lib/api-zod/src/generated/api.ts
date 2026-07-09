@@ -239,6 +239,17 @@ export const GetAdminStatusResponse = zod.object({
 
 
 /**
+ * @summary Aggregate usage statistics (admin only)
+ */
+export const GetAdminStatsResponse = zod.object({
+  "totalUsers": zod.number(),
+  "returningUsers": zod.number().describe('Users with schedules generated on more than one distinct calendar day.'),
+  "averageGenerationTimeMs": zod.number().nullable().describe('Average time (ms) to generate a schedule, across schedules with recorded timing. Null if none recorded yet.'),
+  "totalSchedulesGenerated": zod.number()
+})
+
+
+/**
  * @summary List all feedback submissions (admin only)
  */
 export const ListFeedbackResponseItem = zod.object({
@@ -352,6 +363,7 @@ export const ListSchedulesResponseItem = zod.object({
   "deviceId": zod.string(),
   "scope": zod.enum(['day', 'week']),
   "status": zod.enum(['needs_clarification', 'complete']),
+  "name": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
 export const ListSchedulesResponse = zod.array(ListSchedulesResponseItem)
@@ -373,6 +385,7 @@ export const GetScheduleResponse = zod.object({
   "deviceId": zod.string(),
   "scope": zod.enum(['day', 'week']),
   "status": zod.enum(['needs_clarification', 'complete']),
+  "name": zod.string().nullish(),
   "blocks": zod.array(zod.object({
   "id": zod.string(),
   "day": zod.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
@@ -413,6 +426,7 @@ export const UpdateScheduleResponse = zod.object({
   "deviceId": zod.string(),
   "scope": zod.enum(['day', 'week']),
   "status": zod.enum(['needs_clarification', 'complete']),
+  "name": zod.string().nullish(),
   "blocks": zod.array(zod.object({
   "id": zod.string(),
   "day": zod.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
@@ -459,6 +473,7 @@ export const ReviseScheduleResponse = zod.object({
   "deviceId": zod.string(),
   "scope": zod.enum(['day', 'week']),
   "status": zod.enum(['needs_clarification', 'complete']),
+  "name": zod.string().nullish(),
   "blocks": zod.array(zod.object({
   "id": zod.string(),
   "day": zod.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
@@ -550,6 +565,7 @@ export const GenerateScheduleResponse = zod.object({
   "deviceId": zod.string(),
   "scope": zod.enum(['day', 'week']),
   "status": zod.enum(['needs_clarification', 'complete']),
+  "name": zod.string().nullish(),
   "blocks": zod.array(zod.object({
   "id": zod.string(),
   "day": zod.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),

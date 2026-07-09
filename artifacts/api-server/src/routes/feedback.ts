@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { desc, eq } from "drizzle-orm";
-import { db, feedback, staffRoles, users } from "@workspace/db";
+import { desc, eq, isNotNull, sql } from "drizzle-orm";
+import { db, feedback, schedules, staffRoles, users } from "@workspace/db";
 import { resolveOwnerId } from "../lib/auth";
 import { SubmitFeedbackBody, UpdateFeedbackStatusBody, UpdateFeedbackStatusParams } from "@workspace/api-zod";
 
@@ -99,6 +99,41 @@ router.post("/feedback", async (req, res) => {
 router.get("/admin/status", async (req, res) => {
   const auth = getAuth(req);
   res.json({ isAdmin: await isStaffAdmin(auth?.userId ?? null) });
+});
+
+router.get("/admin/stats", async (req, res) => {
+  const auth = getAuth(req);
+  if (!(await isStaffAdmin(auth?.userId ?? null))) {
+    res.status(403).json({ message: "Admin access required." });
+    return;
+  }
+
+  const [[userCountRow], [returningRow], [genStatsRow]] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` }).from(users),
+    db.execute<{ count: number }>(sql`
+      select count(*)::int as count from (
+        select ${schedules.deviceId} as device_id
+        from ${schedules}
+        group by ${schedules.deviceId}
+        having count(distinct date_trunc('day', ${schedules.createdAt})) > 1
+      ) as returning_devices
+    `).then((result) => result.rows as { count: number }[]),
+    db
+      .select({
+        avgMs: sql<number | null>`avg(${schedules.generationDurationMs})`,
+        total: sql<number>`count(*)::int`,
+      })
+      .from(schedules)
+      .where(isNotNull(schedules.generationDurationMs)),
+  ]);
+
+  res.json({
+    totalUsers: userCountRow?.count ?? 0,
+    returningUsers: returningRow?.count ?? 0,
+    averageGenerationTimeMs:
+      genStatsRow?.avgMs != null ? Number(genStatsRow.avgMs) : null,
+    totalSchedulesGenerated: genStatsRow?.total ?? 0,
+  });
 });
 
 router.get("/admin/feedback", async (req, res) => {
