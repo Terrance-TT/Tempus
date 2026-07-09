@@ -207,17 +207,56 @@ export default function Create() {
   }, [step, tasks, studyPref, focusLength, wakeTime, bedTime, mealTimes, prefNotes]);
 
   // Save progress and go to sign-in — survives OAuth full-page redirect
+  const intentionalHandoffRef = useRef(false);
   const goToSignIn = () => {
+    intentionalHandoffRef.current = true;
     savePendingCreateState({ columbiaPreset: isColumbiaMode, step });
     setLocation("/sign-in");
   };
   const goToSignUp = () => {
+    intentionalHandoffRef.current = true;
     savePendingCreateState({ columbiaPreset: isColumbiaMode, step });
     setLocation("/sign-up");
   };
 
+  // If the user abandons the Columbia auto-fill (e.g. hits the browser back
+  // button) instead of deliberately continuing to sign-in/sign-up, discard the
+  // commitments that were auto-created for them. Otherwise that guest data
+  // sits in the DB under their guest device id and gets silently re-attached
+  // to whatever account they sign into later via claim-guest-data — even
+  // though from the user's perspective they never kept it.
+  const isColumbiaModeRef = useRef(isColumbiaMode);
+  isColumbiaModeRef.current = isColumbiaMode;
+  const isSignedInRef = useRef(isSignedIn);
+  isSignedInRef.current = isSignedIn;
+  const deviceIdRef = useRef(deviceId);
+  deviceIdRef.current = deviceId;
+  const commitmentsRef = useRef(commitments);
+  commitmentsRef.current = commitments;
+  useEffect(() => {
+    return () => {
+      if (
+        isColumbiaModeRef.current &&
+        !isSignedInRef.current &&
+        !intentionalHandoffRef.current &&
+        deviceIdRef.current
+      ) {
+        sessionStorage.removeItem("columbiaPreset");
+        clearPendingCreateState();
+        clearCreateDraft();
+        const id = deviceIdRef.current;
+        commitmentsRef.current.forEach((c) => {
+          deleteCommitment.mutate({ id: c.id, params: { deviceId: id } });
+        });
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleStartOver = () => {
     clearCreateDraft();
+    clearPendingCreateState();
+    sessionStorage.removeItem("columbiaPreset");
     setStep(1);
     setTasks([]);
     setStudyPref([]);
@@ -226,6 +265,21 @@ export default function Create() {
     setLastExtractedCount(null);
     setResumedFromDraft(false);
     prefsHydratedRef.current = false; // allow server prefs to re-hydrate
+    // Explicit reset should also discard any commitments already persisted
+    // for this guest/user — otherwise they can resurface later (e.g. via
+    // guest-data claiming after sign-in) even though the user asked to start over.
+    if (deviceId && commitments.length > 0) {
+      Promise.all(
+        commitments.map(
+          (c) =>
+            new Promise<void>((resolve) => {
+              deleteCommitment.mutate({ id: c.id, params: { deviceId } }, { onSettled: () => resolve() });
+            })
+        )
+      ).then(() => {
+        queryClient.invalidateQueries({ queryKey: getListCommitmentsQueryKey({ deviceId }) });
+      });
+    }
   };
 
   const extractCommitments = useExtractCommitmentsFromImage();
