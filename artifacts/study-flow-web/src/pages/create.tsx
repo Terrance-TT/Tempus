@@ -666,7 +666,6 @@ export default function Create() {
           <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
             <header className="space-y-2">
               <h1 className="text-3xl font-heading font-semibold text-foreground">Tell us your week</h1>
-              <p className="text-muted-foreground text-lg">Snap a photo of your timetable — or just describe your week in words. Our AI will suggest which assignment to tackle when, so you stay on track.</p>
             </header>
 
             <div className="flex items-stretch p-1.5 bg-secondary/40 rounded-xl border-2 border-border/70" data-testid="tabs-input-mode">
