@@ -187,7 +187,7 @@ export default function Home() {
                       )}
                     >
                       {/* Vertical pill to the left of the circle */}
-                      <div className="w-3 h-9 rounded-full bg-primary/60 self-center shrink-0 ml-2 translate-x-1 transition-transform duration-1000 ease-out group-hover:translate-x-3" />
+                      <div className="w-3 h-9 rounded-full bg-primary/60 self-center shrink-0 ml-2 translate-x-1 origin-bottom transition-transform duration-1000 ease-out group-hover:translate-x-3 group-hover:rotate-12" />
 
                       {/* Left circle cap — indicator dot, click to open */}
                       <button
