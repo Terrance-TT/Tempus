@@ -41,7 +41,6 @@ export function Layout({ children }: LayoutProps) {
     hasGeneratedSchedule
       ? { href: "/", label: "Today", icon: Calendar }
       : { href: "/", label: "Plans", icon: CalendarDays },
-    { href: "/create", label: "New Plan", icon: PlusCircle },
     { href: "/integrations", label: "Integrations", icon: Plug },
     { href: "/focus-guard", label: "Focus Guard", icon: ShieldCheck },
     ...(isAdmin ? [{ href: "/admin/feedback", label: "Feedback Inbox", icon: Inbox }] : []),
