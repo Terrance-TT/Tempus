@@ -216,7 +216,7 @@ async function callGenerationModel(
   blocks: ScheduleBlock[];
 }> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5.4",
+    model: "gpt-5.4-mini",
     max_completion_tokens: 4096,
     messages: [
       { role: "system", content: systemPrompt },
@@ -327,7 +327,7 @@ Rules:
   });
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5.4",
+    model: "gpt-5.4-mini",
     max_completion_tokens: 4096,
     messages: [
       { role: "system", content: systemPrompt },
