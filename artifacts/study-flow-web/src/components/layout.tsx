@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, CalendarDays, PlusCircle, Plug, ShieldCheck, LogOut, MessageSquarePlus, Inbox } from "lucide-react";
+import { Calendar, CalendarDays, PlusCircle, Plug, ShieldCheck, LogOut, MessageSquarePlus, Inbox, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useClerk } from "@clerk/react";
@@ -100,6 +100,24 @@ export function Layout({ children }: LayoutProps) {
               <TooltipContent side="right">Feedback</TooltipContent>
             </Tooltip>
 
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/settings"
+                  className={cn(
+                    "p-2.5 flex items-center justify-center rounded-[18px] transition-all duration-200",
+                    location === "/settings"
+                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  )}
+                  data-testid="link-settings"
+                >
+                  <Settings className="w-8 h-8" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Settings</TooltipContent>
+            </Tooltip>
+
             {isSignedIn && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -164,6 +182,17 @@ export function Layout({ children }: LayoutProps) {
             <MessageSquarePlus className="w-5 h-5 mb-1" />
             <span className="text-[10px] font-medium">Feedback</span>
           </button>
+          <Link
+            href="/settings"
+            className={cn(
+              "flex flex-col items-center justify-center p-2 rounded-lg min-w-[4rem] transition-all duration-200",
+              location === "/settings" ? "text-primary scale-110" : "text-muted-foreground hover:text-foreground"
+            )}
+            data-testid="link-settings-mobile"
+          >
+            <Settings className="w-5 h-5 mb-1" />
+            <span className="text-[10px] font-medium">Settings</span>
+          </Link>
           {isSignedIn && (
             <button
               onClick={handleSignOut}
