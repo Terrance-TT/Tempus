@@ -23,8 +23,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, PlusCircle, ArrowRight, Sparkles, Trash2, CalendarDays, Loader2 } from "lucide-react";
+import { Calendar, PlusCircle, ArrowRight, Sparkles, Trash2, CalendarDays, Loader2, MoreHorizontal } from "lucide-react";
 import { format } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export default function Home() {
   const deviceId = useDeviceId();
@@ -173,9 +174,7 @@ export default function Home() {
                           <span className="font-medium text-foreground">
                             {plan.scope === "week" ? "Weekly plan" : "Daily plan"}
                           </span>
-                          {plan.status === "complete" ? (
-                            <Badge variant="secondary" className="text-xs">Ready</Badge>
-                          ) : (
+                          {plan.status !== "complete" && (
                             <Badge variant="outline" className="text-xs">Needs details</Badge>
                           )}
                         </div>
@@ -183,6 +182,27 @@ export default function Home() {
                           Created {format(new Date(plan.createdAt), "MMM d, yyyy 'at' h:mm a")}
                         </p>
                       </button>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-foreground shrink-0"
+                            aria-label="Plan details"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="w-5 h-5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="end" className="w-64 text-sm space-y-2 p-4">
+                          <p className="font-medium">{plan.scope === "week" ? "Weekly plan" : "Daily plan"}</p>
+                          <div className="text-muted-foreground space-y-1 text-xs">
+                            <p>Created {format(new Date(plan.createdAt), "MMM d, yyyy 'at' h:mm a")}</p>
+                            <p>Status: {plan.status === "complete" ? "Ready" : "Needs details"}</p>
+                            <p className="font-mono text-[10px] break-all text-muted-foreground/60">{plan.id}</p>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                       <Button
                         variant="ghost"
                         size="icon"
