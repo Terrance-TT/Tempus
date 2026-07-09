@@ -85,29 +85,20 @@ export default function Home() {
           <div className="space-y-6">
             <Card className="border-primary/20 bg-primary/5 shadow-sm overflow-hidden relative group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10 group-hover:bg-primary/20 transition-colors" />
-              <CardHeader className="relative z-10">
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                  <Calendar className="w-6 h-6 text-primary" />
-                  Your Active Plan
-                </CardTitle>
-                <CardDescription className="text-base">
-                  Generated on {format(new Date(activeSchedule.createdAt), "MMM d, yyyy")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="relative z-10">
+              <CardContent className="relative z-10 pt-6">
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button 
                     className="flex-1 text-lg py-6 rounded-xl shadow-sm"
                     onClick={() => setLocation(`/schedule/${activeSchedule.id}`)}
                   >
-                    Open Schedule <ArrowRight className="ml-2 w-5 h-5" />
+                    Open <ArrowRight className="ml-2 w-6 h-6" />
                   </Button>
                   <Button 
                     variant="outline" 
                     className="flex-1 py-6 rounded-xl bg-background hover:bg-secondary/50"
                     onClick={() => setLocation("/create")}
                   >
-                    <PlusCircle className="mr-2 w-5 h-5" /> New Plan
+                    <PlusCircle className="mr-2 w-5 h-5" /> New
                   </Button>
                 </div>
               </CardContent>

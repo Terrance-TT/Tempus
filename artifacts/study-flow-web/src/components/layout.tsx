@@ -51,12 +51,17 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-[100dvh] bg-background flex flex-col md:flex-row">
       {/* Desktop Sidebar */}
       <TooltipProvider delayDuration={200}>
-        <aside className="hidden md:flex w-20 flex-col border-r bg-card items-center py-6 gap-2 shrink-0">
-          <Link href="/" className="mb-4 transition-opacity hover:opacity-80">
-            <span className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-              <Calendar className="w-8 h-8" />
-            </span>
-          </Link>
+        <aside className="hidden md:flex w-24 flex-col border-r bg-card items-center py-6 gap-2 shrink-0">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href="/" className="mb-5 transition-all hover:scale-105">
+                <span className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-md shadow-primary/30">
+                  <Calendar className="w-8 h-8" />
+                </span>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">Home</TooltipContent>
+          </Tooltip>
 
           <nav className="flex-1 flex flex-col items-center gap-1">
             {navItems.map((item) => {
@@ -67,13 +72,13 @@ export function Layout({ children }: LayoutProps) {
                     <Link
                       href={item.href}
                       className={cn(
-                        "w-13 h-13 p-3 flex items-center justify-center rounded-xl transition-all duration-200",
+                        "p-3 flex items-center justify-center rounded-xl transition-all duration-200",
                         isActive
                           ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                           : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                       )}
                     >
-                      <item.icon className="w-8 h-8" />
+                      <item.icon className="w-10 h-10" />
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent side="right">{item.label}</TooltipContent>
@@ -90,7 +95,7 @@ export function Layout({ children }: LayoutProps) {
                   className="p-3 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
                   data-testid="button-open-feedback"
                 >
-                  <MessageSquarePlus className="w-8 h-8" />
+                  <MessageSquarePlus className="w-10 h-10" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right">Feedback</TooltipContent>
@@ -103,7 +108,7 @@ export function Layout({ children }: LayoutProps) {
                     onClick={handleSignOut}
                     className="p-3 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
                   >
-                    <LogOut className="w-8 h-8" />
+                    <LogOut className="w-10 h-10" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right">Sign out</TooltipContent>
