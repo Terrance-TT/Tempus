@@ -61,11 +61,11 @@ export function Layout({ children }: LayoutProps) {
           the viewport rather than anchored/stretched into the page layout,
           so it's always fully visible no matter how long the page is. */}
       <TooltipProvider delayDuration={200}>
-        <aside className="hidden md:flex fixed left-5 top-1/2 -translate-y-1/2 z-50 flex-col bg-card border rounded-full shadow-lg items-center py-5 px-2.5 gap-2">
+        <aside className="hidden md:flex fixed left-5 top-1/2 -translate-y-1/2 z-50 flex-col bg-card border rounded-3xl shadow-lg items-center py-5 px-2.5 gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Link href="/" className="mb-4 transition-all hover:scale-105">
-                <span className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-md shadow-primary/30">
+                <span className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-md shadow-primary/30">
                   <Calendar className="w-7 h-7" />
                 </span>
               </Link>
@@ -82,7 +82,7 @@ export function Layout({ children }: LayoutProps) {
                     <Link
                       href={item.href}
                       className={cn(
-                        "p-2.5 flex items-center justify-center rounded-full transition-all duration-200",
+                        "p-2.5 flex items-center justify-center rounded-xl transition-all duration-200",
                         isActive
                           ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                           : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -102,7 +102,7 @@ export function Layout({ children }: LayoutProps) {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setFeedbackOpen(true)}
-                  className="p-2.5 flex items-center justify-center rounded-full transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  className="p-2.5 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
                   data-testid="button-open-feedback"
                 >
                   <MessageSquarePlus className="w-8 h-8" />
@@ -116,7 +116,7 @@ export function Layout({ children }: LayoutProps) {
                 <Link
                   href="/settings"
                   className={cn(
-                    "p-2.5 flex items-center justify-center rounded-full transition-all duration-200",
+                    "p-2.5 flex items-center justify-center rounded-xl transition-all duration-200",
                     location === "/settings"
                       ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -134,7 +134,7 @@ export function Layout({ children }: LayoutProps) {
                 <TooltipTrigger asChild>
                   <button
                     onClick={handleSignOut}
-                    className="p-2.5 flex items-center justify-center rounded-full transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    className="p-2.5 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:bg-secondary hover:text-foreground"
                   >
                     <LogOut className="w-8 h-8" />
                   </button>
