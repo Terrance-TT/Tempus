@@ -221,6 +221,7 @@ export interface ScheduleSummary {
   deviceId: string;
   scope: ScheduleScope;
   status: ScheduleStatus;
+  name?: string | null;
   createdAt: string;
 }
 

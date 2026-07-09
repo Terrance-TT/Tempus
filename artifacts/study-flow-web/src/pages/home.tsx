@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useDeviceId } from "@/hooks/use-device-id";
 import {
   useListSchedules,
@@ -9,8 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -23,9 +22,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, PlusCircle, ArrowRight, Sparkles, Trash2, CalendarDays, Loader2, MoreHorizontal } from "lucide-react";
-import { format } from "date-fns";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { PlusCircle, Sparkles, Trash2, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   const deviceId = useDeviceId();
@@ -33,6 +31,9 @@ export default function Home() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   const { data: schedules, isLoading } = useListSchedules(
     { deviceId: deviceId || "" },
@@ -52,6 +53,41 @@ export default function Home() {
     },
   });
 
+  const renameSchedule = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const res = await fetch(`/api/schedules/${id}/name`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, deviceId }),
+      });
+      if (!res.ok) throw new Error("Failed to rename");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getListSchedulesQueryKey({ deviceId: deviceId || "" }) });
+    },
+    onError: () => {
+      toast({ title: "Couldn't rename", description: "Please try again.", variant: "destructive" });
+    },
+    onSettled: () => setRenamingId(null),
+  });
+
+  const submitRename = (id: string) => {
+    const trimmed = renameValue.trim();
+    if (trimmed) {
+      renameSchedule.mutate({ id, name: trimmed });
+    } else {
+      setRenamingId(null);
+    }
+  };
+
+  const startRename = (plan: { id: string; name?: string | null; scope: string }) => {
+    const displayName = plan.name ?? (plan.scope === "week" ? "Weekly plan" : "Daily plan");
+    setRenamingId(plan.id);
+    setRenameValue(displayName);
+    setTimeout(() => renameInputRef.current?.select(), 0);
+  };
+
   const activeSchedule = schedules?.find(s => s.status === "complete");
   const currentPlans = schedules ?? [];
 
@@ -65,7 +101,8 @@ export default function Home() {
       <Layout>
         <div className="space-y-6 pt-12">
           <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-64 w-full rounded-2xl" />
+          <Skeleton className="h-14 w-full rounded-full" />
+          <Skeleton className="h-14 w-full rounded-full" />
         </div>
       </Layout>
     );
@@ -82,21 +119,19 @@ export default function Home() {
         </header>
 
         {activeSchedule ? (
-          <div className="space-y-8">
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                className="aspect-[2/1] rounded-2xl border border-primary/30 bg-primary/10 flex items-center justify-center transition-all duration-200 hover:border-primary/60 hover:bg-primary/15 hover:shadow-sm"
-                onClick={() => setLocation(`/schedule/${activeSchedule.id}`)}
-              >
-                <span className="text-xl font-bold text-foreground">Open</span>
-              </button>
-              <button
-                className="aspect-[2/1] rounded-2xl border bg-card flex items-center justify-center transition-all duration-200 hover:border-primary/40 hover:shadow-sm"
-                onClick={() => setLocation("/create")}
-              >
-                <span className="text-xl font-bold text-foreground">New</span>
-              </button>
-            </div>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              className="aspect-[2/1] rounded-2xl border border-primary/30 bg-primary/10 flex items-center justify-center transition-all duration-200 hover:border-primary/60 hover:bg-primary/15 hover:shadow-sm"
+              onClick={() => setLocation(`/schedule/${activeSchedule.id}`)}
+            >
+              <span className="text-xl font-bold text-foreground">Open</span>
+            </button>
+            <button
+              className="aspect-[2/1] rounded-2xl border bg-card flex items-center justify-center transition-all duration-200 hover:border-primary/40 hover:shadow-sm"
+              onClick={() => setLocation("/create")}
+            >
+              <span className="text-xl font-bold text-foreground">New</span>
+            </button>
           </div>
         ) : currentPlans.length === 0 ? (
           <Card className="text-center py-16 px-6 border-dashed bg-secondary/10 shadow-none relative overflow-hidden rounded-3xl">
@@ -135,65 +170,68 @@ export default function Home() {
         )}
 
         {currentPlans.length > 0 && (
-          <section className="space-y-4">
+          <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-heading font-semibold text-foreground">Current plans</h2>
               <span className="text-sm text-muted-foreground">
                 {currentPlans.length} {currentPlans.length === 1 ? "plan" : "plans"}
               </span>
             </div>
-            <div className="space-y-3">
+
+            <div className="space-y-2">
               {currentPlans.map((plan) => {
                 const isDeleting = deleteSchedule.isPending && pendingDeleteId === plan.id;
+                const isRenaming = renamingId === plan.id;
+                const displayName = plan.name ?? (plan.scope === "week" ? "Weekly plan" : "Daily plan");
+
                 return (
-                  <Card key={plan.id} className="group hover:border-primary/40 transition-colors">
-                    <CardContent className="p-4 flex items-center gap-4">
-                      <button
-                        className="flex-1 min-w-0 text-left cursor-pointer"
-                        onClick={() => setLocation(`/schedule/${plan.id}`)}
+                  <div key={plan.id} className="group relative">
+                    <div
+                      className={cn(
+                        "h-14 rounded-full border bg-card flex items-center overflow-hidden transition-all duration-200",
+                        "hover:border-primary/40 hover:shadow-sm"
+                      )}
+                    >
+                      {/* Left content — name (hidden until hover, shown in rename mode) */}
+                      <div
+                        className="flex-1 h-full flex items-center px-6 cursor-pointer select-none min-w-0"
+                        onClick={() => !isRenaming && setLocation(`/schedule/${plan.id}`)}
+                        onDoubleClick={(e) => { e.preventDefault(); startRename(plan); }}
                       >
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-lg font-bold text-foreground">
-                            {plan.scope === "week" ? "Weekly plan" : "Daily plan"}
-                          </span>
-                          {plan.status !== "complete" && (
-                            <Badge variant="outline" className="text-xs">Needs details</Badge>
-                          )}
-                        </div>
-                      </button>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-muted-foreground hover:text-foreground shrink-0"
-                            aria-label="Plan details"
+                        {isRenaming ? (
+                          <input
+                            ref={renameInputRef}
+                            autoFocus
+                            className="bg-transparent text-lg font-bold text-foreground outline-none w-full"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") submitRename(plan.id);
+                              if (e.key === "Escape") setRenamingId(null);
+                            }}
+                            onBlur={() => submitRename(plan.id)}
                             onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreHorizontal className="w-5 h-5" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent align="end" className="w-64 text-sm space-y-2 p-4">
-                          <p className="font-medium">{plan.scope === "week" ? "Weekly plan" : "Daily plan"}</p>
-                          <div className="text-muted-foreground space-y-1 text-xs">
-                            <p>Created {format(new Date(plan.createdAt), "MMM d, yyyy 'at' h:mm a")}</p>
-                            <p>Status: {plan.status === "complete" ? "Ready" : "Needs details"}</p>
-                            <p className="font-mono text-[10px] break-all text-muted-foreground/60">{plan.id}</p>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive shrink-0"
-                        aria-label="Delete plan"
+                          />
+                        ) : (
+                          <span className="text-lg font-bold text-foreground truncate opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            {displayName}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Right circle cap */}
+                      <button
+                        className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary/50 hover:bg-destructive/15 hover:text-destructive transition-colors duration-200"
+                        onClick={(e) => { e.stopPropagation(); setPendingDeleteId(plan.id); }}
                         disabled={isDeleting}
-                        onClick={() => setPendingDeleteId(plan.id)}
+                        aria-label="Delete plan"
                       >
-                        {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-                      </Button>
-                    </CardContent>
-                  </Card>
+                        {isDeleting
+                          ? <Loader2 className="w-4 h-4 animate-spin" />
+                          : <Trash2 className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
             </div>

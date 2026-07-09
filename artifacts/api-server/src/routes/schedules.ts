@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { and, desc, eq, sql } from "drizzle-orm";
@@ -61,6 +62,7 @@ function serializeSchedule(row: typeof schedules.$inferSelect) {
     deviceId: row.deviceId,
     scope: row.scope,
     status: row.status,
+    name: row.name ?? null,
     blocks: row.blocks as ScheduleBlock[],
     clarifyingQuestions: row.clarifyingQuestions as string[],
     createdAt: row.createdAt.toISOString(),
@@ -369,6 +371,7 @@ router.get("/schedules", async (req, res) => {
       deviceId: row.deviceId,
       scope: row.scope,
       status: row.status,
+      name: row.name ?? null,
       createdAt: row.createdAt.toISOString(),
     })),
   );
@@ -425,6 +428,27 @@ router.patch("/schedules/:id", async (req, res) => {
     .returning();
 
   res.json(serializeSchedule(updated));
+});
+
+router.patch("/schedules/:id/name", async (req, res) => {
+  const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+  const { name, deviceId } = z.object({
+    name: z.string().trim().min(1).max(100),
+    deviceId: z.string().optional(),
+  }).parse(req.body);
+  const ownerId = resolveOwnerId(req, deviceId);
+
+  const [updated] = await db
+    .update(schedules)
+    .set({ name })
+    .where(and(eq(schedules.id, id), eq(schedules.deviceId, ownerId)))
+    .returning();
+
+  if (!updated) {
+    res.status(404).json({ message: "Schedule not found" });
+    return;
+  }
+  res.json({ id: updated.id, name: updated.name });
 });
 
 router.delete("/schedules/:id", async (req, res) => {

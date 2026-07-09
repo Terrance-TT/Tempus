@@ -10,6 +10,7 @@ export const schedules = pgTable("schedules", {
   answers: jsonb("answers").notNull().default([]), // ClarificationAnswer[] collected so far
   tasks: jsonb("tasks").notNull().default([]), // Task[] (assignments) used to generate
   commitmentsSnapshot: jsonb("commitments_snapshot").notNull().default([]), // Commitment[] used to generate
+  name: text("name"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
