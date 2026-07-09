@@ -119,15 +119,9 @@ export default function Home() {
         </header>
 
         {activeSchedule ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div>
             <button
-              className="aspect-[2/1] rounded-2xl border border-primary/30 bg-primary/10 flex items-center justify-center transition-all duration-200 hover:border-primary/60 hover:bg-primary/15 hover:shadow-sm"
-              onClick={() => setLocation(`/schedule/${activeSchedule.id}`)}
-            >
-              <span className="text-xl font-bold text-foreground">Open</span>
-            </button>
-            <button
-              className="aspect-[2/1] rounded-2xl border bg-card flex items-center justify-center transition-all duration-200 hover:border-primary/40 hover:shadow-sm"
+              className="aspect-[2/1] w-1/2 rounded-2xl border bg-card flex items-center justify-center transition-all duration-200 hover:border-primary/40 hover:shadow-sm"
               onClick={() => setLocation("/create")}
             >
               <span className="text-xl font-bold text-foreground">New</span>
