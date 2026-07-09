@@ -694,7 +694,7 @@ export default function Create() {
                     <MessageSquareText className="w-5 h-5" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent>Describe your week in your own words</TooltipContent>
+                <TooltipContent>Describe your week, we'll optimize.</TooltipContent>
               </Tooltip>
             </div>
 
