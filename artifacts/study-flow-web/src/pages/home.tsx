@@ -239,19 +239,26 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* Two vertical pills — opens the options menu */}
+                      {/* Right circle cap — decorative, mirrors the left indicator circle */}
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 -mr-2 transition-transform duration-1000 ease-out group-hover:-translate-x-1">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary/50">
+                          {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                        </div>
+                      </div>
+
+                      {/* Vertical double-pill to the right of the circle — opens the options menu, mirrors the left pill */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="h-20 w-10 rounded-full flex items-center justify-center gap-1.5 shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors duration-200"
+                            className="w-3 h-9 rounded-full self-center shrink-0 -mr-2 -translate-x-1 origin-bottom transition-transform duration-1000 ease-out group-hover:-translate-x-3 group-hover:rotate-[-18deg] flex items-center justify-center gap-0.5 bg-transparent"
                             onClick={(e) => e.stopPropagation()}
                             aria-label="Plan options"
                           >
-                            <span className="w-2 h-8 rounded-full bg-current" />
-                            <span className="w-2 h-8 rounded-full bg-current" />
+                            <span className="w-1 h-6 rounded-full bg-primary/60" />
+                            <span className="w-1 h-6 rounded-full bg-primary/60" />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="center" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenuItem onClick={() => startRename(plan)}>
                             <Pencil className="w-4 h-4 mr-2" /> Rename
                           </DropdownMenuItem>
@@ -268,13 +275,6 @@ export default function Home() {
                           </DropdownMenuLabel>
                         </DropdownMenuContent>
                       </DropdownMenu>
-
-                      {/* Right circle cap — decorative */}
-                      <div className="w-16 h-16 rounded-full flex items-center justify-center shrink-0">
-                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary/50">
-                          {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
-                        </div>
-                      </div>
                     </div>
                   </div>
                 );
