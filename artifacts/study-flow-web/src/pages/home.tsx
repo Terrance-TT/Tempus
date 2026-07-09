@@ -130,11 +130,11 @@ export default function Home() {
         {activeSchedule ? (
           <div>
             <button
-              className="aspect-[2/1] w-1/2 rounded-2xl bg-card flex items-center justify-center transition-all duration-200 hover:shadow-sm"
+              className="group aspect-[2/1] w-1/2 rounded-2xl bg-card flex items-center justify-center transition-all duration-200 hover:shadow-sm"
               onClick={() => setLocation("/create")}
               aria-label="New plan"
             >
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center transition-colors duration-200 group-hover:bg-primary/20">
                 <Plus className="w-7 h-7 text-primary" />
               </div>
             </button>
