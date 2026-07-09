@@ -88,17 +88,17 @@ export default function Home() {
               <CardContent className="relative z-10 pt-6">
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button 
-                    className="flex-1 text-lg py-6 rounded-xl shadow-sm"
+                    className="flex-1 text-2xl py-6 rounded-xl shadow-sm"
                     onClick={() => setLocation(`/schedule/${activeSchedule.id}`)}
                   >
-                    Open <ArrowRight className="ml-2 w-6 h-6" />
+                    Open <ArrowRight className="ml-2 w-7 h-7" />
                   </Button>
                   <Button 
                     variant="outline" 
-                    className="flex-1 py-6 rounded-xl bg-background hover:bg-secondary/50"
+                    className="flex-1 py-6 rounded-xl bg-background hover:bg-secondary/50 text-2xl"
                     onClick={() => setLocation("/create")}
                   >
-                    <PlusCircle className="mr-2 w-5 h-5" /> New
+                    <PlusCircle className="mr-2 w-6 h-6" /> New
                   </Button>
                 </div>
               </CardContent>
