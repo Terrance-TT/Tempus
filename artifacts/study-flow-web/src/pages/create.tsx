@@ -610,24 +610,22 @@ export default function Create() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adCountdown, pendingNavScheduleId]);
 
+  // FIX: Redirect ALL users (guests too) to their schedule after generation
   const onGenerateComplete = (scheduleId: string, blocks?: ScheduleBlock[]) => {
     clearCreateDraft();
+    // Show reveal screen for signed-in users with interesting blocks
     if (isSignedIn) {
       const interestingBlocks = (blocks ?? []).filter(b =>
         ["homework", "study", "review", "assignment"].includes(b.category)
       );
       if (interestingBlocks.length > 0) {
         setRevealData({ scheduleId, blocks: interestingBlocks });
-      } else {
-        toast({ title: "Schedule generated!" });
-        setLocation(`/schedule/${scheduleId}`);
+        return;
       }
-    } else {
-      // Guests must sign in to view the result.
-      setPendingScheduleId(scheduleId);
-      setLockedScheduleId(scheduleId);
-      setIsGenerating(false);
     }
+    // For guests and signed-in users without interesting blocks: redirect to schedule
+    toast({ title: "Schedule generated!" });
+    setLocation(`/schedule/${scheduleId}`);
   };
 
   const startAdIfNeeded = () => {
