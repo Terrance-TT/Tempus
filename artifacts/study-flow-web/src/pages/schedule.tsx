@@ -120,6 +120,36 @@ export default function Schedule() {
     return () => clearTimeout(t);
   }, []);
 
+  // Vertical scale for the week grid (pixels per hour). `null` = auto-fit container.
+  const [weekHourPx, setWeekHourPx] = useState<number | null>(null);
+  const weekGridRef = useRef<HTMLDivElement | null>(null);
+  const scaleDragRef = useRef<{ startY: number; startHourPx: number; totalHours: number } | null>(null);
+  const [isScalingWeek, setIsScalingWeek] = useState(false);
+
+  const handleScaleDragStart = (e: React.PointerEvent<HTMLDivElement>, totalHours: number) => {
+    e.preventDefault();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    const startHourPx = weekHourPx ?? (weekGridRef.current ? weekGridRef.current.clientHeight / totalHours : 48);
+    scaleDragRef.current = { startY: e.clientY, startHourPx, totalHours };
+    setIsScalingWeek(true);
+  };
+  const handleScaleDragMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = scaleDragRef.current;
+    if (!drag) return;
+    const deltaY = e.clientY - drag.startY;
+    // Dragging down increases the scale (more px per hour = zoomed in / more spread out).
+    const nextHourPx = drag.startHourPx + deltaY / drag.totalHours;
+    const clamped = Math.min(220, Math.max(24, nextHourPx));
+    setWeekHourPx(clamped);
+  };
+  const handleScaleDragEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (scaleDragRef.current) {
+      try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* noop */ }
+    }
+    scaleDragRef.current = null;
+    setIsScalingWeek(false);
+  };
+
   const previewSpsIcs = usePreviewSpsEngageIcs();
   const [spsEvents, setSpsEvents] = useState<SpsEvent[] | null>(null);
   const [spsFunOnly, setSpsFunOnly] = useState(false);
@@ -694,6 +724,8 @@ export default function Schedule() {
           const hourMarks: number[] = [];
           for (let m = minStart + 60; m < maxEnd; m += 60) hourMarks.push(m);
 
+          const totalHours = total / 60;
+
           return (
             <div className="rounded-2xl border bg-card overflow-hidden animate-in fade-in duration-300" data-testid="week-grid">
               <div className="grid border-b bg-secondary/20" style={{ gridTemplateColumns: "3rem repeat(7, 1fr)" }}>
@@ -704,8 +736,24 @@ export default function Schedule() {
                   </div>
                 ))}
               </div>
-              <div className="grid" style={{ gridTemplateColumns: "3rem repeat(7, 1fr)", height: "calc(100dvh - 22rem)", minHeight: "440px" }}>
-                <div className="relative">
+              <div
+                ref={weekGridRef}
+                className="grid"
+                style={{
+                  gridTemplateColumns: "3rem repeat(7, 1fr)",
+                  height: weekHourPx ? `${weekHourPx * totalHours}px` : "calc(100dvh - 22rem)",
+                  minHeight: "440px",
+                }}
+              >
+                <div
+                  className={`relative touch-none select-none cursor-ns-resize ${isScalingWeek ? "bg-secondary/30" : ""}`}
+                  data-testid="week-scale-handle"
+                  title="Drag up or down to adjust the time scale"
+                  onPointerDown={(e) => handleScaleDragStart(e, totalHours)}
+                  onPointerMove={handleScaleDragMove}
+                  onPointerUp={handleScaleDragEnd}
+                  onPointerCancel={handleScaleDragEnd}
+                >
                   {hourMarks.map(m => (
                     <span
                       key={m}
