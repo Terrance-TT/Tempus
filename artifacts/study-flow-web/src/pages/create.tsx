@@ -118,7 +118,7 @@ function extractAssignmentHints(text: string, now: Date = new Date()): { title: 
     if (!dueDate) continue;
 
     let title = clause.replace(/[.!?;]+$/, "").trim();
-    if (title.length > 80) title = `${title.slice(0, 80)}…`;
+    if (title.length > 80) title = `${title.slice(0, 80)}\u2026`;
     const key = title.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -137,7 +137,8 @@ export default function Create() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [isColumbiaMode] = useState(() => {
+  // FIX: Make isColumbiaMode a regular state so it can be reset on "Start over"
+  const [isColumbiaMode, setIsColumbiaMode] = useState(() => {
     if (sessionStorage.getItem("columbiaPreset")) return true;
     return !!getPendingCreateState()?.columbiaPreset;
   });
@@ -178,11 +179,9 @@ export default function Create() {
   // Reveal screen: shown after generation for signed-in users
   const [revealData, setRevealData] = useState<{ scheduleId: string; blocks: ScheduleBlock[] } | null>(null);
 
-  // Step 3 study-style preferences. Sensible defaults are pre-selected so a
-  // schedule is never generated with zero preference signal (users can still
-  // change or deselect them).
-  const [studyPref, setStudyPref] = useState<string[]>(["evening"]);
-  const [focusLength, setFocusLength] = useState<string | null>("45");
+  // FIX: Remove pre-selected defaults \u2014 require explicit user choice
+  const [studyPref, setStudyPref] = useState<string[]>([]);
+  const [focusLength, setFocusLength] = useState<string | null>(null);
   const [showRoutineDetails, setShowRoutineDetails] = useState(false);
 
   // Preferences (persisted per user)
@@ -217,7 +216,7 @@ export default function Create() {
     }
   }, [savedPrefs]);
 
-  // Restore progress on mount — pendingCreateState (sign-in redirect) takes
+  // Restore progress on mount \u2014 pendingCreateState (sign-in redirect) takes
   // priority; otherwise restore a saved draft.
   useEffect(() => {
     if (draftInitializedRef.current) return;
@@ -252,10 +251,8 @@ export default function Create() {
   // Auto-save draft whenever key wizard state changes
   useEffect(() => {
     if (!draftInitializedRef.current) return;
-    // Pre-selected defaults (evening / 45 min) don't count as progress —
-    // only user-driven changes should create a resumable draft.
-    const prefsTouched =
-      focusLength !== "45" || studyPref.length !== 1 || studyPref[0] !== "evening";
+    // With no pre-selected defaults, any non-empty pref counts as progress
+    const prefsTouched = studyPref.length > 0 || focusLength !== null;
     const hasMeaningfulProgress = step > 1 || tasks.length > 0 || prefsTouched;
     if (hasMeaningfulProgress) {
       saveCreateDraft({
@@ -276,7 +273,7 @@ export default function Create() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, tasks, studyPref, focusLength, wakeTime, bedTime, mealTimes, prefNotes]);
 
-  // Save progress and go to sign-in — survives OAuth full-page redirect
+  // Save progress and go to sign-in \u2014 survives OAuth full-page redirect
   const intentionalHandoffRef = useRef(false);
   const goToSignIn = () => {
     intentionalHandoffRef.current = true;
@@ -293,7 +290,7 @@ export default function Create() {
   // button) instead of deliberately continuing to sign-in/sign-up, discard the
   // commitments that were auto-created for them. Otherwise that guest data
   // sits in the DB under their guest device id and gets silently re-attached
-  // to whatever account they sign into later via claim-guest-data — even
+  // to whatever account they sign into later via claim-guest-data \u2014 even
   // though from the user's perspective they never kept it.
   const isColumbiaModeRef = useRef(isColumbiaMode);
   isColumbiaModeRef.current = isColumbiaMode;
@@ -323,10 +320,12 @@ export default function Create() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // FIX: Reset isColumbiaMode when starting over
   const handleStartOver = () => {
     clearCreateDraft();
     clearPendingCreateState();
     sessionStorage.removeItem("columbiaPreset");
+    setIsColumbiaMode(false);
     setStep(1);
     setTasks([]);
     setStudyPref([]);
@@ -336,7 +335,7 @@ export default function Create() {
     setResumedFromDraft(false);
     prefsHydratedRef.current = false; // allow server prefs to re-hydrate
     // Explicit reset should also discard any commitments already persisted
-    // for this guest/user — otherwise they can resurface later (e.g. via
+    // for this guest/user \u2014 otherwise they can resurface later (e.g. via
     // guest-data claiming after sign-in) even though the user asked to start over.
     if (deviceId && commitments.length > 0) {
       Promise.all(
@@ -369,7 +368,7 @@ export default function Create() {
     setIsExtracting(true);
     setExtractionError(false);
     const columbiaSchedule =
-      "I have a class called Entrepreneurship with Daniel every weekday (Monday–Friday) from 9:10 AM to 11:00 AM, and again from 1:10 PM to 3:00 PM. Lunch is every day from 11:00 AM to 1:00 PM.";
+      "I have a class called Entrepreneurship with Daniel every weekday (Monday\u2013Friday) from 9:10 AM to 11:00 AM, and again from 1:10 PM to 3:00 PM. Lunch is every day from 11:00 AM to 1:00 PM.";
     // Clear any existing commitments first, then extract
     Promise.all(commitments.map(
       (c) => new Promise<void>((resolve) => {
@@ -637,8 +636,28 @@ export default function Create() {
     }
   };
 
+  // FIX: Add validation before generating schedule
   const handleGenerate = (selectedScope: ScheduleScope) => {
     if (!deviceId) return;
+
+    // Validate that user has explicitly selected preferences
+    if (studyPref.length === 0) {
+      toast({
+        title: "Select when you prefer to study",
+        description: "Choose at least one time preference (Morning, Afternoon, or Evening).",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!focusLength) {
+      toast({
+        title: "Select focus duration",
+        description: "Choose how long you can focus at a stretch.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setScope(selectedScope);
     setIsGenerating(true);
     setClarifyingQuestions([]);
@@ -648,8 +667,8 @@ export default function Create() {
     const preferences = buildPreferences();
 
     // Persist preferences so they're remembered next time (fire-and-forget).
-    // Important: persist the raw, user-typed notes here — not the
-    // hint-augmented `preferences.notes` — so the "Preferred study
+    // Important: persist the raw, user-typed notes here \u2014 not the
+    // hint-augmented `preferences.notes` \u2014 so the "Preferred study
     // time"/"Focus session length" hints (derived from studyPref/focusLength
     // toggles) never get baked permanently into the saved notes text. If we
     // saved the combined text, reloading it next session would re-seed
@@ -748,9 +767,33 @@ export default function Create() {
     );
   }
 
+  // Helper: proceed from Step 2 to Step 3 (shared by Columbia and default flows)
+  const proceedToStep3 = () => {
+    // Auto-add a partially filled task so nothing is lost.
+    let finalTasks = tasks;
+    if (newTaskTitle.trim() && newTaskDueDate.trim()) {
+      const pending = {
+        title: newTaskTitle.trim(),
+        dueDate: newTaskDueDate.trim(),
+        estimatedMinutes: newTaskMinutes ? parseInt(newTaskMinutes, 10) : null,
+      };
+      finalTasks = [...tasks, pending];
+      setTasks(finalTasks);
+      setNewTaskTitle("");
+      setNewTaskDueDate("");
+      setNewTaskMinutes("");
+    }
+    // FIX: Allow Columbia flow to proceed without tasks (class schedule is already set)
+    if (finalTasks.length === 0 && !isColumbiaMode) {
+      toast({ title: "Add at least one task to continue.", duration: 3000 });
+      return;
+    }
+    setStep(3);
+  };
+
   return (
     <>
-      {/* Columbia sign-in nudge — fixed right panel, desktop only */}
+      {/* Columbia sign-in nudge \u2014 fixed right panel, desktop only */}
       {isColumbiaMode && !isSignedIn && (
         <div className="hidden lg:flex fixed right-5 top-1/2 -translate-y-1/2 z-40 flex-col gap-3 w-52 rounded-2xl border bg-card shadow-lg shadow-black/5 p-4 animate-in fade-in slide-in-from-right-4 duration-500">
           <div className="flex items-center gap-2">
@@ -884,7 +927,7 @@ export default function Create() {
                         </div>
 
                         {extractionError && (
-                          <p className="text-destructive text-sm mt-4">We couldn't read that clearly. Try taking another photo — or switch to "Describe it".</p>
+                          <p className="text-destructive text-sm mt-4">We couldn't read that clearly. Try taking another photo \u2014 or switch to "Describe it".</p>
                         )}
                       </div>
                     </>
@@ -906,7 +949,7 @@ export default function Create() {
                       <div className="space-y-1.5">
                         <Label className="text-base">Describe your regular week</Label>
                         <p className="text-sm text-muted-foreground">
-                          Include days and times — e.g. <span className="italic">"School 8am–3pm Monday to Friday, soccer practice Tuesdays and Thursdays 4–5:30, piano lesson Wednesday at 6"</span>
+                          Include days and times \u2014 e.g. <span className="italic">"School 8am\u20133pm Monday to Friday, soccer practice Tuesdays and Thursdays 4\u20135:30, piano lesson Wednesday at 6"</span>
                         </p>
                       </div>
                       <Textarea
@@ -962,7 +1005,7 @@ export default function Create() {
                       </div>
                       <div>
                         <p className="font-semibold text-sm">Your class schedule is already set</p>
-                        <p className="text-xs text-muted-foreground">These repeat every weekday — no setup needed.</p>
+                        <p className="text-xs text-muted-foreground">These repeat every weekday \u2014 no setup needed.</p>
                       </div>
                     </div>
                     <div className="grid gap-2 pl-12">
@@ -970,21 +1013,21 @@ export default function Create() {
                         <div className="w-1 h-8 rounded-full bg-primary shrink-0" />
                         <div>
                           <p className="text-sm font-medium">Entrepreneurship with Daniel</p>
-                          <p className="text-xs text-muted-foreground">Mon–Fri · 9:10 AM – 11:00 AM &amp; 1:10 PM – 3:00 PM</p>
+                          <p className="text-xs text-muted-foreground">Mon\u2013Fri \u00b7 9:10 AM \u2013 11:00 AM &amp; 1:10 PM \u2013 3:00 PM</p>
                         </div>
                       </div>
                       <div className="bg-background border rounded-lg px-3 py-2 flex items-center gap-3">
                         <div className="w-1 h-8 rounded-full bg-muted-foreground/40 shrink-0" />
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Lunch</p>
-                          <p className="text-xs text-muted-foreground">Mon–Fri · 11:00 AM – 1:00 PM</p>
+                          <p className="text-xs text-muted-foreground">Mon\u2013Fri \u00b7 11:00 AM \u2013 1:00 PM</p>
                         </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Canvas CTA — primary, full-width */}
+                {/* Canvas CTA \u2014 primary, full-width */}
                 {importedAssignments.length > 0 ? (
                   <Card className="border-primary/30 bg-primary/5 shadow-sm">
                     <CardContent className="p-5 flex flex-wrap items-center justify-between gap-3">
@@ -1010,7 +1053,7 @@ export default function Create() {
                       <div className="space-y-1">
                         <p className="font-semibold text-lg">Connect Canvas to pull your assignments</p>
                         <p className="text-muted-foreground text-sm">
-                          Your CourseWorks2 assignments will be imported automatically — due dates and all.
+                          Your CourseWorks2 assignments will be imported automatically \u2014 due dates and all.
                         </p>
                       </div>
                       <Button
@@ -1116,7 +1159,7 @@ export default function Create() {
                       </div>
                       {importedAssignments.length === 0 && (
                         <p className="text-xs text-muted-foreground mt-2">
-                          Not connected yet — clicking will take you to Integrations to set it up.
+                          Not connected yet \u2014 clicking will take you to Integrations to set it up.
                         </p>
                       )}
                     </div>
@@ -1135,7 +1178,7 @@ export default function Create() {
                   <div key={i} className="bg-card border rounded-xl p-4 flex justify-between items-center">
                     <div>
                       <p className="font-medium">{t.title}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Due: {t.dueDate} {t.estimatedMinutes && `• ~${t.estimatedMinutes} mins`}</p>
+                      <p className="text-sm text-muted-foreground mt-1">Due: {t.dueDate} {t.estimatedMinutes && `\u2022 ~${t.estimatedMinutes} mins`}</p>
                     </div>
                     <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleRemoveTask(i)}>
                       <Trash2 className="w-4 h-4" />
@@ -1145,30 +1188,11 @@ export default function Create() {
               </div>
             )}
 
+            {/* FIX: Continue button now shared between Columbia and default flows */}
             <div className="flex justify-end pt-6 border-t">
               <Button
                 size="lg"
-                onClick={() => {
-                  // Auto-add a partially filled task so nothing is lost.
-                  let finalTasks = tasks;
-                  if (newTaskTitle.trim() && newTaskDueDate.trim()) {
-                    const pending = {
-                      title: newTaskTitle.trim(),
-                      dueDate: newTaskDueDate.trim(),
-                      estimatedMinutes: newTaskMinutes ? parseInt(newTaskMinutes, 10) : null,
-                    };
-                    finalTasks = [...tasks, pending];
-                    setTasks(finalTasks);
-                    setNewTaskTitle("");
-                    setNewTaskDueDate("");
-                    setNewTaskMinutes("");
-                  }
-                  if (finalTasks.length === 0) {
-                    toast({ title: "Add at least one task to continue.", duration: 3000 });
-                    return;
-                  }
-                  setStep(3);
-                }}
+                onClick={proceedToStep3}
                 className="rounded-xl shadow-sm"
                 data-testid="button-continue-step2"
               >
@@ -1181,7 +1205,7 @@ export default function Create() {
         {step === 3 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
 
-            {/* ── Reveal screen: shown after generation for signed-in users ── */}
+            {/* \u2014\u2014 Reveal screen: shown after generation for signed-in users \u2014\u2014 */}
             {revealData && !isGenerating && (
               <div className="space-y-6">
                 <header className="text-center space-y-3">
@@ -1203,7 +1227,7 @@ export default function Create() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{block.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{block.startTime} – {block.endTime}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{block.startTime} \u2013 {block.endTime}</p>
                       </div>
                       <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
                     </div>
@@ -1236,9 +1260,9 @@ export default function Create() {
                   <Label className="text-base font-medium">When do you prefer to study?</Label>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { value: "morning", label: "🌅 Morning", sub: "before noon" },
-                      { value: "afternoon", label: "☀️ Afternoon", sub: "noon – 5 pm" },
-                      { value: "evening", label: "🌙 Evening", sub: "after 5 pm" },
+                      { value: "morning", label: "\ud83c\udf05 Morning", sub: "before noon" },
+                      { value: "afternoon", label: "\u2600\ufe0f Afternoon", sub: "noon \u2013 5 pm" },
+                      { value: "evening", label: "\ud83c\udf19 Evening", sub: "after 5 pm" },
                     ].map(opt => {
                       const on = studyPref.includes(opt.value);
                       return (
@@ -1333,7 +1357,7 @@ export default function Create() {
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                       <Button size="lg" className="rounded-xl" onClick={() => setLocation("/pricing")}>
-                        <Zap className="mr-2 w-4 h-4" /> Upgrade to Pro — $10/mo
+                        <Zap className="mr-2 w-4 h-4" /> Upgrade to Pro \u2014 $10/mo
                       </Button>
                       <Button size="lg" variant="outline" className="rounded-xl" onClick={goToSignIn}>
                         Already subscribed? Sign in
@@ -1389,7 +1413,7 @@ export default function Create() {
                   </div>
                   <div className="space-y-1">
                     <h2 className="text-2xl font-heading font-semibold">Your schedule is ready!</h2>
-                    <p className="text-muted-foreground">Sign in with Google to unlock it — we'll keep everything you just built.</p>
+                    <p className="text-muted-foreground">Sign in with Google to unlock it \u2014 we'll keep everything you just built.</p>
                   </div>
                 </div>
                 <CardContent className="p-6 space-y-3">
@@ -1451,7 +1475,7 @@ export default function Create() {
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm px-6">
           <div className="w-full max-w-md space-y-6 text-center">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Free plan — sponsored message</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Free plan \u2014 sponsored message</p>
               <h2 className="text-2xl font-heading font-bold">Stay on track with Tempus Pro</h2>
             </div>
 
@@ -1462,11 +1486,11 @@ export default function Create() {
               <div className="space-y-2">
                 <p className="font-semibold text-lg">Unlimited schedules, no ads</p>
                 <p className="text-muted-foreground text-sm">
-                  Pro members generate as many schedules as they need — instantly, with no wait.
+                  Pro members generate as many schedules as they need \u2014 instantly, with no wait.
                 </p>
               </div>
               <Button className="w-full rounded-xl" onClick={() => setLocation("/pricing")}>
-                <Zap className="mr-2 w-4 h-4" /> Upgrade to Pro — $10/month
+                <Zap className="mr-2 w-4 h-4" /> Upgrade to Pro \u2014 $10/month
               </Button>
             </div>
 
@@ -1487,12 +1511,12 @@ export default function Create() {
                       {adCountdown}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Your schedule is generating — continue in {adCountdown}s</p>
+                  <p className="text-xs text-muted-foreground">Your schedule is generating \u2014 continue in {adCountdown}s</p>
                 </>
               ) : (
                 <>
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  <p className="text-xs text-muted-foreground">Almost ready…</p>
+                  <p className="text-xs text-muted-foreground">Almost ready\u2026</p>
                 </>
               )}
             </div>
