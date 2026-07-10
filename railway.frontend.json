@@ -4,13 +4,16 @@
     "builder": "NIXPACKS",
     "nixpacksPlan": {
       "providers": ["node"],
-      "phase": {
+      "phases": {
         "setup": {
           "nixPkgs": ["nodejs", "pnpm"]
         },
+        "install": {
+          "cmds": ["pnpm install"]
+        },
         "build": {
+          "dependsOn": ["install"],
           "cmds": [
-            "pnpm install",
             "BASE_PATH=/ PORT=3000 VITE_API_BASE_URL=${RAILWAY_API_BASE_URL} pnpm --filter @workspace/study-flow-web run build"
           ]
         }
