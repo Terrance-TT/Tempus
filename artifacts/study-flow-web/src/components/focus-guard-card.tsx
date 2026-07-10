@@ -44,6 +44,37 @@ function formatDuration(seconds: number): string {
   return `${minutes}m`;
 }
 
+// Normalize domain for comparison: strip protocol, www, and path
+function normalizeDomain(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/[/?#].*$/, "");
+}
+
+// Check if a domain is effectively a duplicate given the current blocked list.
+// twitter.com and x.com are treated as the same platform.
+function isDuplicate(domain: string, blockedSites: string[]): boolean {
+  const normalized = normalizeDomain(domain);
+  if (blockedSites.includes(normalized)) return true;
+  // x.com and twitter.com are the same platform since the rebrand
+  if (normalized === "twitter.com" && blockedSites.includes("x.com")) return true;
+  if (normalized === "x.com" && blockedSites.includes("twitter.com")) return true;
+  return false;
+}
+
+// Return the display name for a blocked site (show x.com preferentially)
+function getDisplaySites(blockedSites: string[]): string[] {
+  const hasX = blockedSites.includes("x.com");
+  const hasTwitter = blockedSites.includes("twitter.com");
+  if (hasX && hasTwitter) {
+    return blockedSites.filter((s) => s !== "twitter.com");
+  }
+  return blockedSites;
+}
+
 export function FocusGuardCard() {
   const deviceId = useDeviceId();
   const [, setLocation] = useLocation();
@@ -103,20 +134,19 @@ export function FocusGuardCard() {
   };
 
   const handleAddSite = () => {
-    const domain = newSite
-      .trim()
-      .toLowerCase()
-      .replace(/^https?:\/\//, "")
-      .replace(/^www\./, "")
-      .replace(/[/?#].*$/, "");
+    const domain = normalizeDomain(newSite);
     if (!domain || !domain.includes(".")) {
       toast({ title: "Enter a valid site", description: "For example: youtube.com", variant: "destructive" });
       return;
     }
-    if (settings?.blockedSites.includes(domain)) {
+    if (isDuplicate(domain, settings?.blockedSites ?? [])) {
+      const displayName =
+        domain === "twitter.com" && (settings?.blockedSites ?? []).includes("x.com")
+          ? "x.com"
+          : domain;
       toast({
         title: "Already blocked",
-        description: `${domain} is already in your blocked sites list.`,
+        description: `${displayName} is already in your blocked sites list.`,
       });
       setNewSite("");
       return;
@@ -345,7 +375,8 @@ export function FocusGuardCard() {
                 {settings.blockedSites.length === 0 && (
                   <p className="text-xs text-muted-foreground">No sites on the list \u2014 add some above.</p>
                 )}
-                {settings.blockedSites.map((site) => (
+                {/* FIX: Use deduplicated display list */}
+                {getDisplaySites(settings.blockedSites).map((site) => (
                   <Badge key={site} variant="secondary" className="gap-1 pr-1" data-testid={`badge-site-${site}`}>
                     {site}
                     <button
