@@ -10,7 +10,7 @@
         },
         "build": {
           "cmds": [
-            "npm install -g pnpm && pnpm install && BASE_PATH=/ PORT=3000 VITE_API_BASE_URL=${VITE_API_BASE_URL} pnpm --filter @workspace/study-flow-web run build"
+            "pnpm install --frozen-lockfile && BASE_PATH=/ PORT=3000 VITE_API_BASE_URL=${VITE_API_BASE_URL} pnpm --filter @workspace/study-flow-web run build"
           ]
         }
       }
