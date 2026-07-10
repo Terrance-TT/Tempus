@@ -21,6 +21,7 @@ import {
   type SpsEvent,
 } from "@workspace/api-client-react";
 import { isFunEvent } from "@/lib/sps-events";
+import { placeBlockWithConflictHandling } from "@/lib/schedule-conflicts";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +78,7 @@ export default function Schedule() {
   const [editingBlock, setEditingBlock] = useState<ScheduleBlock | null>(null);
   const [isRevealing, setIsRevealing] = useState(false);
   const [addingForDay, setAddingForDay] = useState<DayOfWeek | null>(null);
+  const [sleepConflict, setSleepConflict] = useState<ScheduleBlock | null>(null);
   
   const [editTitle, setEditTitle] = useState("");
   const [editStart, setEditStart] = useState("");
@@ -338,8 +340,50 @@ export default function Schedule() {
     },
   });
 
+  const pickupGameDetails = {
+    startTime: "19:00",
+    endTime: "20:00",
+    title: "Pickup Games — Soccer",
+    category: "extracurricular" as const,
+    notes: "Lerner Hall Field",
+  };
+
+  const commitPickupGame = (blocks: ScheduleBlockInput[]) => {
+    if (!id || !deviceId) return;
+    addPickupGameMutation.mutate({
+      id,
+      data: { deviceId, blocks: [...blocks, { day: todayKey(), ...pickupGameDetails }] },
+    });
+  };
+
   const handleAddPickupGame = () => {
     if (!schedule || !id || !deviceId) return;
+
+    const result = placeBlockWithConflictHandling(
+      schedule.blocks,
+      todayKey(),
+      pickupGameDetails.startTime,
+      pickupGameDetails.endTime
+    );
+
+    if (!result.ok) {
+      setSleepConflict(result.sleepConflict);
+      return;
+    }
+
+    if (result.moved.length > 0) {
+      const moved = result.moved[0];
+      toast({
+        title: "Moved to make room",
+        description: `Shifted "${moved.title}" to ${moved.toStart}–${moved.toEnd} so Pickup Games fits at 7:00pm.`,
+      });
+    }
+
+    commitPickupGame(result.blocks);
+  };
+
+  const handleAddPickupGameAnyway = () => {
+    if (!schedule || !deviceId) return;
     const existingBlocks: ScheduleBlockInput[] = schedule.blocks.map(b => ({
       id: b.id,
       day: b.day,
@@ -349,18 +393,8 @@ export default function Schedule() {
       category: b.category,
       notes: b.notes,
     }));
-    const pickupGameBlock: ScheduleBlockInput = {
-      day: todayKey(),
-      startTime: "19:00",
-      endTime: "20:00",
-      title: "Pickup Games — Soccer",
-      category: "extracurricular",
-      notes: "Lerner Hall Field",
-    };
-    addPickupGameMutation.mutate({
-      id,
-      data: { deviceId, blocks: [...existingBlocks, pickupGameBlock] },
-    });
+    setSleepConflict(null);
+    commitPickupGame(existingBlocks);
   };
 
   const handleDeleteBlock = (blockId: string) => {
@@ -491,6 +525,25 @@ export default function Schedule() {
             </AlertDialog>
           </div>
         </div>
+
+        <AlertDialog open={!!sleepConflict} onOpenChange={(open) => { if (!open) setSleepConflict(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>This overlaps with your sleep</AlertDialogTitle>
+              <AlertDialogDescription>
+                Pickup Games (7:00pm–8:00pm) conflicts with "{sleepConflict?.title}"
+                {sleepConflict ? ` (${sleepConflict.startTime}–${sleepConflict.endTime})` : ""}.
+                We won't move your sleep schedule automatically — add it anyway, or cancel and pick a different time.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setSleepConflict(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleAddPickupGameAnyway}>
+                Add anyway
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {spsEvents && spsEvents.length > 0 && (
           <div className="rounded-2xl border-2 border-blue-400 dark:border-blue-700 bg-blue-50/60 dark:bg-blue-950/25 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">

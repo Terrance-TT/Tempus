@@ -11,7 +11,9 @@ import {
   getGetScheduleQueryKey,
   type ScheduleBlockInput,
   type DayOfWeek,
+  type ScheduleBlock,
 } from "@workspace/api-client-react";
+import { placeBlockWithConflictHandling } from "@/lib/schedule-conflicts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -133,8 +135,57 @@ export default function Home() {
     },
   });
 
+  const [sleepConflict, setSleepConflict] = useState<ScheduleBlock | null>(null);
+
+  const pickupGameDetails = {
+    startTime: "19:00",
+    endTime: "20:00",
+    title: "Pickup Games — Soccer",
+    category: "extracurricular" as const,
+    notes: "Lerner Hall Field",
+  };
+
+  const commitPickupGame = (blocks: ScheduleBlockInput[], today: DayOfWeek) => {
+    if (!activeSchedule || !deviceId) return;
+    addPickupGame.mutate({
+      id: activeSchedule.id,
+      data: {
+        deviceId,
+        blocks: [...blocks, { day: today, ...pickupGameDetails }],
+      },
+    });
+  };
+
   const handleAddPickupGame = () => {
     if (!activeSchedule || !activeScheduleDetail || !deviceId) return;
+    const jsDayToKey: DayOfWeek[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+    const today = jsDayToKey[new Date().getDay()];
+
+    const result = placeBlockWithConflictHandling(
+      activeScheduleDetail.blocks,
+      today,
+      pickupGameDetails.startTime,
+      pickupGameDetails.endTime
+    );
+
+    if (!result.ok) {
+      setSleepConflict(result.sleepConflict);
+      return;
+    }
+
+    if (result.moved.length > 0) {
+      const moved = result.moved[0];
+      toast({
+        title: "Moved to make room",
+        description: `Shifted "${moved.title}" to ${moved.toStart}–${moved.toEnd} so Pickup Games fits at 7:00pm.`,
+      });
+    }
+
+    commitPickupGame(result.blocks, today);
+  };
+
+  const handleAddPickupGameAnyway = () => {
+    if (!activeScheduleDetail || !deviceId) return;
     const jsDayToKey: DayOfWeek[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
     const today = jsDayToKey[new Date().getDay()];
     const existingBlocks: ScheduleBlockInput[] = activeScheduleDetail.blocks.map(b => ({
@@ -146,18 +197,8 @@ export default function Home() {
       category: b.category,
       notes: b.notes,
     }));
-    const pickupGameBlock: ScheduleBlockInput = {
-      day: today,
-      startTime: "19:00",
-      endTime: "20:00",
-      title: "Pickup Games — Soccer",
-      category: "extracurricular",
-      notes: "Lerner Hall Field",
-    };
-    addPickupGame.mutate({
-      id: activeSchedule.id,
-      data: { deviceId, blocks: [...existingBlocks, pickupGameBlock] },
-    });
+    setSleepConflict(null);
+    commitPickupGame(existingBlocks, today);
   };
 
   // FIX: Show "Plans" heading when on /plans route
@@ -389,6 +430,25 @@ export default function Home() {
             </div>
           </section>
         )}
+
+        <AlertDialog open={!!sleepConflict} onOpenChange={(open) => { if (!open) setSleepConflict(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>This overlaps with your sleep</AlertDialogTitle>
+              <AlertDialogDescription>
+                Pickup Games (7:00pm–8:00pm) conflicts with "{sleepConflict?.title}"
+                {sleepConflict ? ` (${sleepConflict.startTime}–${sleepConflict.endTime})` : ""}.
+                We won't move your sleep schedule automatically — add it anyway, or cancel and pick a different time.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setSleepConflict(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleAddPickupGameAnyway}>
+                Add anyway
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
           <AlertDialogContent>
