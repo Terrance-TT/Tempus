@@ -39,6 +39,7 @@ import {
   Plug,
   Sparkles,
   ArrowRight,
+  ArrowLeft,
   ChevronDown,
   ChevronUp,
   Calendar,
@@ -188,7 +189,7 @@ export default function Integrations() {
             description:
               result.importedCount > 0
                 ? `${result.importedCount} new assignment(s) added.`
-                : "You're up to date — no new assignments.",
+                : "You're up to date \u2014 no new assignments.",
           });
         },
         onError: (err: any) => {
@@ -270,7 +271,7 @@ export default function Integrations() {
             description:
               result.importedCount > 0
                 ? `${result.importedCount} new assignment(s) added.`
-                : "You're up to date — no new assignments.",
+                : "You're up to date \u2014 no new assignments.",
           });
         },
         onError: (err: any) => {
@@ -325,7 +326,7 @@ export default function Integrations() {
             description:
               result.importedCount > 0
                 ? `${result.importedCount} new assignment(s) added.`
-                : "You're up to date — no new assignments.",
+                : "You're up to date \u2014 no new assignments.",
           });
         },
         onError: (err: any) => {
@@ -398,18 +399,25 @@ export default function Integrations() {
     <>
       <div className="space-y-8">
         <header className="space-y-2">
-          <h1 className="text-3xl font-heading font-semibold text-foreground flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-              <Plug className="w-5 h-5" />
-            </span>
-            Integrations
-          </h1>
-          <p className="text-muted-foreground text-lg">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => setLocation("/")} className="-ml-2">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-heading font-semibold text-foreground flex items-center gap-3">
+                <span className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <Plug className="w-5 h-5" />
+                </span>
+                Integrations
+              </h1>
+            </div>
+          </div>
+          <p className="text-muted-foreground text-lg ml-11">
             Connect your school tools to pull assignments straight into your study plans.
           </p>
         </header>
 
-        {/* Imported assignments — shown at top when assignments exist */}
+        {/* Imported assignments \u2014 shown at top when assignments exist */}
         {(isLoadingAssignments || assignments.length > 0) && (
           <section className="space-y-3">
             <h2 className="font-semibold text-xl flex items-center gap-2">
@@ -495,7 +503,7 @@ export default function Integrations() {
           </section>
         )}
 
-        {/* Integration tiles — minimal; details appear when a tile is clicked */}
+        {/* Integration tiles \u2014 minimal; details appear when a tile is clicked */}
         <section className="space-y-3">
           <h2 className="font-semibold text-xl">Connect a tool</h2>
 
@@ -594,7 +602,7 @@ export default function Integrations() {
                           required
                         />
                         <p className="text-xs text-muted-foreground">
-                          Open Canvas in your browser and copy the first part of the address bar — usually <span className="font-mono">https://schoolname.instructure.com</span>
+                          Open Canvas in your browser and copy the first part of the address bar \u2014 usually <span className="font-mono">https://schoolname.instructure.com</span>
                         </p>
                       </div>
                       <div className="space-y-2">
@@ -611,16 +619,16 @@ export default function Integrations() {
                             <p className="text-xs font-medium text-foreground">How to get your CourseWorks2 token:</p>
                             <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
                               <li>Sign in to <span className="font-mono bg-background px-1 rounded">courseworks2.columbia.edu</span></li>
-                              <li>Click your profile picture (top-right) → <strong>Settings</strong></li>
+                              <li>Click your profile picture (top-right) \u2192 <strong>Settings</strong></li>
                               <li>Scroll down to <strong>Approved Integrations</strong></li>
                               <li>Click <strong>+ New Access Token</strong></li>
-                              <li>Enter a purpose (e.g. <em>Tempus</em>) — leave expiry blank</li>
+                              <li>Enter a purpose (e.g. <em>Tempus</em>) \u2014 leave expiry blank</li>
                               <li>Click <strong>Generate Token</strong> and copy it immediately</li>
                             </ol>
                           </div>
                         ) : (
                           <p className="text-xs text-muted-foreground">
-                            In Canvas: Account → Settings → New Access Token
+                            In Canvas: Account \u2192 Settings \u2192 New Access Token
                           </p>
                         )}
                       </div>
@@ -640,7 +648,7 @@ export default function Integrations() {
                     <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
                       <li>Sign in at <a href="https://spscolumbia.campusgroups.com" target="_blank" rel="noopener noreferrer" className="font-mono bg-background px-1 rounded underline-offset-2 hover:underline">spscolumbia.campusgroups.com</a></li>
                       <li>Click <strong>Calendar</strong> in the top nav</li>
-                      <li>Click <strong>Subscribe to Calendars</strong> → switch to the <strong>ICS Feeds</strong> tab</li>
+                      <li>Click <strong>Subscribe to Calendars</strong> \u2192 switch to the <strong>ICS Feeds</strong> tab</li>
                       <li>Copy your <strong>personal feed URL</strong></li>
                     </ol>
                   </div>
@@ -650,12 +658,12 @@ export default function Integrations() {
                       <Label>Your ICS feed URL</Label>
                       <Input
                         type="password"
-                        placeholder="https://spscolumbia.campusgroups.com/ics?user_id=…&token=…"
+                        placeholder="https://spscolumbia.campusgroups.com/ics?user_id=\u2026&token=\u2026"
                         value={spsIcsUrl}
                         onChange={(e) => { setSpsIcsUrl(e.target.value); setSpsEvents(null); }}
                         autoComplete="off"
                       />
-                      <p className="text-xs text-muted-foreground">The URL contains a private token — it's hidden above and never stored on our servers.</p>
+                      <p className="text-xs text-muted-foreground">The URL contains a private token \u2014 it's hidden above and never stored on our servers.</p>
                     </div>
                     <Button type="submit" disabled={!spsIcsUrl || previewSpsIcs.isPending}>
                       {previewSpsIcs.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
@@ -709,7 +717,7 @@ export default function Integrations() {
 
                         {spsDisplayed.length === 0 ? (
                           <p className="text-sm text-muted-foreground text-center py-4">
-                            No fun events detected — try turning off the filter to see all events.
+                            No fun events detected \u2014 try turning off the filter to see all events.
                           </p>
                         ) : (
                           <div className="max-h-60 overflow-y-auto space-y-1 rounded-lg border p-2 bg-muted/20">
@@ -738,8 +746,8 @@ export default function Integrations() {
                                   <div className="min-w-0 flex-1">
                                     <p className="text-sm font-medium leading-snug">{ev.title}</p>
                                     <p className="text-xs text-muted-foreground">
-                                      {dateStr} · {startTime}–{endTime}
-                                      {ev.location ? ` · ${ev.location}` : ""}
+                                      {dateStr} \u00b7 {startTime}\u2013{endTime}
+                                      {ev.location ? ` \u00b7 ${ev.location}` : ""}
                                     </p>
                                   </div>
                                   {ev.url && (
@@ -817,7 +825,7 @@ export default function Integrations() {
                         <p className="text-xs font-medium">How to get your API credentials:</p>
                         <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
                           <li>Sign in to your school's Schoology site</li>
-                          <li>Click your name (top-right) → <strong>Settings</strong></li>
+                          <li>Click your name (top-right) \u2192 <strong>Settings</strong></li>
                           <li>Go to the <strong>API Access</strong> tab</li>
                           <li>Your <strong>Consumer Key</strong> and <strong>Consumer Secret</strong> are listed there</li>
                         </ol>
