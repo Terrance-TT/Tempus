@@ -38,7 +38,6 @@ const JS_DAY_TO_KEY: DayOfWeek[] = ["sun", "mon", "tue", "wed", "thu", "fri", "s
 function todayKey(): DayOfWeek { return JS_DAY_TO_KEY[new Date().getDay()]; }
 function nowMinutes(): number { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
 
-/** Reorder days so today comes first, then the rest in calendar order. */
 function orderedDays(): DayOfWeek[] {
   const today = todayKey();
   const idx = DAYS_ORDER.indexOf(today);
@@ -79,7 +78,6 @@ export default function Schedule() {
   const [isRevealing, setIsRevealing] = useState(false);
   const [addingForDay, setAddingForDay] = useState<DayOfWeek | null>(null);
   
-  // Local edit states
   const [editTitle, setEditTitle] = useState("");
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
@@ -102,11 +100,9 @@ export default function Schedule() {
     query: { enabled: !!id, queryKey: getGetScheduleCalendarSyncsQueryKey(id || "") }
   });
   const autoSyncedRef = useRef(false);
-  // Capture URL params at mount before any effect clears them.
   const mountParamsRef = useRef(new URLSearchParams(window.location.search));
   const syncMap = new Map(calendarSyncs?.map(s => [s.blockId, s.googleEventId]) ?? []);
 
-  // Week schedules open in the all-days-at-a-glance grid by default.
   const viewInitializedRef = useRef(false);
   useEffect(() => {
     if (schedule && !viewInitializedRef.current) {
@@ -115,7 +111,6 @@ export default function Schedule() {
     }
   }, [schedule]);
 
-  // Detect ?reveal=1 from the create flow and trigger staggered block animation.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("reveal") !== "1") return;
@@ -234,9 +229,22 @@ export default function Schedule() {
     );
   };
 
+  // FIX: Add time validation before saving blocks
   const handleSaveBlock = () => {
     if (!schedule || !id) return;
-    
+
+    // Validate start time < end time
+    const startMin = timeToMinutes(editStart);
+    const endMin = timeToMinutes(editEnd);
+    if (startMin >= endMin) {
+      toast({
+        title: "Invalid time range",
+        description: "Start time must be before end time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     let newBlocks: ScheduleBlockInput[] = [...schedule.blocks].map(b => ({
       id: b.id,
       day: b.day,
@@ -415,7 +423,6 @@ export default function Schedule() {
           </div>
         </div>
 
-        {/* SPS Engage upcoming events */}
         {spsEvents && spsEvents.length > 0 && (
           <div className="rounded-2xl border-2 border-blue-400 dark:border-blue-700 bg-blue-50/60 dark:bg-blue-950/25 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
             <div className="flex items-center gap-2.5 px-4 py-3 border-b border-blue-300 dark:border-blue-700 bg-blue-600 text-white">
@@ -527,8 +534,6 @@ export default function Schedule() {
             const isToday = day === todayKey();
             const now = nowMinutes();
 
-            // For today: split into upcoming (endTime >= now) and past blocks.
-            // Show upcoming first so the current moment is always at the top.
             let displayBlocks = blocks;
             let pastBlocks: typeof blocks = [];
             let showNowDivider = false;
@@ -619,7 +624,6 @@ export default function Schedule() {
                     );
                   })}
 
-                  {/* Earlier today — already-passed blocks, dimmed */}
                   {showNowDivider && (
                     <>
                       <div className="flex items-center gap-3 py-1">
@@ -711,7 +715,6 @@ export default function Schedule() {
                       {formatHourLabel(m)}
                     </span>
                   ))}
-                  {/* "Now" time label on the axis */}
                   {nowMinutes() >= minStart && nowMinutes() <= minStart + total && (
                     <span
                       className="absolute right-1.5 -translate-y-1/2 text-[9px] tabular-nums text-primary font-semibold"
@@ -735,7 +738,6 @@ export default function Schedule() {
                           style={{ top: `${((m - minStart) / total) * 100}%` }}
                         />
                       ))}
-                      {/* Red "now" line across today's column */}
                       {showNowLine && (
                         <div
                           className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
@@ -757,7 +759,7 @@ export default function Schedule() {
                             onClick={() => openEdit(block)}
                             className={`absolute left-0.5 right-0.5 rounded-md border px-1 py-0.5 text-left overflow-hidden transition-shadow hover:shadow-md hover:z-10 ${getCategoryColor(block.category)}`}
                             style={{ top: `${top}%`, height: `${height}%`, minHeight: "14px" }}
-                            title={`${block.title} • ${block.startTime}–${block.endTime}`}
+                            title={`${block.title} · ${block.startTime}–${block.endTime}`}
                             data-testid={`grid-block-${block.id}`}
                           >
                             <p className="text-[10px] font-semibold leading-tight truncate">{block.title}</p>
