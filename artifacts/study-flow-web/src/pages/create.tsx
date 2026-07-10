@@ -847,7 +847,12 @@ export default function Create() {
         {step === 1 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
             <header className="space-y-2">
-              <h1 className="text-3xl font-heading font-semibold text-foreground">Tell us your week</h1>
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon" onClick={() => setLocation("/")} className="-ml-2">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <h1 className="text-3xl font-heading font-semibold text-foreground">Tell us your week</h1>
+              </div>
             </header>
 
             <div className="flex items-stretch p-1.5 bg-secondary/40 rounded-full border-2 border-border/70 mx-auto w-fit" data-testid="tabs-input-mode">
