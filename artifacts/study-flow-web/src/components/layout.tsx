@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, CalendarDays, PlusCircle, Plug, ShieldCheck, LogOut, MessageSquarePlus, Inbox, Settings, BarChart3 } from "lucide-react";
+import { Calendar, CalendarDays, Plug, ShieldCheck, LogOut, MessageSquarePlus, Inbox, Settings, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useClerk } from "@clerk/react";
@@ -37,9 +37,6 @@ export function Layout({ children }: LayoutProps) {
 
   const handleSignOut = () =>
     signOut(() => {
-      // Clear all locally-persisted app state (theme, guest device id, drafts,
-      // etc.) so signing out is a true reset rather than leaving customization
-      // or leftover guest data behind for the next person to use this browser.
       localStorage.clear();
       sessionStorage.clear();
       window.location.href = "/";
@@ -55,11 +52,16 @@ export function Layout({ children }: LayoutProps) {
     ...(isAdmin ? [{ href: "/admin/stats", label: "Stats", icon: BarChart3 }] : []),
   ];
 
+  // FIX: /plans should highlight the root nav item
+  const isNavActive = (itemHref: string): boolean => {
+    if (location === itemHref) return true;
+    if (itemHref === "/" && location === "/plans") return true;
+    if (itemHref !== "/" && location.startsWith(itemHref)) return true;
+    return false;
+  };
+
   return (
     <div className="min-h-[100dvh] bg-background">
-      {/* Desktop Sidebar — a floating, self-contained pill that's fixed to
-          the viewport rather than anchored/stretched into the page layout,
-          so it's always fully visible no matter how long the page is. */}
       <TooltipProvider delayDuration={200}>
         <aside className="hidden md:flex fixed left-5 top-1/2 -translate-y-1/2 z-50 flex-col bg-card border rounded-3xl shadow-lg items-center py-5 px-2.5 gap-2">
           <Tooltip>
@@ -75,7 +77,7 @@ export function Layout({ children }: LayoutProps) {
 
           <nav className="flex flex-col items-center gap-1">
             {navItems.map((item) => {
-              const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+              const active = isNavActive(item.href);
               return (
                 <Tooltip key={item.href}>
                   <TooltipTrigger asChild>
@@ -83,7 +85,7 @@ export function Layout({ children }: LayoutProps) {
                       href={item.href}
                       className={cn(
                         "p-2.5 flex items-center justify-center rounded-xl transition-all duration-200",
-                        isActive
+                        active
                           ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                           : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                       )}
@@ -146,9 +148,7 @@ export function Layout({ children }: LayoutProps) {
         </aside>
       </TooltipProvider>
 
-      {/* Main Content */}
       <main className="pb-20 md:pb-0 md:pl-28 relative">
-        {/* Background dots */}
         <div className="absolute inset-0 pointer-events-none select-none" aria-hidden>
           <svg className="absolute inset-0 w-full h-full text-primary opacity-[0.18]" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -164,23 +164,22 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </main>
 
-      {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-card/80 backdrop-blur-md pb-safe z-50">
         <div className="flex items-center justify-around p-2">
           {navItems.map((item) => {
-            const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+            const active = isNavActive(item.href);
             return (
               <Link 
                 key={item.href} 
                 href={item.href}
                 className={cn(
                   "flex flex-col items-center justify-center p-2 rounded-lg min-w-[4rem] transition-all duration-200",
-                  isActive 
+                  active 
                     ? "text-primary scale-110" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <item.icon className={cn("w-5 h-5 mb-1", isActive ? "fill-primary/20" : "")} />
+                <item.icon className={cn("w-5 h-5 mb-1", active ? "fill-primary/20" : "")} />
                 <span className="text-[10px] font-medium">{item.label}</span>
               </Link>
             );
