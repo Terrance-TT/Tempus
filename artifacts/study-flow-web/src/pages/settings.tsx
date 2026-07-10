@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/hooks/use-theme";
-import { Sun, Moon, Chrome, ArrowUpRight, Check } from "lucide-react";
+import { Sun, Moon, Chrome, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function SettingsIcon() {
@@ -108,7 +108,7 @@ export default function Settings() {
           </div>
           <button
             disabled
-            title="Coming soon — link this once the extension is published"
+            title="Coming soon \u2014 link this once the extension is published"
             data-testid="button-extension-settings"
             className="w-full flex items-center gap-3 rounded-xl border border-border p-4 text-left opacity-60 cursor-not-allowed"
           >
@@ -119,7 +119,6 @@ export default function Settings() {
               <span className="block text-sm font-medium">Chrome extension settings</span>
               <span className="block text-xs text-muted-foreground">Coming soon</span>
             </span>
-            <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
           </button>
         </Card>
       </div>
