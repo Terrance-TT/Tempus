@@ -207,16 +207,36 @@ Rules:
 - "blocks" must be empty when status is "needs_clarification", and "questions" must be empty when status is "complete".${weekExtra}${correction}`;
 }
 
+/**
+ * Model router: short free-text prompts (one sentence or less) go to the
+ * cheaper gpt-5.4-mini; longer, more nuanced prompts go to full gpt-5.4.
+ */
+function countSentences(text: string): number {
+  return text
+    .split(/[.!?\n]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0).length;
+}
+
+export function pickModel(freeTexts: string[]): "gpt-5.4" | "gpt-5.4-mini" {
+  const maxSentences = freeTexts.reduce(
+    (max, text) => Math.max(max, countSentences(text)),
+    0,
+  );
+  return maxSentences > 1 ? "gpt-5.4" : "gpt-5.4-mini";
+}
+
 async function callGenerationModel(
   systemPrompt: string,
   userPrompt: string,
+  model: "gpt-5.4" | "gpt-5.4-mini",
 ): Promise<{
   status: "needs_clarification" | "complete";
   questions: string[];
   blocks: ScheduleBlock[];
 }> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5.4-mini",
+    model,
     max_completion_tokens: 4096,
     messages: [
       { role: "system", content: systemPrompt },
@@ -270,7 +290,10 @@ async function runScheduleGeneration(
     priorAnswers: answers,
   });
 
-  const result = await callGenerationModel(buildGenerationPrompt(scope), userPrompt);
+  const model = pickModel(answers.map((a) => a.answer));
+  logger.info({ model }, "Routing schedule generation");
+
+  const result = await callGenerationModel(buildGenerationPrompt(scope), userPrompt, model);
 
   // Sanity-check week schedules: if the LLM crammed everything onto too few
   // days (a known hallucination pattern), retry once with an explicit correction.
@@ -286,7 +309,7 @@ async function runScheduleGeneration(
         "Week schedule has too few distinct days — retrying with correction",
       );
       const correction = `Your previous response only used ${distinctDays} distinct day(s) out of 7. You MUST spread blocks across all seven days (mon, tue, wed, thu, fri, sat, sun). Every day must appear at least once. Do not put all or most blocks on the same day.`;
-      return callGenerationModel(buildGenerationPrompt(scope, correction), userPrompt);
+      return callGenerationModel(buildGenerationPrompt(scope, correction), userPrompt, model);
     }
   }
 
@@ -326,8 +349,11 @@ Rules:
     instruction,
   });
 
+  const model = pickModel([instruction]);
+  logger.info({ model }, "Routing schedule revision");
+
   const response = await openai.chat.completions.create({
-    model: "gpt-5.4-mini",
+    model,
     max_completion_tokens: 4096,
     messages: [
       { role: "system", content: systemPrompt },
