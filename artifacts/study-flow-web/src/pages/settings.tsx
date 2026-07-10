@@ -114,7 +114,7 @@ export default function Settings() {
           </div>
           <button
             disabled
-            title="Coming soon \u2014 link this once the extension is published"
+            title="Coming soon — link this once the extension is published"
             data-testid="button-extension-settings"
             className="w-full flex items-center gap-3 rounded-xl border border-border p-4 text-left opacity-60 cursor-not-allowed"
           >

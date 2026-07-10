@@ -196,7 +196,7 @@ export function FocusGuardCard() {
         </CardTitle>
         <CardDescription>
           Blocks distracting sites while you're supposed to be working. The extension itself is
-          just a clock \u2014 everything is controlled from here.
+          just a clock — everything is controlled from here.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -242,7 +242,7 @@ export function FocusGuardCard() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Paste this into the Focus Guard popup in Chrome. Keep it private \u2014 regenerating invalidates the old code.
+                Paste this into the Focus Guard popup in Chrome. Keep it private — regenerating invalidates the old code.
               </p>
             </div>
           )}
@@ -280,14 +280,14 @@ export function FocusGuardCard() {
                     Hide the on/off switch
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Commit mode \u2014 hide the switch so you can't turn blocking off on a whim.
+                    Commit mode — hide the switch so you can't turn blocking off on a whim.
                   </p>
                 </div>
                 <Switch
                   checked={hideSwitch}
                   onCheckedChange={(checked) => {
                     setSwitchHidden(checked);
-                    // Hiding the switch forces blocking on \u2014 otherwise it's a trap.
+                    // Hiding the switch forces blocking on — otherwise it's a trap.
                     applyUpdate(checked ? { hideActivateSwitch: true, active: true } : { hideActivateSwitch: false });
                   }}
                   data-testid="switch-hide-activate"
@@ -316,14 +316,14 @@ export function FocusGuardCard() {
                   <RadioGroupItem value="non_free" id="mode-nonfree" className="mt-0.5" data-testid="radio-mode-nonfree" />
                   <span>
                     <span className="text-sm font-medium block">Whenever it's not free time</span>
-                    <span className="text-xs text-muted-foreground">Blocked during class, work blocks \u2014 anything that isn't a break.</span>
+                    <span className="text-xs text-muted-foreground">Blocked during class, work blocks — anything that isn't a break.</span>
                   </span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <RadioGroupItem value="always" id="mode-always" className="mt-0.5" data-testid="radio-mode-always" />
                   <span>
                     <span className="text-sm font-medium block">All day</span>
-                    <span className="text-xs text-muted-foreground">Blocked around the clock, no schedule needed \u2014 great for testing the extension.</span>
+                    <span className="text-xs text-muted-foreground">Blocked around the clock, no schedule needed — great for testing the extension.</span>
                   </span>
                 </label>
               </RadioGroup>
@@ -373,7 +373,7 @@ export function FocusGuardCard() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {settings.blockedSites.length === 0 && (
-                  <p className="text-xs text-muted-foreground">No sites on the list \u2014 add some above.</p>
+                  <p className="text-xs text-muted-foreground">No sites on the list — add some above.</p>
                 )}
                 {/* FIX: Use deduplicated display list */}
                 {getDisplaySites(settings.blockedSites).map((site) => (
