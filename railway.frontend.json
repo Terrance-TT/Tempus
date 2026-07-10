@@ -6,7 +6,7 @@
       "providers": ["node"],
       "phases": {
         "setup": {
-          "nixPkgs": ["nodejs", "pnpm"]
+          "nixPkgs": ["nodejs_20", "pnpm_10"]
         },
         "build": {
           "cmds": [
