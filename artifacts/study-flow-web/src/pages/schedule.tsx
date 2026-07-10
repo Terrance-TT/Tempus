@@ -490,7 +490,7 @@ export default function Schedule() {
           <div className="rounded-2xl border-2 border-blue-400 dark:border-blue-700 bg-blue-50/60 dark:bg-blue-950/25 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
             <div className="flex items-center gap-2.5 px-4 py-3 border-b border-blue-300 dark:border-blue-700 bg-blue-600 text-white">
               <CalendarIcon className="w-4 h-4" />
-              <span className="font-bold text-sm tracking-wide flex-1">SPS Engage \u2014 Upcoming Events</span>
+              <span className="font-bold text-sm tracking-wide flex-1">SPS Engage &mdash; Upcoming Events</span>
               <button
                 type="button"
                 onClick={() => setSpsFunOnly((v) => !v)}
@@ -501,7 +501,7 @@ export default function Schedule() {
               </button>
             </div>
             {spsDisplayed.length === 0 ? (
-              <p className="px-4 py-3 text-sm text-blue-700 dark:text-blue-300">No fun events in the next 14 days \u2014 <button type="button" className="underline" onClick={() => setSpsFunOnly(false)}>show all</button>.</p>
+              <p className="px-4 py-3 text-sm text-blue-700 dark:text-blue-300">No fun events in the next 14 days &mdash; <button type="button" className="underline" onClick={() => setSpsFunOnly(false)}>show all</button>.</p>
             ) : (
               <div className="divide-y divide-blue-100 dark:divide-blue-900">
                 {spsDisplayed.map((ev) => {
@@ -512,7 +512,7 @@ export default function Schedule() {
                   const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
                   return (
                     <div key={ev.uid} className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-100/60 dark:hover:bg-blue-900/30 transition-colors">
-                      <p className="text-xs text-blue-700 dark:text-blue-300 w-40 shrink-0 tabular-nums font-medium">{dateStr} \u00b7 {startTime}\u2013{endTime}</p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 w-40 shrink-0 tabular-nums font-medium">{dateStr} &middot; {startTime}&ndash;{endTime}</p>
                       <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate flex-1">{ev.title}</p>
                       {ev.location && (
                         <p className="text-xs text-blue-600 dark:text-blue-400 hidden sm:block shrink-0 max-w-32 truncate">{ev.location}</p>
@@ -839,7 +839,7 @@ export default function Schedule() {
                             onClick={() => openEdit(block)}
                             className={`absolute left-0.5 right-0.5 rounded-md border px-1 py-0.5 text-left overflow-hidden transition-shadow hover:shadow-md hover:z-10 ${getCategoryColor(block.category)}`}
                             style={{ top: `${top}%`, height: `${height}%`, minHeight: "14px" }}
-                            title={`${block.title} \u00b7 ${block.startTime}\u2013${block.endTime}`}
+                            title={`${block.title} &middot; ${block.startTime}&ndash;${block.endTime}`}
                             data-testid={`grid-block-${block.id}`}
                           >
                             <p className="text-[10px] font-semibold leading-tight truncate">{block.title}</p>
