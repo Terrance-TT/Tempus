@@ -1,9 +1,12 @@
 import { useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/hooks/use-theme";
-import { Sun, Moon, Chrome, Check, ArrowLeft } from "lucide-react";
+import { Sun, Moon, Chrome, Check, ArrowLeft, Zap, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSubscriptionStatus, useCreateCheckout, useManageSubscription, useProProducts } from "@/hooks/use-subscription";
+import { useToast } from "@/hooks/use-toast";
 
 function SettingsIcon() {
   return (
@@ -20,6 +23,37 @@ function SettingsIcon() {
 export default function Settings() {
   const [, setLocation] = useLocation();
   const { mode, setMode, presetId, setPresetId, presets } = useTheme();
+  const { toast } = useToast();
+
+  const { data: status } = useSubscriptionStatus();
+  const { data: products = [] } = useProProducts();
+  const createCheckout = useCreateCheckout();
+  const manageSubscription = useManageSubscription();
+
+  const proProduct = products.find((p) => p.name === "Tempus Pro");
+  const proPrice = proProduct?.prices.find((p) => p.recurring?.interval === "month");
+
+  const handleUpgrade = async () => {
+    if (!proPrice) {
+      toast({ title: "Plan not available", description: "Please try again shortly.", variant: "destructive" });
+      return;
+    }
+    try {
+      const { url } = await createCheckout.mutateAsync(proPrice.id);
+      window.location.href = url;
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleManage = async () => {
+    try {
+      const { url } = await manageSubscription.mutateAsync();
+      window.location.href = url;
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
 
   return (
     <>
@@ -76,6 +110,40 @@ export default function Settings() {
               {mode === "dark" && <Check className="w-4 h-4 text-primary ml-auto" />}
             </button>
           </div>
+        </Card>
+
+        <Card className="p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-heading font-semibold text-lg flex items-center gap-2">
+                <Zap className="w-4 h-4 text-primary" /> Subscription
+              </h2>
+              <p className="text-sm text-muted-foreground">Test the Stripe checkout flow.</p>
+            </div>
+            <Badge variant={status?.isPro ? "default" : "secondary"} data-testid="badge-subscription-status">
+              {status?.isPro ? "Pro" : "Free"}
+            </Badge>
+          </div>
+          {status?.isPro ? (
+            <Button
+              variant="outline"
+              onClick={handleManage}
+              disabled={manageSubscription.isPending}
+              data-testid="button-manage-subscription"
+            >
+              {manageSubscription.isPending && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+              Manage subscription
+            </Button>
+          ) : (
+            <Button
+              onClick={handleUpgrade}
+              disabled={createCheckout.isPending}
+              data-testid="button-go-pro"
+            >
+              {createCheckout.isPending && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+              <Zap className="mr-2 w-4 h-4" /> Go Pro
+            </Button>
+          )}
         </Card>
 
         <Card className="p-6 space-y-4">
