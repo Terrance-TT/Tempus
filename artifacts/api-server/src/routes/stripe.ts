@@ -52,6 +52,12 @@ router.post("/checkout", async (req, res) => {
   }
 
   let customerId = user.stripeCustomerId;
+  if (customerId) {
+    // Guard against stale customer IDs left over from a previously connected
+    // Stripe account — recreate the customer if it no longer exists.
+    const exists = await stripeService.customerExists(customerId);
+    if (!exists) customerId = null;
+  }
   if (!customerId) {
     const customer = await stripeService.createCustomer(user.email ?? "", userId);
     await storage.updateUserStripeInfo(userId, { stripeCustomerId: customer.id });

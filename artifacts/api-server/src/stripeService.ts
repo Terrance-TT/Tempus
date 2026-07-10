@@ -12,6 +12,20 @@ export class StripeService {
   }
 
   /**
+   * Returns true if the customer exists (and is not deleted) in the currently
+   * connected Stripe account. Used to detect stale IDs after an account switch.
+   */
+  async customerExists(customerId: string): Promise<boolean> {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const customer = await stripe.customers.retrieve(customerId);
+      return !customer.deleted;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Resolves the intro coupon ID if it exists and is valid in Stripe.
    * Returns undefined if not found or invalid so checkout still proceeds.
    */

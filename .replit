@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "postgresql-16", "python-3.11"]
+modules = ["nodejs-24", "python-3.11", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -62,3 +62,6 @@ channel = "stable-25_05"
 
 [userenv.shared]
 ADMIN_EMAIL = "yungyungadam@gmail.com"
+
+[objectStorage]
+defaultBucketID = "replit-objstore-50ba9cab-ad7f-4f6c-9a79-70cd826868c4"

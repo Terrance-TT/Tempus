@@ -1,7 +1,11 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useDeviceId } from "./use-device-id";
 
-const BASE = (import.meta.env.BASE_URL as string).replace(/\/$/, "");
+// API calls use root-relative "/api" paths (same as the shared api client) —
+// the platform proxy routes them to the API server. BASE_URL is the frontend's
+// own path prefix and must NOT be prepended, or requests hit the Vite dev
+// server and get HTML back. VITE_API_BASE_URL overrides for cross-origin setups.
+const BASE = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "").replace(/\/+$/, "");
 
 export type SubscriptionStatus = {
   isPro: boolean;
