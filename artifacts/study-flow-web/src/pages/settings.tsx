@@ -1,6 +1,8 @@
+import { useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
-import { Sun, Moon, Chrome, Check } from "lucide-react";
+import { Sun, Moon, Chrome, Check, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function SettingsIcon() {
@@ -16,12 +18,16 @@ function SettingsIcon() {
 }
 
 export default function Settings() {
+  const [, setLocation] = useLocation();
   const { mode, setMode, presetId, setPresetId, presets } = useTheme();
 
   return (
     <>
       <div className="space-y-8 max-w-2xl">
         <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => setLocation("/")} className="-ml-2 shrink-0">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
           <SettingsIcon />
           <div>
             <h1 className="text-3xl font-heading font-bold" data-testid="text-settings-title">
