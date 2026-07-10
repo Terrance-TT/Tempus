@@ -35,6 +35,7 @@ import {
 
 export default function Home() {
   const deviceId = useDeviceId();
+  const [location] = useLocation();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -42,6 +43,8 @@ export default function Home() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
+  // FIX: Track whether Escape was pressed so onBlur doesn't re-submit
+  const escapePressedRef = useRef(false);
 
   const { data: schedules, isLoading } = useListSchedules(
     { deviceId: deviceId || "" },
@@ -80,24 +83,35 @@ export default function Home() {
     onSettled: () => setRenamingId(null),
   });
 
-  const submitRename = (id: string) => {
+  // FIX: Only submit rename if the name actually changed
+  const submitRename = (id: string, originalName: string) => {
     const trimmed = renameValue.trim();
-    if (trimmed) {
-      renameSchedule.mutate({ id, name: trimmed });
-    } else {
+    if (!trimmed) {
       setRenamingId(null);
+      return;
     }
+    if (trimmed === originalName) {
+      // Name unchanged — just cancel rename mode without API call
+      setRenamingId(null);
+      return;
+    }
+    renameSchedule.mutate({ id, name: trimmed });
   };
 
   const startRename = (plan: { id: string; name?: string | null; scope: string }) => {
     const displayName = plan.name ?? (plan.scope === "week" ? "Weekly plan" : "Daily plan");
     setRenamingId(plan.id);
     setRenameValue(displayName);
+    escapePressedRef.current = false;
     setTimeout(() => renameInputRef.current?.select(), 0);
   };
 
   const activeSchedule = schedules?.find(s => s.status === "complete");
   const currentPlans = schedules ?? [];
+
+  // FIX: Show "Plans" heading when on /plans route
+  const isPlansPage = location === "/plans";
+  const pageTitle = isPlansPage ? "Plans" : activeSchedule ? "Today" : "Welcome to Tempus";
 
   const confirmDelete = () => {
     if (!pendingDeleteId || !deviceId) return;
@@ -121,12 +135,12 @@ export default function Home() {
       <div className="max-w-3xl mx-auto space-y-10 pt-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <header className="space-y-1">
           <h1 className="text-4xl font-heading font-bold text-foreground tracking-tight">
-            {activeSchedule ? "Today" : "Welcome to Tempus"}
+            {pageTitle}
           </h1>
           <p className="text-muted-foreground text-lg">Your AI-powered study planner.</p>
         </header>
 
-        {activeSchedule ? (
+        {activeSchedule && !isPlansPage ? (
           <div>
             <button
               className="group aspect-[2/1] w-1/2 rounded-2xl bg-card flex items-center justify-center transition-all duration-200 hover:shadow-sm"
@@ -197,10 +211,8 @@ export default function Home() {
                         "hover:border-primary/40 hover:shadow-sm"
                       )}
                     >
-                      {/* Vertical pill to the left of the circle */}
                       <div className="w-3 h-9 rounded-full bg-primary/60 self-center shrink-0 ml-2 translate-x-1 origin-bottom transition-transform duration-1000 ease-out group-hover:translate-x-3 group-hover:rotate-[18deg]" />
 
-                      {/* Left circle cap — indicator dot, click to open */}
                       <button
                         className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 -ml-2 -mr-4 transition-transform duration-1000 ease-out group-hover:translate-x-1"
                         onClick={() => !isRenaming && setLocation(`/schedule/${plan.id}`)}
@@ -209,7 +221,6 @@ export default function Home() {
                         <div className="w-8 h-8 rounded-full bg-primary/40" />
                       </button>
 
-                      {/* Rolling name — expands out from the left circle on hover */}
                       {isRenaming ? (
                         <div className="w-48 h-full flex items-center pr-2">
                           <input
@@ -219,10 +230,23 @@ export default function Home() {
                             value={renameValue}
                             onChange={(e) => setRenameValue(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") submitRename(plan.id);
-                              if (e.key === "Escape") setRenamingId(null);
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                submitRename(plan.id, displayName);
+                              }
+                              if (e.key === "Escape") {
+                                escapePressedRef.current = true;
+                                setRenamingId(null);
+                              }
                             }}
-                            onBlur={() => submitRename(plan.id)}
+                            onBlur={() => {
+                              // FIX: Don't submit if Escape was just pressed
+                              if (escapePressedRef.current) {
+                                escapePressedRef.current = false;
+                                return;
+                              }
+                              submitRename(plan.id, displayName);
+                            }}
                             onClick={(e) => e.stopPropagation()}
                           />
                         </div>
@@ -238,7 +262,6 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* Right circle cap — decorative, mirrors the left indicator circle, sliced through by the pills */}
                       <div className="relative w-16 h-16 flex items-center justify-center shrink-0 -ml-4 -mr-2">
                         <div className="w-16 h-16 rounded-full flex items-center justify-center transition-transform duration-1000 ease-out group-hover:-translate-x-1">
                           <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary/50">
@@ -246,7 +269,6 @@ export default function Home() {
                           </div>
                         </div>
 
-                        {/* Vertical double-pill — opens the options menu, slices through the circle at 45deg */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
