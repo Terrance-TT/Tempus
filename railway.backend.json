@@ -4,13 +4,16 @@
     "builder": "NIXPACKS",
     "nixpacksPlan": {
       "providers": ["node"],
-      "phase": {
+      "phases": {
         "setup": {
           "nixPkgs": ["nodejs", "pnpm"]
         },
+        "install": {
+          "cmds": ["pnpm install"]
+        },
         "build": {
+          "dependsOn": ["install"],
           "cmds": [
-            "pnpm install",
             "pnpm --filter @workspace/api-server run build"
           ]
         }
