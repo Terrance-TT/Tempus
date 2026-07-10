@@ -6,7 +6,6 @@ export const DEFAULT_BLOCKED_SITES = [
   "snapchat.com",
   "tiktok.com",
   "x.com",
-  "twitter.com",
   "reddit.com",
   "facebook.com",
   "twitch.tv",

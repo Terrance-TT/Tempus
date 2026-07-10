@@ -290,6 +290,7 @@ function AppShell() {
     <Layout>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/plans" component={Home} />
         <Route path="/create" component={Create} />
         <Route path="/schedule/:id" component={Schedule} />
         <Route path="/integrations" component={Integrations} />

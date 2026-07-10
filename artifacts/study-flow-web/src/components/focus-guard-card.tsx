@@ -114,6 +114,10 @@ export function FocusGuardCard() {
       return;
     }
     if (settings?.blockedSites.includes(domain)) {
+      toast({
+        title: "Already blocked",
+        description: `${domain} is already in your blocked sites list.`,
+      });
       setNewSite("");
       return;
     }

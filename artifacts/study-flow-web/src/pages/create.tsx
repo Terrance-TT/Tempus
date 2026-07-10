@@ -178,9 +178,11 @@ export default function Create() {
   // Reveal screen: shown after generation for signed-in users
   const [revealData, setRevealData] = useState<{ scheduleId: string; blocks: ScheduleBlock[] } | null>(null);
 
-  // Step 3 study-style preferences
-  const [studyPref, setStudyPref] = useState<string[]>([]);
-  const [focusLength, setFocusLength] = useState<string | null>(null);
+  // Step 3 study-style preferences. Sensible defaults are pre-selected so a
+  // schedule is never generated with zero preference signal (users can still
+  // change or deselect them).
+  const [studyPref, setStudyPref] = useState<string[]>(["evening"]);
+  const [focusLength, setFocusLength] = useState<string | null>("45");
   const [showRoutineDetails, setShowRoutineDetails] = useState(false);
 
   // Preferences (persisted per user)
@@ -250,7 +252,11 @@ export default function Create() {
   // Auto-save draft whenever key wizard state changes
   useEffect(() => {
     if (!draftInitializedRef.current) return;
-    const hasMeaningfulProgress = step > 1 || tasks.length > 0 || studyPref.length > 0 || focusLength !== null;
+    // Pre-selected defaults (evening / 45 min) don't count as progress —
+    // only user-driven changes should create a resumable draft.
+    const prefsTouched =
+      focusLength !== "45" || studyPref.length !== 1 || studyPref[0] !== "evening";
+    const hasMeaningfulProgress = step > 1 || tasks.length > 0 || prefsTouched;
     if (hasMeaningfulProgress) {
       saveCreateDraft({
         step,
