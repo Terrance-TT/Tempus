@@ -1,9 +1,9 @@
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/hooks/use-theme";
-import { Sun, Moon, Chrome, Check, ArrowLeft, Zap, Loader2 } from "lucide-react";
+import { Sun, Moon, Chrome, Check, ArrowLeft, Zap, Loader2, FileText, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSubscriptionStatus, useCreateCheckout, useManageSubscription, useProProducts } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
@@ -194,6 +194,24 @@ export default function Settings() {
               <span className="block text-xs text-muted-foreground">Coming soon</span>
             </span>
           </button>
+        </Card>
+
+        <Card className="p-6 space-y-4">
+          <div>
+            <h2 className="font-heading font-semibold text-lg">Legal</h2>
+            <p className="text-sm text-muted-foreground">Review how Tempus handles your data.</p>
+          </div>
+          <Link
+            href="/privacy"
+            data-testid="link-privacy-policy"
+            className="w-full flex items-center gap-3 rounded-xl border border-border p-4 text-left hover:bg-secondary/40 transition-colors"
+          >
+            <span className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
+              <FileText className="w-4 h-4 text-foreground" />
+            </span>
+            <span className="flex-1 text-sm font-medium">Privacy Policy</span>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </Link>
         </Card>
       </div>
     </>
