@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Calendar } from "lucide-react";
+import { Calendar, ArrowLeft } from "lucide-react";
 
 const LAST_UPDATED = "July 9, 2026";
 
@@ -20,7 +20,15 @@ export default function Privacy() {
       <main className="flex-1">
         <div className="container mx-auto px-4 md:px-8 max-w-3xl py-16 space-y-10 text-foreground">
           <header className="space-y-2">
-            <h1 className="text-4xl font-heading font-bold">Privacy Policy</h1>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/"
+                className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted transition-colors shrink-0"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+              <h1 className="text-4xl font-heading font-bold">Privacy Policy</h1>
+            </div>
             <p className="text-muted-foreground text-sm">Last updated: {LAST_UPDATED}</p>
           </header>
 
