@@ -1,10 +1,24 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "nixpacksPlan": {
+      "providers": ["node"],
+      "phase": {
+        "setup": {
+          "nixPkgs": ["nodejs", "pnpm"]
+        },
+        "build": {
+          "cmds": [
+            "pnpm install",
+            "pnpm --filter @workspace/api-server run build"
+          ]
+        }
+      }
+    }
   },
   "deploy": {
-    "startCommand": "echo 'Root project — services deploy individually via railway.backend.json and railway.frontend.json'",
+    "startCommand": "node --enable-source-maps ./artifacts/api-server/dist/index.mjs",
     "healthcheckPath": "/healthz",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
