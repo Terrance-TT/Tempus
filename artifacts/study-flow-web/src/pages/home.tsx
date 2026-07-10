@@ -5,7 +5,12 @@ import { useDeviceId } from "@/hooks/use-device-id";
 import {
   useListSchedules,
   useDeleteSchedule,
+  useGetSchedule,
+  useUpdateSchedule,
   getListSchedulesQueryKey,
+  getGetScheduleQueryKey,
+  type ScheduleBlockInput,
+  type DayOfWeek,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Sparkles, Loader2, Plus, Pencil, Trash2, Clock } from "lucide-react";
+import { PlusCircle, Sparkles, Loader2, Plus, Pencil, Trash2, Clock, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
@@ -109,6 +114,52 @@ export default function Home() {
   const activeSchedule = schedules?.find(s => s.status === "complete");
   const currentPlans = schedules ?? [];
 
+  const { data: activeScheduleDetail } = useGetSchedule(
+    activeSchedule?.id || "",
+    { deviceId: deviceId || "" },
+    { query: { enabled: !!activeSchedule?.id && !!deviceId, queryKey: getGetScheduleQueryKey(activeSchedule?.id || "", { deviceId: deviceId || "" }) } }
+  );
+
+  const addPickupGame = useUpdateSchedule({
+    mutation: {
+      onSuccess: (data, variables) => {
+        queryClient.setQueryData(getGetScheduleQueryKey(variables.id, { deviceId: deviceId || "" }), data);
+        queryClient.invalidateQueries({ queryKey: getListSchedulesQueryKey({ deviceId: deviceId || "" }) });
+        toast({ title: "Pickup Games added! ⚽", description: "Today, 7:00pm at Lerner Hall Field." });
+      },
+      onError: (err: any) => {
+        toast({ title: "Couldn't add it", description: err?.message || "Please try again.", variant: "destructive" });
+      },
+    },
+  });
+
+  const handleAddPickupGame = () => {
+    if (!activeSchedule || !activeScheduleDetail || !deviceId) return;
+    const jsDayToKey: DayOfWeek[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+    const today = jsDayToKey[new Date().getDay()];
+    const existingBlocks: ScheduleBlockInput[] = activeScheduleDetail.blocks.map(b => ({
+      id: b.id,
+      day: b.day,
+      startTime: b.startTime,
+      endTime: b.endTime,
+      title: b.title,
+      category: b.category,
+      notes: b.notes,
+    }));
+    const pickupGameBlock: ScheduleBlockInput = {
+      day: today,
+      startTime: "19:00",
+      endTime: "20:00",
+      title: "Pickup Games — Soccer",
+      category: "extracurricular",
+      notes: "Lerner Hall Field",
+    };
+    addPickupGame.mutate({
+      id: activeSchedule.id,
+      data: { deviceId, blocks: [...existingBlocks, pickupGameBlock] },
+    });
+  };
+
   // FIX: Show "Plans" heading when on /plans route
   const isPlansPage = location === "/plans";
   const pageTitle = isPlansPage ? "Plans" : activeSchedule ? "Today" : "Welcome to Tempus";
@@ -139,6 +190,39 @@ export default function Home() {
           </h1>
           <p className="text-muted-foreground text-lg">Your AI-powered study planner.</p>
         </header>
+
+        {activeSchedule && !isPlansPage && (
+          <button
+            onClick={handleAddPickupGame}
+            disabled={!activeScheduleDetail || addPickupGame.isPending}
+            data-testid="button-add-pickup-games"
+            className="group relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-green-500 to-lime-500 p-6 text-left shadow-lg shadow-emerald-500/30 transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            <div className="absolute -right-6 -top-6 text-8xl opacity-20 rotate-12 select-none">⚽</div>
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl shrink-0">
+                ⚽
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-bold uppercase tracking-widest text-white/80">Quick add</p>
+                <h3 className="text-2xl font-heading font-extrabold text-white leading-tight">Pickup Games</h3>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-white/90">
+                  <span className="inline-flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Today, 7:00pm</span>
+                  <span className="inline-flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> Lerner Hall Field</span>
+                </div>
+              </div>
+              <div className="shrink-0">
+                {addPickupGame.isPending ? (
+                  <Loader2 className="w-6 h-6 text-white animate-spin" />
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white text-emerald-700 font-bold text-sm px-4 py-2 shadow-sm transition-transform group-hover:scale-105">
+                    <Plus className="w-4 h-4" /> Add to schedule
+                  </span>
+                )}
+              </div>
+            </div>
+          </button>
+        )}
 
         {activeSchedule && !isPlansPage ? (
           <div>
