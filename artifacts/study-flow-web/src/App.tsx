@@ -31,6 +31,7 @@ import Settings from "@/pages/settings";
 import Pricing from "@/pages/pricing";
 import Privacy from "@/pages/privacy";
 import CheckoutSuccess from "@/pages/checkout-success";
+import CheckoutCancel from "@/pages/checkout-cancel";
 import NotFound from "@/pages/not-found";
 
 // When the frontend and backend are on different origins (e.g. Railway), set
@@ -300,6 +301,7 @@ function AppShell() {
         <Route path="/settings" component={Settings} />
         <Route path="/pricing" component={Pricing} />
         <Route path="/checkout/success" component={CheckoutSuccess} />
+        <Route path="/checkout/cancel" component={CheckoutCancel} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
