@@ -1,410 +1,483 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
+  Alert,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
+  TextInput,
   View,
 } from "react-native";
-import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { FocusSession, formatDuration, useApp } from "@/contexts/AppContext";
+import { DotPattern } from "@/components/DotPattern";
+import { Fonts } from "@/constants/fonts";
 import { useColors } from "@/hooks/useColors";
 
-const RING_SIZE = 200;
-const STROKE = 12;
-const R = (RING_SIZE - STROKE) / 2;
-const CIRCUMFERENCE = 2 * Math.PI * R;
+type BlockMode = "work_blocks" | "non_free" | "always";
 
-function StudyRing({
-  progress,
-  studySeconds,
-  goalSeconds,
+const DEFAULT_SITES = ["instagram.com", "x.com", "reddit.com", "youtube.com"];
+
+function Divider({ colors }: { colors: ReturnType<typeof useColors> }) {
+  return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
+}
+
+function ProgressBar({
+  value,
+  max,
   colors,
 }: {
-  progress: number;
-  studySeconds: number;
-  goalSeconds: number;
+  value: number;
+  max: number;
   colors: ReturnType<typeof useColors>;
 }) {
-  const strokeDashoffset = CIRCUMFERENCE * (1 - Math.min(progress, 1));
-
+  const pct = max > 0 ? Math.max(4, (value / max) * 100) : 4;
   return (
-    <View style={styles.ringContainer}>
-      <Svg width={RING_SIZE} height={RING_SIZE} style={styles.ring}>
-        <Circle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={R}
-          stroke={colors.border}
-          strokeWidth={STROKE}
-          fill="none"
-        />
-        <Circle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={R}
-          stroke={colors.primary}
-          strokeWidth={STROKE}
-          fill="none"
-          strokeDasharray={`${CIRCUMFERENCE}`}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          rotation="-90"
-          origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
-        />
-      </Svg>
-      <View style={styles.ringInner}>
-        <Text style={[styles.ringTime, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-          {formatDuration(studySeconds) || "0m"}
-        </Text>
-        <Text style={[styles.ringGoal, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-          of {formatDuration(goalSeconds)} goal
-        </Text>
-      </View>
+    <View style={[styles.progressTrack, { backgroundColor: colors.muted }]}>
+      <View style={[styles.progressFill, { width: `${pct}%` as any, backgroundColor: colors.primary }]} />
     </View>
   );
 }
 
-const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
-
-function WeekChart({
-  data,
-  maxSeconds,
-  colors,
-}: {
-  data: number[];
-  maxSeconds: number;
-  colors: ReturnType<typeof useColors>;
-}) {
-  const todayIdx = ((new Date().getDay() + 6) % 7);
-
-  return (
-    <View style={styles.chartContainer}>
-      {data.map((s, i) => {
-        const height = maxSeconds > 0 ? (s / maxSeconds) * 80 : 0;
-        const isToday = i === todayIdx;
-        return (
-          <View key={i} style={styles.barCol}>
-            <View style={[styles.barTrack, { backgroundColor: colors.muted }]}>
-              <View
-                style={[
-                  styles.barFill,
-                  {
-                    height: Math.max(height, s > 0 ? 4 : 0),
-                    backgroundColor: isToday ? colors.primary : colors.primary + "60",
-                  },
-                ]}
-              />
-            </View>
-            <Text
-              style={[
-                styles.barLabel,
-                {
-                  color: isToday ? colors.primary : colors.mutedForeground,
-                  fontFamily: isToday ? "Inter_600SemiBold" : "Inter_400Regular",
-                },
-              ]}
-            >
-              {DAY_LABELS[i]}
-            </Text>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
-function SessionRow({ session, colors }: { session: FocusSession; colors: ReturnType<typeof useColors> }) {
-  const date = new Date(session.startedAt);
-  const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const dateStr = date.toLocaleDateString([], { month: "short", day: "numeric" });
-  const typeLabels = { pomodoro: "Pomodoro", extended: "Extended", custom: "Custom" };
-
-  return (
-    <View style={[styles.sessionRow, { borderBottomColor: colors.border }]}>
-      <View style={[styles.sessionIcon, { backgroundColor: colors.primary + "20" }]}>
-        <Feather name="clock" size={14} color={colors.primary} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.sessionType, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
-          {typeLabels[session.type]} Session
-        </Text>
-        <Text style={[styles.sessionDate, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-          {dateStr} at {timeStr}
-        </Text>
-      </View>
-      <Text style={[styles.sessionDuration, { color: colors.primary, fontFamily: "Inter_700Bold" }]}>
-        {formatDuration(session.durationSeconds)}
-      </Text>
-    </View>
-  );
-}
-
-export default function FocusScreen() {
+export default function FocusGuardScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { todayStudySeconds, weekStudySeconds, focusSessions, preferences, streakDays } = useApp();
 
-  const goalSeconds = preferences.dailyGoalHours * 3600;
-  const progress = todayStudySeconds / goalSeconds;
-  const maxWeek = Math.max(...weekStudySeconds, goalSeconds);
-  const recentSessions = focusSessions.slice(0, 10);
-
-  const weekTotal = weekStudySeconds.reduce((s, v) => s + v, 0);
+  const [blocking, setBlocking] = useState(true);
+  const [hideSwitch, setHideSwitch] = useState(false);
+  const [showClock, setShowClock] = useState(true);
+  const [blockMode, setBlockMode] = useState<BlockMode>("work_blocks");
+  const [blockedSites, setBlockedSites] = useState<string[]>(DEFAULT_SITES);
+  const [newSite, setNewSite] = useState("");
+  const [connectionCode] = useState<string | null>(null);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-  const botPad = Platform.OS === "web" ? 34 : 0;
+  const botPad = Platform.OS === "web" ? 84 : insets.bottom + 60;
 
-  const handleStartSession = (type: "pomodoro" | "extended" | "custom") => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push({ pathname: "/focus/session", params: { type } });
+  const handleAddSite = () => {
+    const domain = newSite.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/[/?#].*$/, "");
+    if (!domain || !domain.includes(".")) {
+      Alert.alert("Enter a valid site", "For example: youtube.com");
+      return;
+    }
+    if (blockedSites.includes(domain)) {
+      Alert.alert("Already blocked", `${domain} is already in your list.`);
+      setNewSite("");
+      return;
+    }
+    setBlockedSites((prev) => [...prev, domain]);
+    setNewSite("");
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  const handleRemoveSite = (site: string) => {
+    setBlockedSites((prev) => prev.filter((s) => s !== site));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleGetCode = () => {
+    Alert.alert(
+      "Connection code",
+      "To get a connection code, open the Tempus web app and navigate to Focus Guard.",
+      [{ text: "OK" }]
+    );
+  };
+
+  const MODES: { id: BlockMode; label: string; desc: string }[] = [
+    {
+      id: "work_blocks",
+      label: "Only during work blocks",
+      desc: "Blocked while a homework or study block is on your schedule.",
+    },
+    {
+      id: "non_free",
+      label: "Whenever it's not free time",
+      desc: "Blocked during class, work blocks — anything that isn't a break.",
+    },
+    {
+      id: "always",
+      label: "All day",
+      desc: "Blocked around the clock, no schedule needed — great for testing the extension.",
+    },
+  ];
+
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ paddingBottom: botPad + 100 }}
-      showsVerticalScrollIndicator={false}
-    >
-      <LinearGradient
-        colors={[colors.primary + "18", colors.background]}
-        style={[styles.heroSection, { paddingTop: topPad + 16 }]}
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <DotPattern />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingTop: topPad + 48,
+          paddingHorizontal: 20,
+          paddingBottom: botPad,
+          gap: 24,
+        }}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.heroHeader}>
-          <View>
-            <Text style={[styles.heroTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-              Focus Guard
-            </Text>
-            <Text style={[styles.heroSub, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-              Your daily study tracker
-            </Text>
-          </View>
-          {streakDays > 0 && (
-            <View style={[styles.streakBadge, { backgroundColor: colors.accent + "20" }]}>
-              <Feather name="zap" size={14} color={colors.accent} />
-              <Text style={[styles.streakText, { color: colors.accent, fontFamily: "Inter_700Bold" }]}>
-                {streakDays}
+        <View style={styles.header}>
+          <Text style={[styles.pageTitle, { color: colors.foreground, fontFamily: Fonts.heading }]}>
+            Focus Guard
+          </Text>
+          <Text style={[styles.pageSubtitle, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+            Your distraction blocker, controlled entirely from here.
+          </Text>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.cardHeader}>
+            <View style={styles.cardTitleRow}>
+              <Feather name="shield" size={18} color={colors.primary} />
+              <Text style={[styles.cardTitle, { color: colors.foreground, fontFamily: Fonts.headingSemibold }]}>
+                Tempus Focus 4
               </Text>
             </View>
-          )}
-        </View>
+            <View style={[styles.badge, { borderColor: colors.border }]}>
+              <Text style={[styles.badgeText, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+                Chrome extension
+              </Text>
+            </View>
+          </View>
+          <Text style={[styles.cardDesc, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+            Blocks distracting sites while you're supposed to be working. The extension itself is just a clock — everything is controlled from here.
+          </Text>
 
-        <StudyRing
-          progress={progress}
-          studySeconds={todayStudySeconds}
-          goalSeconds={goalSeconds}
-          colors={colors}
-        />
-
-        <View style={styles.sessionTypes}>
-          {(["pomodoro", "extended", "custom"] as const).map((type) => {
-            const labels = { pomodoro: "25 min", extended: "50 min", custom: "Custom" };
-            const icons = { pomodoro: "clock", extended: "activity", custom: "sliders" } as const;
-            return (
-              <Pressable
-                key={type}
-                onPress={() => handleStartSession(type)}
-                style={({ pressed }) => [
-                  styles.sessionTypeBtn,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
-                    opacity: pressed ? 0.75 : 1,
-                  },
-                ]}
-              >
-                <Feather name={icons[type]} size={18} color={colors.primary} />
-                <Text style={[styles.sessionTypeName, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
-                  {labels[type]}
+          <View style={styles.setupSteps}>
+            {[
+              "Download the extension and unzip it.",
+              "In Chrome, open chrome://extensions, turn on Developer mode, click Load unpacked and pick the unzipped folder.",
+              "Generate your connection code and paste it into the extension popup.",
+            ].map((step, i) => (
+              <View key={i} style={styles.setupStep}>
+                <Text style={[styles.setupNum, { color: colors.mutedForeground, fontFamily: Fonts.sansMedium }]}>
+                  {i + 1}.
                 </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <Pressable
-          onPress={() => handleStartSession("pomodoro")}
-          style={({ pressed }) => [
-            styles.startBtn,
-            { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
-          ]}
-        >
-          <Feather name="play" size={18} color={colors.primaryForeground} />
-          <Text style={[styles.startBtnText, { color: colors.primaryForeground, fontFamily: "Inter_700Bold" }]}>
-            Start Focus Session
-          </Text>
-        </Pressable>
-      </LinearGradient>
-
-      <View style={styles.statsRow}>
-        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.statValue, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-            {formatDuration(weekTotal) || "0m"}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-            This week
-          </Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.statValue, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-            {streakDays}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-            Day streak
-          </Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.statValue, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-            {focusSessions.filter((s) => s.completed).length}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-            Sessions
-          </Text>
-        </View>
-      </View>
-
-      <View style={[styles.section, { paddingHorizontal: 20 }]}>
-        <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-          This Week
-        </Text>
-        <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <WeekChart data={weekStudySeconds} maxSeconds={maxWeek} colors={colors} />
-        </View>
-      </View>
-
-      {recentSessions.length > 0 ? (
-        <View style={[styles.section, { paddingHorizontal: 20 }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-            Recent Sessions
-          </Text>
-          <View style={[styles.sessionsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {recentSessions.map((s) => (
-              <SessionRow key={s.id} session={s} colors={colors} />
+                <Text style={[styles.setupText, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+                  {step}
+                </Text>
+              </View>
             ))}
           </View>
-        </View>
-      ) : (
-        <View style={[styles.section, { paddingHorizontal: 20 }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-            Recent Sessions
-          </Text>
-          <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Feather name="clock" size={28} color={colors.mutedForeground} />
-            <Text style={[styles.emptyText, { color: colors.mutedForeground, fontFamily: "Inter_500Medium" }]}>
-              No sessions yet
+
+          <View style={styles.setupBtns}>
+            <Pressable
+              onPress={() => Alert.alert("Download", "Download the extension from the Tempus web app.")}
+              style={({ pressed }) => [
+                styles.outlineBtn,
+                { borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+              ]}
+            >
+              <Feather name="download" size={15} color={colors.foreground} />
+              <Text style={[styles.outlineBtnText, { color: colors.foreground, fontFamily: Fonts.sansMedium }]}>
+                Download extension
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={handleGetCode}
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+              ]}
+            >
+              <Text style={[styles.primaryBtnText, { color: colors.primaryForeground, fontFamily: Fonts.sansBold }]}>
+                Get connection code
+              </Text>
+            </Pressable>
+          </View>
+
+          <Divider colors={colors} />
+
+          {!hideSwitch && (
+            <View style={styles.settingRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.settingLabel, { color: colors.foreground, fontFamily: Fonts.sansMedium }]}>
+                  Blocking enabled
+                </Text>
+                <Text style={[styles.settingDesc, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+                  Turn Focus Guard on or off.
+                </Text>
+              </View>
+              <Switch
+                value={blocking}
+                onValueChange={setBlocking}
+                trackColor={{ false: colors.muted, true: colors.primary }}
+                thumbColor="#fff"
+              />
+            </View>
+          )}
+
+          <View style={styles.settingRow}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.settingLabelRow}>
+                <Feather name={hideSwitch ? "eye-off" : "eye"} size={14} color={colors.foreground} />
+                <Text style={[styles.settingLabel, { color: colors.foreground, fontFamily: Fonts.sansMedium }]}>
+                  Hide the on/off switch
+                </Text>
+              </View>
+              <Text style={[styles.settingDesc, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+                Commit mode — hide the switch so you can't turn blocking off on a whim.
+              </Text>
+            </View>
+            <Switch
+              value={hideSwitch}
+              onValueChange={(v) => {
+                setHideSwitch(v);
+                if (v) setBlocking(true);
+              }}
+              trackColor={{ false: colors.muted, true: colors.primary }}
+              thumbColor="#fff"
+            />
+          </View>
+
+          <Divider colors={colors} />
+
+          <View style={{ gap: 12 }}>
+            <Text style={[styles.settingLabel, { color: colors.foreground, fontFamily: Fonts.sansMedium }]}>
+              When should sites be blocked?
             </Text>
-            <Text style={[styles.emptyHint, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-              Start a focus session to begin tracking your study time
+            {MODES.map((m) => (
+              <Pressable
+                key={m.id}
+                onPress={() => {
+                  setBlockMode(m.id);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                style={styles.radioRow}
+              >
+                <View
+                  style={[
+                    styles.radioOuter,
+                    { borderColor: blockMode === m.id ? colors.primary : colors.border },
+                  ]}
+                >
+                  {blockMode === m.id && (
+                    <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.radioLabel, { color: colors.foreground, fontFamily: Fonts.sansMedium }]}>
+                    {m.label}
+                  </Text>
+                  <Text style={[styles.radioDesc, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+                    {m.desc}
+                  </Text>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+
+          <Divider colors={colors} />
+
+          <View style={styles.settingRow}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.settingLabelRow}>
+                <Feather name="clock" size={14} color={colors.foreground} />
+                <Text style={[styles.settingLabel, { color: colors.foreground, fontFamily: Fonts.sansMedium }]}>
+                  Show the clock
+                </Text>
+              </View>
+              <Text style={[styles.settingDesc, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+                A minimal countdown in the extension showing time left on your current assignment.
+              </Text>
+            </View>
+            <Switch
+              value={showClock}
+              onValueChange={setShowClock}
+              trackColor={{ false: colors.muted, true: colors.primary }}
+              thumbColor="#fff"
+            />
+          </View>
+
+          <Divider colors={colors} />
+
+          <View style={{ gap: 10 }}>
+            <Text style={[styles.settingLabel, { color: colors.foreground, fontFamily: Fonts.sansMedium }]}>
+              Blocked sites
             </Text>
+            <View style={styles.addSiteRow}>
+              <TextInput
+                value={newSite}
+                onChangeText={setNewSite}
+                placeholder="e.g. youtube.com"
+                placeholderTextColor={colors.mutedForeground}
+                style={[
+                  styles.siteInput,
+                  { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.background, fontFamily: Fonts.sans },
+                ]}
+                autoCapitalize="none"
+                returnKeyType="done"
+                onSubmitEditing={handleAddSite}
+              />
+              <Pressable
+                onPress={handleAddSite}
+                style={({ pressed }) => [
+                  styles.addSiteBtn,
+                  { borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+                ]}
+              >
+                <Feather name="plus" size={18} color={colors.foreground} />
+              </Pressable>
+            </View>
+            {blockedSites.length === 0 && (
+              <Text style={[styles.emptyHint, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+                No sites on the list — add some above.
+              </Text>
+            )}
+            <View style={styles.chips}>
+              {blockedSites.map((site) => (
+                <View key={site} style={[styles.chip, { backgroundColor: colors.secondary }]}>
+                  <Text style={[styles.chipText, { color: colors.secondaryForeground, fontFamily: Fonts.sansMedium }]}>
+                    {site}
+                  </Text>
+                  <Pressable onPress={() => handleRemoveSite(site)} hitSlop={6}>
+                    <Feather name="x" size={12} color={colors.mutedForeground} />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <Divider colors={colors} />
+
+          <View style={{ gap: 10 }}>
+            <View style={styles.settingLabelRow}>
+              <Feather name="bar-chart-2" size={14} color={colors.foreground} />
+              <Text style={[styles.settingLabel, { color: colors.foreground, fontFamily: Fonts.sansMedium }]}>
+                Where your time goes
+              </Text>
+              <View style={[styles.proBadge, { backgroundColor: "#fef3c7", borderColor: "#fcd34d" }]}>
+                <Text style={[styles.proBadgeText, { color: "#92400e", fontFamily: Fonts.sansBold }]}>
+                  Pro
+                </Text>
+              </View>
+            </View>
+            <View style={[styles.proGate, { backgroundColor: colors.muted + "66", borderRadius: 12 }]}>
+              <Text style={[styles.proGateText, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+                See which sites eat the most of your time, tracked by the extension over the last week.
+              </Text>
+              <Pressable
+                onPress={() => Alert.alert("Upgrade", "Upgrade to Tempus Pro in Settings.")}
+                style={({ pressed }) => [
+                  styles.upgradeBtn,
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
+                ]}
+              >
+                <Feather name="star" size={13} color={colors.primaryForeground} />
+                <Text style={[styles.upgradeBtnText, { color: colors.primaryForeground, fontFamily: Fonts.sansBold }]}>
+                  Upgrade
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
-      )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  heroSection: { paddingHorizontal: 20, paddingBottom: 24, alignItems: "center" },
-  heroHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    width: "100%",
-    marginBottom: 24,
+  root: { flex: 1 },
+  header: { gap: 4 },
+  pageTitle: { fontSize: 32, lineHeight: 38 },
+  pageSubtitle: { fontSize: 16, lineHeight: 22 },
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+    gap: 16,
   },
-  heroTitle: { fontSize: 28 },
-  heroSub: { fontSize: 14, marginTop: 2 },
-  streakBadge: {
+  cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  cardTitle: { fontSize: 18 },
+  badge: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
+  badgeText: { fontSize: 12 },
+  cardDesc: { fontSize: 13, lineHeight: 19 },
+  setupSteps: { gap: 6 },
+  setupStep: { flexDirection: "row", gap: 6 },
+  setupNum: { fontSize: 13, width: 16 },
+  setupText: { fontSize: 13, flex: 1, lineHeight: 18 },
+  setupBtns: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  outlineBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  streakText: { fontSize: 16 },
-  ringContainer: { width: RING_SIZE, height: RING_SIZE, alignItems: "center", justifyContent: "center" },
-  ring: { position: "absolute" },
-  ringInner: { alignItems: "center" },
-  ringTime: { fontSize: 32, lineHeight: 38 },
-  ringGoal: { fontSize: 13, marginTop: 2 },
-  sessionTypes: { flexDirection: "row", gap: 10, marginTop: 24, width: "100%" },
-  sessionTypeBtn: {
-    flex: 1,
-    alignItems: "center",
-    gap: 6,
-    paddingVertical: 12,
-    borderRadius: 14,
+    gap: 7,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
     borderWidth: 1,
   },
-  sessionTypeName: { fontSize: 13 },
-  startBtn: {
+  outlineBtnText: { fontSize: 14 },
+  primaryBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 28,
-    paddingVertical: 16,
-    borderRadius: 28,
-    marginTop: 16,
-    width: "100%",
+    gap: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  primaryBtnText: { fontSize: 14 },
+  divider: { height: 1 },
+  settingRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  settingLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+  settingLabel: { fontSize: 14 },
+  settingDesc: { fontSize: 12, lineHeight: 17, marginTop: 2 },
+  radioRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  radioOuter: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  radioInner: { width: 9, height: 9, borderRadius: 5 },
+  radioLabel: { fontSize: 14 },
+  radioDesc: { fontSize: 12, lineHeight: 17, marginTop: 2 },
+  addSiteRow: { flexDirection: "row", gap: 8 },
+  siteInput: {
+    flex: 1,
+    height: 42,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 14,
+  },
+  addSiteBtn: {
+    width: 42,
+    height: 42,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignItems: "center",
     justifyContent: "center",
   },
-  startBtnText: { fontSize: 17 },
-  statsRow: {
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 20,
-    marginTop: 20,
-  },
-  statCard: {
-    flex: 1,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    alignItems: "center",
-    gap: 4,
-  },
-  statValue: { fontSize: 22 },
-  statLabel: { fontSize: 11 },
-  section: { marginTop: 24 },
-  sectionTitle: { fontSize: 18, marginBottom: 12 },
-  chartCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-  },
-  chartContainer: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", height: 110 },
-  barCol: { flex: 1, alignItems: "center", gap: 6 },
-  barTrack: { width: "70%", height: 80, borderRadius: 6, justifyContent: "flex-end", overflow: "hidden" },
-  barFill: { borderRadius: 6 },
-  barLabel: { fontSize: 11 },
-  sessionsCard: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
-  sessionRow: {
+  emptyHint: { fontSize: 12 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    padding: 14,
-    borderBottomWidth: 1,
-  },
-  sessionIcon: { width: 32, height: 32, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  sessionType: { fontSize: 14, marginBottom: 2 },
-  sessionDate: { fontSize: 12 },
-  sessionDuration: { fontSize: 15 },
-  emptyCard: {
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 16,
-    borderWidth: 1,
-    padding: 36,
-    alignItems: "center",
-    gap: 8,
   },
-  emptyText: { fontSize: 16, marginTop: 4 },
-  emptyHint: { fontSize: 13, textAlign: "center" },
+  chipText: { fontSize: 13 },
+  proBadge: { borderWidth: 1, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  proBadgeText: { fontSize: 10 },
+  proGate: { flexDirection: "row", alignItems: "center", gap: 10, padding: 14 },
+  proGateText: { flex: 1, fontSize: 12, lineHeight: 17 },
+  upgradeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
+  upgradeBtnText: { fontSize: 12 },
+  progressTrack: { flex: 1, height: 8, borderRadius: 4, overflow: "hidden" },
+  progressFill: { height: 8, borderRadius: 4 },
 });

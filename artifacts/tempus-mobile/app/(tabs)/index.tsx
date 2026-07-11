@@ -1,9 +1,9 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useState } from "react";
 import {
+  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -13,290 +13,366 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import {
-  Assignment,
-  ScheduleBlock,
-  blockTypeColor,
-  formatDuration,
-  getTodayBlocks,
-  useApp,
-} from "@/contexts/AppContext";
+import { DotPattern } from "@/components/DotPattern";
+import { Schedule, useApp } from "@/contexts/AppContext";
+import { Fonts } from "@/constants/fonts";
 import { useColors } from "@/hooks/useColors";
 
-const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function greetingFor(name: string): string {
-  const h = new Date().getHours();
-  if (h < 12) return `Good morning, ${name}`;
-  if (h < 17) return `Good afternoon, ${name}`;
-  return `Good evening, ${name}`;
-}
-
-function timeToMinutes(t: string): number {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
-}
-
-function formatTime(t: string): string {
-  const [h, m] = t.split(":").map(Number);
-  const ampm = h >= 12 ? "pm" : "am";
-  const hour = h % 12 || 12;
-  return `${hour}:${m.toString().padStart(2, "0")} ${ampm}`;
-}
-
-function BlockRow({ block, colors }: { block: ScheduleBlock; colors: ReturnType<typeof useColors> }) {
-  const color = blockTypeColor(block.type, colors.primary, colors.accent);
-  const now = new Date();
-  const curMin = now.getHours() * 60 + now.getMinutes();
-  const startMin = timeToMinutes(block.startTime);
-  const endMin = timeToMinutes(block.endTime);
-  const isActive = curMin >= startMin && curMin < endMin;
-  const isPast = curMin >= endMin;
-
+function PlanPill({
+  plan,
+  onPress,
+  onDelete,
+  colors,
+}: {
+  plan: Schedule;
+  onPress: () => void;
+  onDelete: () => void;
+  colors: ReturnType<typeof useColors>;
+}) {
   return (
-    <View style={[styles.blockRow, { opacity: isPast ? 0.5 : 1 }]}>
-      <View style={[styles.blockDot, { backgroundColor: color }]} />
-      <View style={styles.blockInfo}>
-        <Text style={[styles.blockTitle, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]} numberOfLines={1}>
-          {block.title}
-        </Text>
-        <Text style={[styles.blockTime, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-          {formatTime(block.startTime)} – {formatTime(block.endTime)}
-        </Text>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.planPill,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          opacity: pressed ? 0.85 : 1,
+        },
+      ]}
+    >
+      <View style={[styles.planPillDot, { backgroundColor: colors.primary + "99" }]} />
+      <View style={[styles.planPillCircle, { backgroundColor: colors.primary + "66" }]} />
+      <Text
+        style={[styles.planPillName, { color: colors.foreground, fontFamily: Fonts.heading }]}
+        numberOfLines={1}
+      >
+        {plan.name}
+      </Text>
+      <View style={{ flex: 1 }} />
+      <Pressable
+        onPress={onDelete}
+        hitSlop={12}
+        style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+      >
+        <Feather name="trash-2" size={16} color={colors.mutedForeground} />
+      </Pressable>
+      <View style={[styles.planPillEndCircle, { backgroundColor: colors.primary + "1a" }]}>
+        <Feather name="chevron-right" size={16} color={colors.primary + "80"} />
       </View>
-      {isActive && (
-        <View style={[styles.activePill, { backgroundColor: color + "20" }]}>
-          <View style={[styles.activeDot, { backgroundColor: color }]} />
-          <Text style={[styles.activeText, { color, fontFamily: "Inter_600SemiBold" }]}>Now</Text>
-        </View>
-      )}
-    </View>
+    </Pressable>
   );
 }
 
-function AssignmentChip({ assignment, colors }: { assignment: Assignment; colors: ReturnType<typeof useColors> }) {
-  const isToday = (() => {
-    const due = new Date(assignment.dueDate);
-    const t = new Date();
-    return due.getDate() === t.getDate() && due.getMonth() === t.getMonth() && due.getFullYear() === t.getFullYear();
-  })();
-
-  return (
-    <View style={[styles.assignmentChip, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <Text style={[styles.chipCourse, { color: colors.primary, fontFamily: "Inter_600SemiBold" }]} numberOfLines={1}>
-        {assignment.course.split(" ").slice(-1)[0]}
-      </Text>
-      <Text style={[styles.chipTitle, { color: colors.foreground, fontFamily: "Inter_500Medium" }]} numberOfLines={1}>
-        {assignment.title}
-      </Text>
-      {isToday && (
-        <View style={[styles.dueTodayBadge, { backgroundColor: colors.destructive + "15" }]}>
-          <Text style={[styles.dueTodayText, { color: colors.destructive, fontFamily: "Inter_600SemiBold" }]}>Due today</Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
-export default function TodayScreen() {
+export default function PlansScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { activeSchedule, todayStudySeconds, assignments, preferences } = useApp();
-
-  const todayBlocks = useMemo(() => getTodayBlocks(activeSchedule), [activeSchedule]);
-  const now = new Date();
-  const curMin = now.getHours() * 60 + now.getMinutes();
-
-  const upcomingBlocks = useMemo(
-    () => todayBlocks.filter((b) => timeToMinutes(b.endTime) > curMin).slice(0, 5),
-    [todayBlocks, curMin]
-  );
-
-  const dueAssignments = useMemo(
-    () => assignments.filter((a) => !a.completed).slice(0, 3),
-    [assignments]
-  );
-
-  const goalSeconds = preferences.dailyGoalHours * 3600;
-  const goalProgress = Math.min(todayStudySeconds / goalSeconds, 1);
-  const studyFormatted = formatDuration(todayStudySeconds);
-
-  const handleStartFocus = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push("/focus/session");
-  };
+  const { schedules, activeSchedule } = useApp();
+  const [plans, setPlans] = useState(schedules);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-  const botPad = Platform.OS === "web" ? 34 : 0;
+  const botPad = Platform.OS === "web" ? 84 : insets.bottom + 60;
 
-  const day = DAY_NAMES[now.getDay()];
-  const date = `${MONTH_NAMES[now.getMonth()]} ${now.getDate()}`;
+  const hasActivePlan = plans.some((p) => p);
+
+  const handleAddPickup = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      "Pickup Games added! ⚽",
+      "Today, 7:00pm at Lerner Hall Field.",
+      [{ text: "OK" }]
+    );
+  };
+
+  const handleDeletePlan = (id: string) => {
+    Alert.alert("Delete this plan?", "This can't be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => setPlans((prev) => prev.filter((p) => p.id !== id)),
+      },
+    ]);
+  };
+
+  const handleCreatePlan = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert("Create a plan", "Open the Tempus web app to use the full AI schedule builder.");
+  };
+
+  const pageTitle = hasActivePlan ? "Today" : "Welcome to Tempus";
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ paddingBottom: botPad + 100 }}
-      showsVerticalScrollIndicator={false}
-    >
-      <LinearGradient
-        colors={[colors.primary + "22", colors.background]}
-        style={[styles.headerGradient, { paddingTop: topPad + 20 }]}
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <DotPattern />
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingTop: topPad + 48,
+          paddingHorizontal: 20,
+          paddingBottom: botPad,
+          gap: 32,
+        }}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={[styles.dayText, { color: colors.mutedForeground, fontFamily: "Inter_500Medium" }]}>
-              {day}, {date}
-            </Text>
-            <Text style={[styles.greeting, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-              {greetingFor(preferences.name)}
-            </Text>
-          </View>
+        <View style={styles.header}>
+          <Text style={[styles.pageTitle, { color: colors.foreground, fontFamily: Fonts.heading }]}>
+            {pageTitle}
+          </Text>
+          <Text style={[styles.pageSubtitle, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+            Your AI-powered study planner.
+          </Text>
+        </View>
+
+        {hasActivePlan && (
           <Pressable
-            onPress={handleStartFocus}
-            style={({ pressed }) => [
-              styles.focusBtn,
-              { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
+            onPress={handleAddPickup}
+            style={({ pressed }) => [styles.pickupCard, { opacity: pressed ? 0.92 : 1 }]}
+          >
+            <LinearGradient
+              colors={["#10b981", "#22c55e", "#84cc16"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <Text style={styles.pickupLabel}>Quick add</Text>
+            <View style={styles.pickupContent}>
+              <View style={styles.pickupIconBox}>
+                <Text style={styles.pickupEmoji}>⚽</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.pickupTitle, { fontFamily: Fonts.heading }]}>
+                  Pickup Games
+                </Text>
+                <View style={styles.pickupMeta}>
+                  <Feather name="clock" size={13} color="rgba(255,255,255,0.9)" />
+                  <Text style={[styles.pickupMetaText, { fontFamily: Fonts.sansMedium }]}>
+                    Today, 7:00pm
+                  </Text>
+                  <Feather name="map-pin" size={13} color="rgba(255,255,255,0.9)" />
+                  <Text style={[styles.pickupMetaText, { fontFamily: Fonts.sansMedium }]}>
+                    Lerner Hall Field
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.pickupAddBtn}>
+                <Feather name="plus" size={14} color="#059669" />
+                <Text style={[styles.pickupAddText, { fontFamily: Fonts.sansBold }]}>
+                  Add to schedule
+                </Text>
+              </View>
+            </View>
+          </Pressable>
+        )}
+
+        {!hasActivePlan ? (
+          <View
+            style={[
+              styles.emptyCard,
+              { backgroundColor: colors.secondary + "1a", borderColor: colors.border },
             ]}
           >
-            <Feather name="clock" size={16} color={colors.primaryForeground} />
-            <Text style={[styles.focusBtnText, { color: colors.primaryForeground, fontFamily: "Inter_600SemiBold" }]}>
-              Focus
+            <View style={[styles.emptyGlow, { backgroundColor: colors.primary + "1a" }]} />
+            <View style={[styles.emptyIconRing, { backgroundColor: colors.primary + "1a", borderColor: colors.primary + "33" }]}>
+              <Feather name="star" size={40} color={colors.primary} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.foreground, fontFamily: Fonts.heading }]}>
+              Ready to get organized?
             </Text>
-          </Pressable>
-        </View>
-
-        <View style={[styles.goalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.goalHeader}>
-            <Text style={[styles.goalLabel, { color: colors.mutedForeground, fontFamily: "Inter_500Medium" }]}>
-              Today's Study Time
+            <Text style={[styles.emptyDesc, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+              Snap a photo of your class timetable, tell us what's due, and we'll build a balanced schedule for you in seconds.
             </Text>
-            <Text style={[styles.goalValue, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-              {studyFormatted || "0m"} / {preferences.dailyGoalHours}h goal
-            </Text>
-          </View>
-          <View style={[styles.progressTrack, { backgroundColor: colors.muted }]}>
-            <View
-              style={[
-                styles.progressFill,
-                { backgroundColor: colors.primary, width: `${goalProgress * 100}%` as any },
+            <Pressable
+              onPress={handleCreatePlan}
+              style={({ pressed }) => [
+                styles.createBtn,
+                { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
               ]}
-            />
-          </View>
-          {todayStudySeconds === 0 && (
-            <Text style={[styles.goalHint, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-              Start a focus session to track your study time
-            </Text>
-          )}
-        </View>
-      </LinearGradient>
-
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-          Today's Schedule
-        </Text>
-        {upcomingBlocks.length === 0 ? (
-          <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Feather name="calendar" size={28} color={colors.mutedForeground} />
-            <Text style={[styles.emptyText, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-              Nothing scheduled for today
-            </Text>
+            >
+              <Feather name="plus-circle" size={18} color={colors.primaryForeground} />
+              <Text style={[styles.createBtnText, { color: colors.primaryForeground, fontFamily: Fonts.sansBold }]}>
+                Create Your First Plan
+              </Text>
+            </Pressable>
           </View>
         ) : (
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {upcomingBlocks.map((b, i) => (
-              <View key={b.id}>
-                <BlockRow block={b} colors={colors} />
-                {i < upcomingBlocks.length - 1 && (
-                  <View style={[styles.divider, { backgroundColor: colors.border }]} />
-                )}
+          <View>
+            <Pressable
+              onPress={handleCreatePlan}
+              style={({ pressed }) => [
+                styles.newPlanBtn,
+                { backgroundColor: colors.card, opacity: pressed ? 0.7 : 1 },
+              ]}
+            >
+              <View style={[styles.newPlanBtnInner, { backgroundColor: colors.primary + "1a" }]}>
+                <Feather name="plus" size={28} color={colors.primary} />
               </View>
-            ))}
+            </Pressable>
           </View>
         )}
-      </View>
 
-      {dueAssignments.length > 0 && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-            Upcoming Tasks
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
-            {dueAssignments.map((a) => (
-              <AssignmentChip key={a.id} assignment={a} colors={colors} />
-            ))}
-          </ScrollView>
-        </View>
-      )}
-    </ScrollView>
+        {plans.length > 0 && (
+          <View style={styles.plansSection}>
+            <View style={styles.plansSectionHeader}>
+              <Text style={[styles.plansSectionTitle, { color: colors.foreground, fontFamily: Fonts.headingSemibold }]}>
+                Current plans
+              </Text>
+              <Text style={[styles.plansSectionCount, { color: colors.mutedForeground, fontFamily: Fonts.sans }]}>
+                {plans.length} {plans.length === 1 ? "plan" : "plans"}
+              </Text>
+            </View>
+            <View style={{ gap: 8 }}>
+              {plans.map((plan) => (
+                <PlanPill
+                  key={plan.id}
+                  plan={plan}
+                  colors={colors}
+                  onPress={() =>
+                    Alert.alert(plan.name, `${plan.blocks.length} blocks in this plan.`)
+                  }
+                  onDelete={() => handleDeletePlan(plan.id)}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  headerGradient: { paddingHorizontal: 20, paddingBottom: 20 },
-  headerContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 },
-  dayText: { fontSize: 13, marginBottom: 4 },
-  greeting: { fontSize: 22, lineHeight: 28 },
-  focusBtn: {
+  root: { flex: 1 },
+  header: { gap: 4 },
+  pageTitle: { fontSize: 36, lineHeight: 42 },
+  pageSubtitle: { fontSize: 17, lineHeight: 24 },
+  pickupCard: {
+    borderRadius: 24,
+    overflow: "hidden",
+    padding: 20,
+    shadowColor: "#10b981",
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  pickupLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+    color: "rgba(255,255,255,0.8)",
+    textTransform: "uppercase",
+    marginBottom: 8,
+    fontFamily: "DmSans_700Bold",
+  },
+  pickupContent: { flexDirection: "row", alignItems: "center", gap: 12 },
+  pickupIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pickupEmoji: { fontSize: 28 },
+  pickupTitle: { fontSize: 22, color: "#fff", lineHeight: 26 },
+  pickupMeta: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4, flexWrap: "wrap" },
+  pickupMetaText: { fontSize: 12, color: "rgba(255,255,255,0.9)" },
+  pickupAddBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    gap: 4,
+    backgroundColor: "#fff",
     borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  focusBtnText: { fontSize: 14 },
-  goalCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    gap: 10,
-  },
-  goalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  goalLabel: { fontSize: 13 },
-  goalValue: { fontSize: 15 },
-  progressTrack: { height: 6, borderRadius: 3, overflow: "hidden" },
-  progressFill: { height: 6, borderRadius: 3 },
-  goalHint: { fontSize: 12 },
-  section: { paddingHorizontal: 20, marginTop: 24 },
-  sectionTitle: { fontSize: 18, marginBottom: 12 },
-  card: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
+  pickupAddText: { fontSize: 12, color: "#059669" },
   emptyCard: {
-    borderRadius: 16,
+    borderRadius: 24,
     borderWidth: 1,
+    borderStyle: "dashed",
     padding: 32,
     alignItems: "center",
-    gap: 8,
+    gap: 16,
+    overflow: "hidden",
   },
-  emptyText: { fontSize: 14 },
-  blockRow: { flexDirection: "row", alignItems: "center", padding: 14, gap: 12 },
-  blockDot: { width: 8, height: 8, borderRadius: 4 },
-  blockInfo: { flex: 1 },
-  blockTitle: { fontSize: 15, marginBottom: 2 },
-  blockTime: { fontSize: 12 },
-  activePill: {
+  emptyGlow: {
+    position: "absolute",
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    top: "50%",
+    left: "50%",
+    marginTop: -100,
+    marginLeft: -100,
+  },
+  emptyIconRing: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyTitle: { fontSize: 22, textAlign: "center" },
+  emptyDesc: { fontSize: 16, textAlign: "center", lineHeight: 24 },
+  createBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  activeDot: { width: 6, height: 6, borderRadius: 3 },
-  activeText: { fontSize: 11 },
-  divider: { height: 1, marginHorizontal: 14 },
-  chipRow: { marginHorizontal: -20, paddingHorizontal: 20 },
-  assignmentChip: {
-    width: 200,
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     borderRadius: 14,
+    width: "100%",
+    justifyContent: "center",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  createBtnText: { fontSize: 17 },
+  newPlanBtn: {
+    aspectRatio: 2,
+    width: "50%",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newPlanBtnInner: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  plansSection: { gap: 12 },
+  plansSectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  plansSectionTitle: { fontSize: 20 },
+  plansSectionCount: { fontSize: 13 },
+  planPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 64,
+    borderRadius: 32,
     borderWidth: 1,
-    padding: 14,
-    marginRight: 10,
+    paddingLeft: 8,
+    paddingRight: 8,
     gap: 4,
   },
-  chipCourse: { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 },
-  chipTitle: { fontSize: 14, lineHeight: 20 },
-  dueTodayBadge: { alignSelf: "flex-start", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginTop: 4 },
-  dueTodayText: { fontSize: 10 },
+  planPillDot: { width: 12, height: 36, borderRadius: 6 },
+  planPillCircle: { width: 40, height: 40, borderRadius: 20, marginLeft: -8, marginRight: 4 },
+  planPillName: { fontSize: 17, maxWidth: 160 },
+  planPillEndCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
