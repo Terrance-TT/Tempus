@@ -1,7 +1,7 @@
 import {
-  DmSans_400Regular,
-  DmSans_500Medium,
-  DmSans_700Bold,
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_700Bold,
 } from "@expo-google-fonts/dm-sans";
 import {
   Outfit_400Regular,
@@ -39,9 +39,9 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    DmSans_400Regular,
-    DmSans_500Medium,
-    DmSans_700Bold,
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_700Bold,
     Outfit_400Regular,
     Outfit_500Medium,
     Outfit_600SemiBold,

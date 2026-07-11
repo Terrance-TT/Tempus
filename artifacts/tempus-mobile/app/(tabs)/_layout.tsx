@@ -35,7 +35,7 @@ export default function TabLayout() {
             <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.card }]} />
           ),
         tabBarShowLabel: true,
-        tabBarLabelStyle: { fontSize: 10, fontFamily: "DmSans_500Medium" },
+        tabBarLabelStyle: { fontSize: 10, fontFamily: "DMSans_500Medium" },
       }}
     >
       <Tabs.Screen
