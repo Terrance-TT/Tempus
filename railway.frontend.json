@@ -2,19 +2,7 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "nixpacksPlan": {
-      "providers": ["node"],
-      "phases": {
-        "setup": {
-          "nixPkgs": ["nodejs_20", "pnpm_10"]
-        },
-        "build": {
-          "cmds": [
-            "npm install -g pnpm && pnpm install && BASE_PATH=/ PORT=3000 VITE_API_BASE_URL=${VITE_API_BASE_URL} pnpm --filter @workspace/study-flow-web run build"
-          ]
-        }
-      }
-    }
+    "buildCommand": "pnpm install && BASE_PATH=/ PORT=3000 VITE_API_BASE_URL=${VITE_API_BASE_URL} pnpm --filter @workspace/study-flow-web run build"
   },
   "deploy": {
     "startCommand": "npx serve artifacts/study-flow-web/dist/public -l ${PORT}",
