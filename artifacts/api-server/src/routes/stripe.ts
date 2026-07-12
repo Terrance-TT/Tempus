@@ -64,9 +64,11 @@ router.post("/checkout", async (req, res) => {
     customerId = customer.id;
   }
 
-  const host = req.get("host")
-    ?? process.env.RAILWAY_PUBLIC_DOMAIN
-    ?? process.env.REPLIT_DOMAINS?.split(",")[0];
+  const host =
+    process.env.RAILWAY_PUBLIC_DOMAIN ??
+    process.env.REPLIT_DOMAINS?.split(",")[0] ??
+    req.get("x-forwarded-host") ??
+    req.get("host");
   const proto = host?.includes("localhost") ? "http" : "https";
   const appBase = `${proto}://${host}/study-flow-web`;
 
@@ -96,9 +98,11 @@ router.post("/customer-portal", async (req, res) => {
     return;
   }
 
-  const host = req.get("host")
-    ?? process.env.RAILWAY_PUBLIC_DOMAIN
-    ?? process.env.REPLIT_DOMAINS?.split(",")[0];
+  const host =
+    process.env.RAILWAY_PUBLIC_DOMAIN ??
+    process.env.REPLIT_DOMAINS?.split(",")[0] ??
+    req.get("x-forwarded-host") ??
+    req.get("host");
   const proto = host?.includes("localhost") ? "http" : "https";
   const returnUrl = `${proto}://${host}/study-flow-web/pricing`;
 
