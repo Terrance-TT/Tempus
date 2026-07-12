@@ -21,7 +21,7 @@ import {
   type SpsEvent,
 } from "@workspace/api-client-react";
 import { isFunEvent } from "@/lib/sps-events";
-import { placeBlockWithConflictHandling } from "@/lib/schedule-conflicts";
+
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Plus, Pencil, Loader2, Send, CalendarCheck2, List, LayoutGrid, ExternalLink, PartyPopper, MapPin } from "lucide-react";
+import { Trash2, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Plus, Pencil, Loader2, Send, CalendarCheck2, List, LayoutGrid, ExternalLink, PartyPopper } from "lucide-react";
 import { format } from "date-fns";
 
 const DAYS_ORDER: DayOfWeek[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
@@ -78,7 +78,6 @@ export default function Schedule() {
   const [editingBlock, setEditingBlock] = useState<ScheduleBlock | null>(null);
   const [isRevealing, setIsRevealing] = useState(false);
   const [addingForDay, setAddingForDay] = useState<DayOfWeek | null>(null);
-  const [sleepConflict, setSleepConflict] = useState<ScheduleBlock | null>(null);
   
   const [editTitle, setEditTitle] = useState("");
   const [editStart, setEditStart] = useState("");
@@ -334,77 +333,6 @@ export default function Schedule() {
     );
   };
 
-  const addPickupGameMutation = useUpdateSchedule({
-    mutation: {
-      onSuccess: (data) => {
-        if (!id) return;
-        queryClient.setQueryData(getGetScheduleQueryKey(id, { deviceId: deviceId || "" }), data);
-        queryClient.invalidateQueries({ queryKey: getGetScheduleCalendarSyncsQueryKey(id) });
-        toast({ title: "Pickup Games added! ⚽", description: "Today, 7:00pm at Lerner Hall Field." });
-      },
-      onError: (err: any) => {
-        toast({ title: "Couldn't add it", description: err?.message || "Please try again.", variant: "destructive" });
-      },
-    },
-  });
-
-  const pickupGameDetails = {
-    startTime: "19:00",
-    endTime: "20:00",
-    title: "Pickup Games — Soccer",
-    category: "extracurricular" as const,
-    notes: "Lerner Hall Field",
-  };
-
-  const commitPickupGame = (blocks: ScheduleBlockInput[]) => {
-    if (!id || !deviceId) return;
-    addPickupGameMutation.mutate({
-      id,
-      data: { deviceId, blocks: [...blocks, { day: todayKey(), ...pickupGameDetails }] },
-    });
-  };
-
-  const handleAddPickupGame = () => {
-    if (!schedule || !id || !deviceId) return;
-
-    const result = placeBlockWithConflictHandling(
-      schedule.blocks,
-      todayKey(),
-      pickupGameDetails.startTime,
-      pickupGameDetails.endTime
-    );
-
-    if (!result.ok) {
-      setSleepConflict(result.sleepConflict);
-      return;
-    }
-
-    if (result.moved.length > 0) {
-      const moved = result.moved[0];
-      toast({
-        title: "Moved to make room",
-        description: `Shifted "${moved.title}" to ${moved.toStart}–${moved.toEnd} so Pickup Games fits at 7:00pm.`,
-      });
-    }
-
-    commitPickupGame(result.blocks);
-  };
-
-  const handleAddPickupGameAnyway = () => {
-    if (!schedule || !deviceId) return;
-    const existingBlocks: ScheduleBlockInput[] = schedule.blocks.map(b => ({
-      id: b.id,
-      day: b.day,
-      startTime: b.startTime,
-      endTime: b.endTime,
-      title: b.title,
-      category: b.category,
-      notes: b.notes,
-    }));
-    setSleepConflict(null);
-    commitPickupGame(existingBlocks);
-  };
-
   const handleDeleteBlock = (blockId: string) => {
     if (!schedule || !id || !deviceId) return;
     const newBlocks = schedule.blocks.filter(b => b.id !== blockId).map(b => ({
@@ -534,25 +462,6 @@ export default function Schedule() {
           </div>
         </div>
 
-        <AlertDialog open={!!sleepConflict} onOpenChange={(open) => { if (!open) setSleepConflict(null); }}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>This overlaps with your sleep</AlertDialogTitle>
-              <AlertDialogDescription>
-                Pickup Games (7:00pm–8:00pm) conflicts with "{sleepConflict?.title}"
-                {sleepConflict ? ` (${sleepConflict.startTime}–${sleepConflict.endTime})` : ""}.
-                We won't move your sleep schedule automatically — add it anyway, or cancel and pick a different time.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setSleepConflict(null)}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleAddPickupGameAnyway}>
-                Add anyway
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
         {spsEvents && spsEvents.length > 0 && (
           <div className="rounded-2xl border-2 border-blue-400 dark:border-blue-700 bg-blue-50/60 dark:bg-blue-950/25 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
             <div className="flex items-center gap-2.5 px-4 py-3 border-b border-blue-300 dark:border-blue-700 bg-blue-600 text-white">
@@ -654,37 +563,6 @@ export default function Schedule() {
             </Button>
           </form>
         </div>
-
-        <button
-          onClick={handleAddPickupGame}
-          disabled={addPickupGameMutation.isPending}
-          data-testid="button-add-pickup-games"
-          className="group relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-green-500 to-lime-500 p-6 text-left shadow-lg shadow-emerald-500/30 transition-transform duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          <div className="absolute -right-6 -top-6 text-8xl opacity-20 rotate-12 select-none">⚽</div>
-          <div className="relative z-10 flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl shrink-0">
-              ⚽
-            </div>
-            <div className="flex-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-white/80">Quick add</p>
-              <h3 className="text-2xl font-heading font-extrabold text-white leading-tight">Pickup Games</h3>
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-white/90">
-                <span className="inline-flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Today, 7:00pm</span>
-                <span className="inline-flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> Lerner Hall Field</span>
-              </div>
-            </div>
-            <div className="shrink-0">
-              {addPickupGameMutation.isPending ? (
-                <Loader2 className="w-6 h-6 text-white animate-spin" />
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white text-emerald-700 font-bold text-sm px-4 py-2 shadow-sm transition-transform group-hover:scale-105">
-                  <Plus className="w-4 h-4" /> Add to schedule
-                </span>
-              )}
-            </div>
-          </div>
-        </button>
 
         {viewMode === "list" && (
         <div className="space-y-10">
