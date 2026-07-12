@@ -157,8 +157,18 @@ export function FocusGuardCard() {
     setNewSite("");
   };
 
+  // FIX: When removing x.com also remove twitter.com (and vice versa)
   const handleRemoveSite = (domain: string) => {
-    applyUpdate({ blockedSites: (settings?.blockedSites ?? []).filter((s) => s !== domain) });
+    const blockedSites = settings?.blockedSites ?? [];
+    const toRemove = new Set([domain]);
+    // If removing x.com, also remove twitter.com (and vice versa)
+    if (domain === "x.com" && blockedSites.includes("twitter.com")) {
+      toRemove.add("twitter.com");
+    }
+    if (domain === "twitter.com" && blockedSites.includes("x.com")) {
+      toRemove.add("x.com");
+    }
+    applyUpdate({ blockedSites: blockedSites.filter((s) => !toRemove.has(s)) });
   };
 
   const handleGenerateCode = () => {

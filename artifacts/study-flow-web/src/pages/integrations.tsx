@@ -255,6 +255,9 @@ export default function Integrations() {
           invalidate();
           toast({ title: "Canvas disconnected" });
         },
+        onError: (err: any) => {
+          toast({ title: "Disconnect failed", description: err?.data?.message || "Please try again.", variant: "destructive" });
+        },
       },
     );
   };
@@ -310,6 +313,9 @@ export default function Integrations() {
           invalidate();
           toast({ title: "Schoology disconnected" });
         },
+        onError: (err: any) => {
+          toast({ title: "Disconnect failed", description: err?.data?.message || "Please try again.", variant: "destructive" });
+        },
       },
     );
   };
@@ -343,6 +349,10 @@ export default function Integrations() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListAssignmentsQueryKey({ deviceId: deviceId || "" }) });
+          toast({ title: "Assignment removed" });
+        },
+        onError: (err: any) => {
+          toast({ title: "Delete failed", description: err?.data?.message || "Please try again.", variant: "destructive" });
         },
       },
     );
