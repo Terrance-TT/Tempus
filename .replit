@@ -62,6 +62,7 @@ channel = "stable-25_05"
 
 [userenv.shared]
 ADMIN_EMAIL = "yungyungadam@gmail.com"
+GITHUB_TOKEN = "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"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-50ba9cab-ad7f-4f6c-9a79-70cd826868c4"
