@@ -1,61 +1,94 @@
-databases:
-  - name: tempus-db
-    plan: free
-    databaseName: tempus
-    user: tempus_user
-
 services:
-  # ── Backend API ────────────────────────────────────────────────────────────
+  # Backend API service
   - type: web
     name: tempus-api
     runtime: node
     plan: starter
-    buildCommand: "npm install -g pnpm@10 && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build"
-    startCommand: "node --enable-source-maps ./artifacts/api-server/dist/index.mjs"
-    healthCheckPath: /healthz
+    buildCommand: npm install -g pnpm@10.13.1 && pnpm install && pnpm --filter @workspace/api-server run build
+    preDeployCommand: pnpm --filter @workspace/db run push
+    startCommand: node --enable-source-maps ./artifacts/api-server/dist/index.mjs
+    healthCheckPath: /api/healthz
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
+        value: 8080
       - key: DATABASE_URL
         fromDatabase:
           name: tempus-db
           property: connectionString
-      # Set this to your tempus-web.onrender.com URL after the first deploy
-      - key: FRONTEND_URL
-        sync: false
-      # Clerk
+      - key: SESSION_SECRET
+        generateValue: true
       - key: CLERK_SECRET_KEY
         sync: false
       - key: CLERK_PUBLISHABLE_KEY
         sync: false
-      # Google OAuth (Calendar / Classroom)
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
-      # Stripe
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
-
-  # ── Frontend static site ───────────────────────────────────────────────────
-  - type: static
-    name: tempus-web
-    # BASE_PATH=/ and PORT=3000 are baked into the command because Vite
-    # requires them at build time; they are not secret and never change.
-    buildCommand: "npm install -g pnpm@10 && pnpm install --frozen-lockfile && BASE_PATH=/ PORT=3000 pnpm --filter @workspace/study-flow-web run build"
-    staticPublishPath: ./artifacts/study-flow-web/dist/public
-    # Rewrite all paths to index.html so client-side routing works
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      # Set this to your tempus-api.onrender.com URL (no trailing slash)
-      - key: VITE_API_BASE_URL
+      - key: AI_INTEGRATIONS_OPENAI_API_KEY
         sync: false
+      - key: AI_INTEGRATIONS_OPENAI_BASE_URL
+        sync: false
+      - key: AI_INTEGRATIONS_OPENAI_MODEL
+        sync: false
+      - key: DEFAULT_OBJECT_STORAGE_BASE_URL
+        sync: false
+      - key: DEFAULT_OBJECT_STORAGE_ACCESS_KEY_ID
+        sync: false
+      - key: DEFAULT_OBJECT_STORAGE_SECRET_ACCESS_KEY
+        sync: false
+      - key: PRIVATE_OBJECT_STORAGE_BASE_URL
+        sync: false
+      - key: PRIVATE_OBJECT_STORAGE_ACCESS_KEY_ID
+        sync: false
+      - key: PRIVATE_OBJECT_STORAGE_SECRET_ACCESS_KEY
+        sync: false
+      - key: PRIVATE_OBJECT_DIR
+        sync: false
+      - key: PUBLIC_OBJECT_STORAGE_BASE_URL
+        sync: false
+      - key: PUBLIC_OBJECT_STORAGE_ACCESS_KEY_ID
+        sync: false
+      - key: PUBLIC_OBJECT_STORAGE_SECRET_ACCESS_KEY
+        sync: false
+      - key: PUBLIC_OBJECT_STORAGE_BUCKET_NAME
+        sync: false
+      - key: PUBLIC_OBJECT_STORAGE_DIR
+        sync: false
+      - key: PUBLIC_OBJECT_SEARCH_PUBLIC_KEY
+        sync: false
+      - key: PUBLIC_OBJECT_SEARCH_PRIVATE_KEY
+        sync: false
+      - key: RAILWAY_API_BASE_URL
+        sync: false
+
+  # Frontend web service
+  - type: web
+    name: tempus-web
+    runtime: node
+    plan: starter
+    buildCommand: npm install -g pnpm@10.13.1 && pnpm install && BASE_PATH=/ PORT=3000 VITE_API_BASE_URL=https://tempus-api.onrender.com pnpm --filter @workspace/study-flow-web run build
+    startCommand: npx serve artifacts/study-flow-web/dist/public -l ${PORT}
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: VITE_API_BASE_URL
+        value: https://tempus-api.onrender.com
       - key: VITE_CLERK_PUBLISHABLE_KEY
         sync: false
+
+databases:
+  - name: tempus-db
+    plan: starter
+    databaseName: tempus
+    user: tempus
