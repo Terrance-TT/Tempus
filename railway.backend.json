@@ -2,24 +2,11 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "nixpacksPlan": {
-      "providers": ["node"],
-      "phase": {
-        "setup": {
-          "nixPkgs": ["nodejs", "pnpm"]
-        },
-        "build": {
-          "cmds": [
-            "pnpm install",
-            "pnpm --filter @workspace/api-server run build"
-          ]
-        }
-      }
-    }
+    "buildCommand": "pnpm install && pnpm --filter @workspace/db run push && pnpm --filter @workspace/api-server run build"
   },
   "deploy": {
     "startCommand": "node --enable-source-maps ./artifacts/api-server/dist/index.mjs",
-    "healthcheckPath": "/healthz",
+    "healthcheckPath": "/api/healthz",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
