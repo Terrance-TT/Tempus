@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Sparkles, Loader2, Plus, Pencil, Trash2, Clock } from "lucide-react";
+import { PlusCircle, Sparkles, Loader2, Plus, Pencil, Trash2, Clock, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
@@ -293,6 +293,11 @@ export default function Home() {
                             </button>
                           </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                          {/* FIX: Add explicit View schedule option */}
+                          <DropdownMenuItem onClick={() => setLocation(`/schedule/${plan.id}`)}>
+                            <ArrowRight className="w-4 h-4 mr-2" /> View schedule
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => startRename(plan)}>
                             <Pencil className="w-4 h-4 mr-2" /> Rename
                           </DropdownMenuItem>
