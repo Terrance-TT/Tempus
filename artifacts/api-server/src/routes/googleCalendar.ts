@@ -294,30 +294,49 @@ router.post("/schedules/:id/sync-google-calendar", async (req, res) => {
   }
 
   let syncedCount = 0;
+  let failedCount = 0;
+  const errors: { blockId: string; message: string }[] = [];
   for (const block of blocks) {
-    const eventBody = buildEventBody(block, scope, timeZone);
-    const existingSync = syncByBlockId.get(block.id);
+    try {
+      const eventBody = buildEventBody(block, scope, timeZone);
+      const existingSync = syncByBlockId.get(block.id);
 
-    if (existingSync) {
-      const updated = await updateCalendarEvent(accessToken, existingSync.googleEventId, eventBody);
-      if (updated.id !== existingSync.googleEventId) {
-        await db
-          .update(scheduleCalendarSyncs)
-          .set({ googleEventId: updated.id })
-          .where(eq(scheduleCalendarSyncs.id, existingSync.id));
+      if (existingSync) {
+        const updated = await updateCalendarEvent(accessToken, existingSync.googleEventId, eventBody);
+        if (updated.id !== existingSync.googleEventId) {
+          await db
+            .update(scheduleCalendarSyncs)
+            .set({ googleEventId: updated.id })
+            .where(eq(scheduleCalendarSyncs.id, existingSync.id));
+        }
+      } else {
+        const created = await insertCalendarEvent(accessToken, eventBody);
+        await db.insert(scheduleCalendarSyncs).values({
+          scheduleId: id,
+          blockId: block.id,
+          googleEventId: created.id,
+        });
       }
-    } else {
-      const created = await insertCalendarEvent(accessToken, eventBody);
-      await db.insert(scheduleCalendarSyncs).values({
-        scheduleId: id,
-        blockId: block.id,
-        googleEventId: created.id,
-      });
+      syncedCount++;
+    } catch (err) {
+      // A transient failure on one block (e.g. a 5xx from Google Calendar)
+      // must not abort the whole sync — we still want every other block to
+      // be attempted, and the caller needs to know which blocks failed so
+      // it can prompt the user to retry instead of assuming full success.
+      failedCount++;
+      const message = err instanceof Error ? err.message : "Unknown error";
+      errors.push({ blockId: block.id, message });
+      req.log?.error({ err, blockId: block.id }, "Failed to sync schedule block to Google Calendar");
     }
-    syncedCount++;
   }
 
-  res.json({ syncedCount, calendarUrl: "https://calendar.google.com/calendar/r" });
+  res.json({
+    syncedCount,
+    totalCount: blocks.length,
+    failedCount,
+    ...(failedCount > 0 ? { errors } : {}),
+    calendarUrl: "https://calendar.google.com/calendar/r",
+  });
 });
 
 export default router;

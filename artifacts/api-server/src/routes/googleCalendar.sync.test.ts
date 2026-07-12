@@ -376,6 +376,43 @@ describe("POST /schedules/:id/sync-google-calendar — expired token refresh", (
   });
 });
 
+describe("POST /schedules/:id/sync-google-calendar — partial failure", () => {
+  it("continues syncing remaining blocks and reports failedCount when one block errors mid-sync", async () => {
+    const { scheduleId, blocks } = await seedScheduleFreshToken();
+    seededScheduleIds.push(scheduleId);
+    expect(blocks.length).toBeGreaterThanOrEqual(2);
+
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+
+    // First block succeeds, second block hits a transient 5xx from Google.
+    fetchMock.mockImplementationOnce(makeCalendarEventResponse(`gcal-new-${blocks[0].id}`));
+    fetchMock.mockImplementationOnce(async (_input: string | URL | Request, init?: RequestInit) => {
+      fetchCalls.push({ url: _input.toString(), method: init?.method ?? "GET" });
+      return new Response("Internal error", { status: 503 });
+    });
+
+    const res = await request(app)
+      .post(`/api/schedules/${scheduleId}/sync-google-calendar`)
+      .send({ timeZone: "America/New_York" });
+
+    // The endpoint must not abort or 500 — it reports partial success.
+    expect(res.status).toBe(200);
+    expect(res.body.syncedCount).toBe(1);
+    expect(res.body.totalCount).toBe(blocks.length);
+    expect(res.body.failedCount).toBe(blocks.length - 1);
+    expect(res.body.errors).toBeDefined();
+    expect(res.body.errors[0].blockId).toBe(blocks[1].id);
+
+    // The successfully-synced block's row must still be persisted.
+    const syncs = await db
+      .select()
+      .from(scheduleCalendarSyncs)
+      .where(eq(scheduleCalendarSyncs.scheduleId, scheduleId));
+    expect(syncs).toHaveLength(1);
+    expect(syncs[0].blockId).toBe(blocks[0].id);
+  });
+});
+
 describe("POST /schedules/:id/sync-google-calendar — revoked token", () => {
   it("cleans up the connection row and returns 409 (not 500) when the refresh token is revoked", async () => {
     const { scheduleId } = await seedScheduleExpiredToken();

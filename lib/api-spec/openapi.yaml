@@ -1280,10 +1280,28 @@ components:
       properties:
         syncedCount:
           type: integer
+        totalCount:
+          type: integer
+        failedCount:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              blockId:
+                type: string
+              message:
+                type: string
+            required:
+              - blockId
+              - message
         calendarUrl:
           type: string
       required:
         - syncedCount
+        - totalCount
+        - failedCount
         - calendarUrl
     ScheduleCalendarSync:
       type: object

@@ -68,6 +68,7 @@ export * from './submitFeedbackInputType';
 export * from './surveyAnswer';
 export * from './syncScheduleGoogleCalendarInput';
 export * from './syncScheduleGoogleCalendarResult';
+export * from './syncScheduleGoogleCalendarResultErrorsItem';
 export * from './task';
 export * from './updateCommitmentInput';
 export * from './updateFeedbackStatusInput';

@@ -183,7 +183,15 @@ export default function Schedule() {
       { id, data: { timeZone } },
       {
         onSuccess: (data) => {
-          toast({ title: "Synced to Google Calendar", description: `${data.syncedCount} event(s) up to date.` });
+          if (data.failedCount > 0) {
+            toast({
+              title: "Sync partially completed",
+              description: `${data.syncedCount} of ${data.totalCount} event(s) synced. ${data.failedCount} failed — try syncing again.`,
+              variant: "destructive",
+            });
+          } else {
+            toast({ title: "Synced to Google Calendar", description: `${data.syncedCount} event(s) up to date.` });
+          }
           queryClient.invalidateQueries({ queryKey: getGetScheduleCalendarSyncsQueryKey(id) });
         },
         onError: (err: any) => {

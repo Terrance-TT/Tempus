@@ -526,6 +526,12 @@ export const SyncScheduleToGoogleCalendarBody = zod.object({
 
 export const SyncScheduleToGoogleCalendarResponse = zod.object({
   "syncedCount": zod.number(),
+  "totalCount": zod.number(),
+  "failedCount": zod.number(),
+  "errors": zod.array(zod.object({
+  "blockId": zod.string(),
+  "message": zod.string()
+})).optional(),
   "calendarUrl": zod.string()
 })
 

@@ -5,8 +5,12 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SyncScheduleGoogleCalendarResultErrorsItem } from './syncScheduleGoogleCalendarResultErrorsItem';
 
 export interface SyncScheduleGoogleCalendarResult {
   syncedCount: number;
+  totalCount: number;
+  failedCount: number;
+  errors?: SyncScheduleGoogleCalendarResultErrorsItem[];
   calendarUrl: string;
 }

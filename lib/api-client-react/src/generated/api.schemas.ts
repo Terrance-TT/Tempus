@@ -284,8 +284,16 @@ export interface SyncScheduleGoogleCalendarInput {
   timeZone: string;
 }
 
+export type SyncScheduleGoogleCalendarResultErrorsItem = {
+  blockId: string;
+  message: string;
+};
+
 export interface SyncScheduleGoogleCalendarResult {
   syncedCount: number;
+  totalCount: number;
+  failedCount: number;
+  errors?: SyncScheduleGoogleCalendarResultErrorsItem[];
   calendarUrl: string;
 }
 
