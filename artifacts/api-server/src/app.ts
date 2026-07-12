@@ -75,6 +75,11 @@ app.use(
   })),
 );
 
+// Root health check for Render and other hosting platforms
+app.get("/", (req, res) => {
+  res.send("OK");
+});
+
 app.use("/api", router);
 
 export default app;
