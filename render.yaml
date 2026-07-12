@@ -1,0 +1,61 @@
+databases:
+  - name: tempus-db
+    plan: free
+    databaseName: tempus
+    user: tempus_user
+
+services:
+  # ── Backend API ────────────────────────────────────────────────────────────
+  - type: web
+    name: tempus-api
+    runtime: node
+    plan: starter
+    buildCommand: "npm install -g pnpm@10 && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build"
+    startCommand: "node --enable-source-maps ./artifacts/api-server/dist/index.mjs"
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tempus-db
+          property: connectionString
+      # Set this to your tempus-web.onrender.com URL after the first deploy
+      - key: FRONTEND_URL
+        sync: false
+      # Clerk
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      # Google OAuth (Calendar / Classroom)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      # Stripe
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+
+  # ── Frontend static site ───────────────────────────────────────────────────
+  - type: static
+    name: tempus-web
+    # BASE_PATH=/ and PORT=3000 are baked into the command because Vite
+    # requires them at build time; they are not secret and never change.
+    buildCommand: "npm install -g pnpm@10 && pnpm install --frozen-lockfile && BASE_PATH=/ PORT=3000 pnpm --filter @workspace/study-flow-web run build"
+    staticPublishPath: ./artifacts/study-flow-web/dist/public
+    # Rewrite all paths to index.html so client-side routing works
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # Set this to your tempus-api.onrender.com URL (no trailing slash)
+      - key: VITE_API_BASE_URL
+        sync: false
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false

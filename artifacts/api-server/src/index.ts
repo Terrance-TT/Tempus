@@ -11,6 +11,7 @@ async function initStripe() {
     const stripeSync = await getStripeSync();
     const publicHost =
       process.env.RAILWAY_PUBLIC_DOMAIN
+      ?? process.env.RENDER_EXTERNAL_HOSTNAME
       ?? process.env.REPLIT_DOMAINS?.split(",")[0];
     if (!publicHost) {
       logger.warn("Stripe init skipped — no public host configured");

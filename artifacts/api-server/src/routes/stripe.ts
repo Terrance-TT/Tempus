@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import { getAuth } from "@clerk/express";
 import { storage } from "../storage";
 import { stripeService } from "../stripeService";
@@ -6,7 +6,28 @@ import { checkIsProSubscriber, FREE_TIER_SCHEDULE_LIMIT } from "../lib/subscript
 import { db, schedules } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { resolveOwnerId } from "../lib/auth";
+
 const router: IRouter = Router();
+
+/**
+ * Returns the frontend base URL for Stripe redirect/return URLs.
+ * Priority:
+ *   1. FRONTEND_URL env var (explicit — recommended for production)
+ *   2. Auto-detect from RAILWAY_PUBLIC_DOMAIN / RENDER_EXTERNAL_HOSTNAME / REPLIT_DOMAINS / request headers
+ *      - Appends /study-flow-web only when running on Replit (REPLIT_DOMAINS is set)
+ */
+function getFrontendBase(req: Request): string {
+  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
+  const host =
+    process.env.RAILWAY_PUBLIC_DOMAIN ??
+    process.env.RENDER_EXTERNAL_HOSTNAME ??
+    process.env.REPLIT_DOMAINS?.split(",")[0] ??
+    req.get("x-forwarded-host") ??
+    req.get("host");
+  const proto = host?.includes("localhost") ? "http" : "https";
+  const suffix = process.env.REPLIT_DOMAINS ? "/study-flow-web" : "";
+  return `${proto}://${host}${suffix}`;
+}
 
 router.get("/subscription/status", async (req, res) => {
   const deviceId = req.query.deviceId as string | undefined;
@@ -64,13 +85,7 @@ router.post("/checkout", async (req, res) => {
     customerId = customer.id;
   }
 
-  const host =
-    process.env.RAILWAY_PUBLIC_DOMAIN ??
-    process.env.REPLIT_DOMAINS?.split(",")[0] ??
-    req.get("x-forwarded-host") ??
-    req.get("host");
-  const proto = host?.includes("localhost") ? "http" : "https";
-  const appBase = `${proto}://${host}/study-flow-web`;
+  const appBase = getFrontendBase(req);
 
   const couponId = await stripeService.resolveIntroCoupon();
 
@@ -98,13 +113,7 @@ router.post("/customer-portal", async (req, res) => {
     return;
   }
 
-  const host =
-    process.env.RAILWAY_PUBLIC_DOMAIN ??
-    process.env.REPLIT_DOMAINS?.split(",")[0] ??
-    req.get("x-forwarded-host") ??
-    req.get("host");
-  const proto = host?.includes("localhost") ? "http" : "https";
-  const returnUrl = `${proto}://${host}/study-flow-web/pricing`;
+  const returnUrl = `${getFrontendBase(req)}/pricing`;
 
   const portalSession = await stripeService.createCustomerPortalSession(
     user.stripeCustomerId,
