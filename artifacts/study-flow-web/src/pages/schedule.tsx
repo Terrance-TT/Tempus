@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDeviceId } from "@/hooks/use-device-id";
@@ -27,7 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, ArrowLeft, Calendar as CalendarIcon, Clock, Sparkles, Plus, Pencil, Loader2, Send, CalendarCheck2, List, LayoutGrid, ExternalLink, PartyPopper } from "lucide-react";
@@ -66,6 +66,19 @@ function formatHourLabel(minutes: number): string {
   return `${h - 12}pm`;
 }
 
+function findFreeSlot(dayBlocks: ScheduleBlock[]): { start: string; end: string } {
+  if (dayBlocks.length === 0) return { start: "09:00", end: "10:00" };
+  const sorted = [...dayBlocks].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const last = sorted[sorted.length - 1];
+  const lastEnd = timeToMinutes(last.endTime);
+  if (lastEnd + 60 <= 24 * 60) {
+    const s = `${String(Math.floor((lastEnd) / 60)).padStart(2, "0")}:${String((lastEnd) % 60).padStart(2, "0")}`;
+    const e = `${String(Math.floor((lastEnd + 60) / 60)).padStart(2, "0")}:${String((lastEnd + 60) % 60).padStart(2, "0")}`;
+    return { start: s, end: e };
+  }
+  return { start: "09:00", end: "10:00" };
+}
+
 export default function Schedule() {
   const { id } = useParams();
   const deviceId = useDeviceId();
@@ -101,8 +114,11 @@ export default function Schedule() {
     query: { enabled: !!id, queryKey: getGetScheduleCalendarSyncsQueryKey(id || "") }
   });
   const autoSyncedRef = useRef(false);
-  const mountParamsRef = useRef(new URLSearchParams(window.location.search));
-  const syncMap = new Map(calendarSyncs?.map(s => [s.blockId, s.googleEventId]) ?? []);
+  // FIX: Read search params at mount time via effect, not module load
+  const mountParamsRef = useRef<URLSearchParams | null>(null);
+  useEffect(() => { mountParamsRef.current = new URLSearchParams(window.location.search); }, []);
+  // FIX: Memoize syncMap
+  const syncMap = useMemo(() => new Map(calendarSyncs?.map(s => [s.blockId, s.googleEventId]) ?? []), [calendarSyncs]);
 
   const viewInitializedRef = useRef(false);
   useEffect(() => {
@@ -127,7 +143,9 @@ export default function Schedule() {
   const scaleDragRef = useRef<{ startY: number; startHourPx: number; totalHours: number } | null>(null);
   const [isScalingWeek, setIsScalingWeek] = useState(false);
 
+  // FIX: Only left-click for scale drag
   const handleScaleDragStart = (e: React.PointerEvent<HTMLDivElement>, totalHours: number) => {
+    if (e.button !== 0) return;
     e.preventDefault();
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     const startHourPx = weekHourPx ?? (weekGridRef.current ? weekGridRef.current.clientHeight / totalHours : 48);
@@ -138,14 +156,13 @@ export default function Schedule() {
     const drag = scaleDragRef.current;
     if (!drag) return;
     const deltaY = e.clientY - drag.startY;
-    // Dragging down increases the scale (more px per hour = zoomed in / more spread out).
     const nextHourPx = drag.startHourPx + deltaY / drag.totalHours;
     const clamped = Math.min(220, Math.max(24, nextHourPx));
     setWeekHourPx(clamped);
   };
   const handleScaleDragEnd = (e: React.PointerEvent<HTMLDivElement>) => {
     if (scaleDragRef.current) {
-      try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* noop */ }
+      try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
     }
     scaleDragRef.current = null;
     setIsScalingWeek(false);
@@ -154,20 +171,11 @@ export default function Schedule() {
   const previewSpsIcs = usePreviewSpsEngageIcs();
   const [spsEvents, setSpsEvents] = useState<SpsEvent[] | null>(null);
   const [spsFunOnly, setSpsFunOnly] = useState(false);
-  const spsDisplayed = spsFunOnly && spsEvents
-    ? spsEvents.filter((ev) => isFunEvent(ev.title))
-    : spsEvents ?? [];
+  const spsDisplayed = spsFunOnly && spsEvents ? spsEvents.filter((ev) => isFunEvent(ev.title)) : spsEvents ?? [];
   useEffect(() => {
     const icsUrl = localStorage.getItem("spsIcsUrl");
     if (!icsUrl) return;
-    previewSpsIcs.mutate(
-      { data: { icsUrl } },
-      {
-        onSuccess: (events) => setSpsEvents(events.slice(0, 10)),
-        onError: () => {},
-      },
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    previewSpsIcs.mutate({ data: { icsUrl } }, { onSuccess: (events) => setSpsEvents(events.slice(0, 10)), onError: () => {} });
   }, []);
 
   const handleSyncGoogleCalendar = () => {
@@ -207,6 +215,7 @@ export default function Schedule() {
 
   useEffect(() => {
     const params = mountParamsRef.current;
+    if (!params) return;
     if (params.has("googleCalendarConnected")) {
       toast({ title: "Google Calendar connected" });
       window.history.replaceState(null, "", window.location.pathname);
@@ -219,17 +228,12 @@ export default function Schedule() {
 
   useEffect(() => {
     const params = mountParamsRef.current;
-    if (
-      params.get("autoSync") === "1" &&
-      !autoSyncedRef.current &&
-      googleCalendarStatus?.connected &&
-      id
-    ) {
+    if (!params) return;
+    if (params.get("autoSync") === "1" && !autoSyncedRef.current && googleCalendarStatus?.connected && id) {
       autoSyncedRef.current = true;
       window.history.replaceState(null, "", window.location.pathname);
       handleSyncGoogleCalendar();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [googleCalendarStatus?.connected, id]);
 
   const handleDelete = () => {
@@ -252,7 +256,6 @@ export default function Schedule() {
   const handleRevise = (e: React.FormEvent) => {
     e.preventDefault();
     if (!id || !deviceId || !aiInstruction.trim()) return;
-
     reviseSchedule.mutate(
       { id, data: { deviceId, instruction: aiInstruction } },
       {
@@ -268,19 +271,23 @@ export default function Schedule() {
     );
   };
 
-  // FIX: Add time validation before saving blocks
-  const handleSaveBlock = () => {
-    if (!schedule || !id) return;
+  const isSaving = updateSchedule.isPending;
 
-    // Validate start time < end time
+  // FIX: Add time validation + empty title validation + error handling
+  const handleSaveBlock = () => {
+    if (!schedule || !id || !deviceId) return;
+
+    // FIX: Validate title is not empty
+    if (!editTitle.trim()) {
+      toast({ title: "Title required", description: "Please enter a title for this block.", variant: "destructive" });
+      return;
+    }
+
+    // FIX: Validate start time < end time
     const startMin = timeToMinutes(editStart);
     const endMin = timeToMinutes(editEnd);
     if (startMin >= endMin) {
-      toast({
-        title: "Invalid time range",
-        description: "Start time must be before end time.",
-        variant: "destructive",
-      });
+      toast({ title: "Invalid time range", description: "Start time must be before end time.", variant: "destructive" });
       return;
     }
 
@@ -300,25 +307,24 @@ export default function Schedule() {
         newBlocks[index] = {
           id: editingBlock.id,
           day: editingBlock.day,
-          title: editTitle,
+          title: editTitle.trim(),
           startTime: editStart,
           endTime: editEnd,
           category: editCategory,
-          notes: editNotes || null
+          notes: editNotes.trim() || null
         };
       }
     } else if (addingForDay) {
       newBlocks.push({
         day: addingForDay,
-        title: editTitle,
+        title: editTitle.trim(),
         startTime: editStart,
         endTime: editEnd,
         category: editCategory,
-        notes: editNotes || null
+        notes: editNotes.trim() || null
       });
     }
 
-    if (!deviceId) return;
     updateSchedule.mutate(
       { id, data: { deviceId, blocks: newBlocks } },
       {
@@ -328,11 +334,16 @@ export default function Schedule() {
           setEditingBlock(null);
           setAddingForDay(null);
           toast({ title: "Schedule updated" });
+        },
+        // FIX: Add error handler
+        onError: (err: any) => {
+          toast({ title: "Save failed", description: err?.data?.message || "Could not save block.", variant: "destructive" });
         }
       }
     );
   };
 
+  // FIX: Close edit dialog if the edited block was deleted
   const handleDeleteBlock = (blockId: string) => {
     if (!schedule || !id || !deviceId) return;
     const newBlocks = schedule.blocks.filter(b => b.id !== blockId).map(b => ({
@@ -345,6 +356,11 @@ export default function Schedule() {
       notes: b.notes
     }));
 
+    // FIX: Close edit dialog if the edited block is being deleted
+    if (editingBlock?.id === blockId) {
+      setEditingBlock(null);
+    }
+
     updateSchedule.mutate(
       { id, data: { deviceId, blocks: newBlocks } },
       {
@@ -352,6 +368,10 @@ export default function Schedule() {
           queryClient.setQueryData(getGetScheduleQueryKey(id, { deviceId: deviceId || "" }), data);
           queryClient.invalidateQueries({ queryKey: getGetScheduleCalendarSyncsQueryKey(id) });
           toast({ title: "Block removed" });
+        },
+        // FIX: Add error handler
+        onError: (err: any) => {
+          toast({ title: "Delete failed", description: err?.data?.message || "Could not delete block.", variant: "destructive" });
         }
       }
     );
@@ -366,11 +386,14 @@ export default function Schedule() {
     setEditNotes(block.notes || "");
   };
 
+  // FIX: Use findFreeSlot for smarter default times
   const openAdd = (day: DayOfWeek) => {
+    const dayBlocks = schedule?.blocks.filter(b => b.day === day) ?? [];
+    const slot = findFreeSlot(dayBlocks);
     setAddingForDay(day);
     setEditTitle("");
-    setEditStart("09:00");
-    setEditEnd("10:00");
+    setEditStart(slot.start);
+    setEditEnd(slot.end);
     setEditCategory("free");
     setEditNotes("");
   };
@@ -386,6 +409,15 @@ export default function Schedule() {
       default: return "bg-secondary text-secondary-foreground border-border";
     }
   };
+
+  // FIX: Derive dialog metadata
+  const dialogDay = editingBlock?.day ?? addingForDay ?? null;
+  const dialogTitle = editingBlock
+    ? `Edit: ${editingBlock.title}`
+    : dialogDay ? `Add Block \u2014 ${DAY_NAMES[dialogDay]}` : "Add Block";
+  const dialogDescription = editingBlock
+    ? `${DAY_NAMES[editingBlock.day]} \u00b7 ${editingBlock.startTime}\u2013${editingBlock.endTime}`
+    : dialogDay ? `Adding a new block on ${DAY_NAMES[dialogDay]}` : "Add a new time block to your schedule";
 
   if (isLoading || !schedule) {
     return (
@@ -439,25 +471,26 @@ export default function Schedule() {
             </Button>
 
             <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete this schedule?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete this generated schedule from your history.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
+              <AlertDialogTrigger asChild>
+                {/* FIX: Disable trigger while delete is pending */}
+                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={deleteSchedule.isPending}>
+                  {deleteSchedule.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this schedule?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this generated schedule from your history.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
             </AlertDialog>
           </div>
         </div>
@@ -466,7 +499,7 @@ export default function Schedule() {
           <div className="rounded-2xl border-2 border-blue-400 dark:border-blue-700 bg-blue-50/60 dark:bg-blue-950/25 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
             <div className="flex items-center gap-2.5 px-4 py-3 border-b border-blue-300 dark:border-blue-700 bg-blue-600 text-white">
               <CalendarIcon className="w-4 h-4" />
-              <span className="font-bold text-sm tracking-wide flex-1">SPS Engage — Upcoming Events</span>
+              <span className="font-bold text-sm tracking-wide flex-1">SPS Engage &mdash; Upcoming Events</span>
               <button
                 type="button"
                 onClick={() => setSpsFunOnly((v) => !v)}
@@ -477,7 +510,7 @@ export default function Schedule() {
               </button>
             </div>
             {spsDisplayed.length === 0 ? (
-              <p className="px-4 py-3 text-sm text-blue-700 dark:text-blue-300">No fun events in the next 14 days — <button type="button" className="underline" onClick={() => setSpsFunOnly(false)}>show all</button>.</p>
+              <p className="px-4 py-3 text-sm text-blue-700 dark:text-blue-300">No fun events in the next 14 days &mdash; <button type="button" className="underline" onClick={() => setSpsFunOnly(false)}>show all</button>.</p>
             ) : (
               <div className="divide-y divide-blue-100 dark:divide-blue-900">
                 {spsDisplayed.map((ev) => {
@@ -488,7 +521,7 @@ export default function Schedule() {
                   const endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
                   return (
                     <div key={ev.uid} className="flex items-center gap-3 px-4 py-2.5 hover:bg-blue-100/60 dark:hover:bg-blue-900/30 transition-colors">
-                      <p className="text-xs text-blue-700 dark:text-blue-300 w-40 shrink-0 tabular-nums font-medium">{dateStr} · {startTime}–{endTime}</p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 w-40 shrink-0 tabular-nums font-medium">{dateStr} &middot; {startTime}&ndash;{endTime}</p>
                       <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate flex-1">{ev.title}</p>
                       {ev.location && (
                         <p className="text-xs text-blue-600 dark:text-blue-400 hidden sm:block shrink-0 max-w-32 truncate">{ev.location}</p>
@@ -605,6 +638,7 @@ export default function Schedule() {
                       Free day
                     </div>
                   )}
+                  {/* FIX: Don't apply reveal animation to past blocks */}
                   {displayBlocks.map(block => {
                     const googleEventId = syncMap.get(block.id);
                     const rIdx = revealIdx++;
@@ -672,12 +706,10 @@ export default function Schedule() {
                       </div>
                       {pastBlocks.map(block => {
                         const googleEventId = syncMap.get(block.id);
-                        const rIdx = revealIdx++;
                         return (
                           <div
                             key={block.id}
-                            className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:shadow-sm group opacity-45 ${getCategoryColor(block.category)}${isRevealing ? " animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both" : ""}`}
-                            style={isRevealing ? { animationDelay: `${rIdx * 70}ms` } : undefined}
+                            className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-4 transition-colors hover:shadow-sm group opacity-45 ${getCategoryColor(block.category)}`}
                           >
                             <div className="flex items-center gap-2 sm:w-32 shrink-0 font-medium">
                               <Clock className="w-4 h-4 opacity-70" />
@@ -816,7 +848,7 @@ export default function Schedule() {
                             onClick={() => openEdit(block)}
                             className={`absolute left-0.5 right-0.5 rounded-md border px-1 py-0.5 text-left overflow-hidden transition-shadow hover:shadow-md hover:z-10 ${getCategoryColor(block.category)}`}
                             style={{ top: `${top}%`, height: `${height}%`, minHeight: "14px" }}
-                            title={`${block.title} · ${block.startTime}–${block.endTime}`}
+                            title={`${block.title} &middot; ${block.startTime}&ndash;${block.endTime}`}
                             data-testid={`grid-block-${block.id}`}
                           >
                             <p className="text-[10px] font-semibold leading-tight truncate">{block.title}</p>
@@ -838,21 +870,22 @@ export default function Schedule() {
       }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingBlock ? "Edit Block" : "Add Block"}</DialogTitle>
+            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogDescription>{dialogDescription}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label>Title</Label>
-              <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} />
+              <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} disabled={isSaving} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Start Time</Label>
-                <Input type="time" value={editStart} onChange={e => setEditStart(e.target.value)} />
+                <Input type="time" value={editStart} onChange={e => setEditStart(e.target.value)} disabled={isSaving} />
               </div>
               <div className="space-y-2">
                 <Label>End Time</Label>
-                <Input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)} />
+                <Input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)} disabled={isSaving} />
               </div>
             </div>
             <div className="space-y-2">
@@ -860,6 +893,7 @@ export default function Schedule() {
               <select 
                 value={editCategory} 
                 onChange={e => setEditCategory(e.target.value as ScheduleBlockCategory)}
+                disabled={isSaving}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="class">Class</option>
@@ -872,11 +906,20 @@ export default function Schedule() {
             </div>
             <div className="space-y-2">
               <Label>Notes (Optional)</Label>
-              <Input value={editNotes} onChange={e => setEditNotes(e.target.value)} />
+              <Input value={editNotes} onChange={e => setEditNotes(e.target.value)} disabled={isSaving} />
             </div>
-            <Button onClick={handleSaveBlock} className="w-full mt-4" disabled={updateSchedule.isPending}>
-              {updateSchedule.isPending ? "Saving..." : "Save Block"}
-            </Button>
+            <div className="flex gap-3 pt-2">
+              {/* FIX: Delete button inside edit dialog */}
+              {editingBlock && (
+                <Button variant="destructive" onClick={() => handleDeleteBlock(editingBlock.id)} disabled={isSaving} className="shrink-0">
+                  <Trash2 className="w-4 h-4 mr-2" />Delete
+                </Button>
+              )}
+              <Button onClick={handleSaveBlock} className="w-full" disabled={isSaving}>
+                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                {isSaving ? "Saving..." : "Save Block"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
