@@ -24,7 +24,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import {
   ShieldCheck,
-  Download,
   Copy,
   Check,
   Loader2,
@@ -35,7 +34,10 @@ import {
   Sparkles,
   Eye,
   EyeOff,
+  ExternalLink,
 } from "lucide-react";
+
+const CHROME_STORE_URL = "https://chromewebstore.google.com/search/tempus%20focus%204";
 
 function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
@@ -201,20 +203,16 @@ export function FocusGuardCard() {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Setup */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-            <li>Download the extension and unzip it.</li>
-            <li>
-              In Chrome, open <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">chrome://extensions</span>,
-              turn on <strong>Developer mode</strong>, click <strong>Load unpacked</strong> and pick the unzipped folder.
-            </li>
-            <li>Generate your connection code and paste it into the extension popup.</li>
+            <li>Install the extension from the Chrome Web Store.</li>
+            <li>Generate your connection code below and paste it into the extension popup.</li>
           </ol>
           <div className="flex flex-wrap gap-3">
-            <a href={`${import.meta.env.BASE_URL}tempus-focus-4.zip`} download>
-              <Button variant="outline" data-testid="button-download-extension">
-                <Download className="w-4 h-4 mr-2" />
-                Download extension
+            <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" data-testid="button-chrome-store">
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Get from Chrome Web Store
               </Button>
             </a>
             <Button
