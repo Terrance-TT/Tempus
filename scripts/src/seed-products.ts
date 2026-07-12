@@ -30,11 +30,11 @@ async function createProducts() {
 
       const price = await stripe.prices.create({
         product: productId,
-        unit_amount: 1000,
+        unit_amount: 999,
         currency: "usd",
         recurring: { interval: "month" },
       });
-      console.log(`Created price: $10.00/month (${price.id})`);
+      console.log(`Created price: $9.99/month (${price.id})`);
     }
 
     // Create or update the first-month-50%-off coupon

@@ -44,4 +44,4 @@ export async function checkIsProSubscriber(userId: string | null): Promise<boole
   }
 }
 
-export const FREE_TIER_SCHEDULE_LIMIT = 2;
+export const FREE_TIER_SCHEDULE_LIMIT = 5;

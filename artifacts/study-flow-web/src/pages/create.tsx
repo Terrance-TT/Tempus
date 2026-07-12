@@ -705,7 +705,7 @@ export default function Create() {
           setAdCountdown(null);
           setIsGenerating(false);
           if (isLimit) {
-            toast({ title: "Upgrade to Pro", description: "You've used your 2 free schedules. Upgrade to generate more.", variant: "destructive" });
+            toast({ title: "Upgrade to Pro", description: "You've used your 5 free schedules. Upgrade to generate more.", variant: "destructive" });
           } else {
             toast({ title: "Error generating schedule", description: err?.data?.message, variant: "destructive" });
           }
@@ -1357,12 +1357,12 @@ export default function Create() {
                       <Zap className="w-7 h-7" />
                     </div>
                     <div className="space-y-1">
-                      <h2 className="text-xl font-heading font-semibold">You've used your 2 free schedules</h2>
+                      <h2 className="text-xl font-heading font-semibold">You've used your 5 free schedules</h2>
                       <p className="text-muted-foreground text-sm">Upgrade to Pro for unlimited AI schedule generations and no ads.</p>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                       <Button size="lg" className="rounded-xl" onClick={() => setLocation("/pricing")}>
-                        <Zap className="mr-2 w-4 h-4" /> Upgrade to Pro — $10/mo
+                        <Zap className="mr-2 w-4 h-4" /> Upgrade to Pro — $9.99/mo
                       </Button>
                       <Button size="lg" variant="outline" className="rounded-xl" onClick={goToSignIn}>
                         Already subscribed? Sign in
@@ -1495,7 +1495,7 @@ export default function Create() {
                 </p>
               </div>
               <Button className="w-full rounded-xl" onClick={() => setLocation("/pricing")}>
-                <Zap className="mr-2 w-4 h-4" /> Upgrade to Pro — $10/month
+                <Zap className="mr-2 w-4 h-4" /> Upgrade to Pro — $9.99/month
               </Button>
             </div>
 

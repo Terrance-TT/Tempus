@@ -65,8 +65,8 @@ export default function Pricing() {
             <div className="text-sm">
               <p className="font-semibold text-foreground">Limited-time offer</p>
               <p className="text-muted-foreground mt-0.5">
-                Start with a <strong className="text-foreground">14-day free trial</strong>, then get{" "}
-                <strong className="text-foreground">50% off your first month</strong> — just $5 instead of $10.
+                Start with a <strong className="text-foreground">1-month free trial</strong>, then get{" "}
+                <strong className="text-foreground">50% off your second month</strong> — just $4.99 instead of $9.99.
               </p>
             </div>
           </div>
@@ -89,7 +89,7 @@ export default function Pricing() {
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-primary shrink-0" />
-                  <span>2 AI schedule generations</span>
+                  <span>5 AI schedule generations</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-primary shrink-0" />
@@ -101,7 +101,7 @@ export default function Pricing() {
                 </li>
                 <li className="flex items-start gap-2 text-muted-foreground">
                   <span className="w-4 h-4 shrink-0 mt-0.5 text-center text-xs">~</span>
-                  <span>30-second ad during generation</span>
+                  <span>Short promo during generation</span>
                 </li>
               </ul>
             </CardContent>
@@ -124,19 +124,19 @@ export default function Pricing() {
                   <>
                     <div className="flex items-baseline gap-2">
                       <span className="text-4xl font-bold">Free</span>
-                      <span className="text-muted-foreground text-sm">for 14 days</span>
+                      <span className="text-muted-foreground text-sm">for 1 month</span>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="flex items-center gap-1 text-sm font-medium text-primary">
                         <Tag className="w-3.5 h-3.5" />
-                        Then $5 for month 1
+                        Then $4.99 for month 2
                       </span>
-                      <span className="text-xs text-muted-foreground">(50% off), then $10/mo</span>
+                      <span className="text-xs text-muted-foreground">(50% off), then $9.99/mo</span>
                     </div>
                   </>
                 ) : (
                   <div>
-                    <span className="text-4xl font-bold">$10</span>
+                    <span className="text-4xl font-bold">$9.99</span>
                     <span className="text-muted-foreground">/month</span>
                   </div>
                 )}
@@ -187,7 +187,7 @@ export default function Pricing() {
                     Start free trial
                   </Button>
                   <p className="text-center text-xs text-muted-foreground">
-                    No credit card charged for 14 days
+                    No credit card charged for 30 days
                   </p>
                 </div>
               )}
