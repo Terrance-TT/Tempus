@@ -27,9 +27,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Sparkles, Loader2, Plus, Pencil, Trash2, Clock } from "lucide-react";
+import { PlusCircle, Sparkles, Loader2, Plus, Pencil, Trash2, Clock, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { useSubscriptionStatus } from "@/hooks/use-subscription";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -51,6 +52,9 @@ export default function Home() {
   const renameInputRef = useRef<HTMLInputElement>(null);
   // FIX: Track whether Escape was pressed so onBlur doesn't re-submit
   const escapePressedRef = useRef(false);
+
+  const { data: status } = useSubscriptionStatus();
+  const isPro = status?.isPro ?? false;
 
   const { data: schedules, isLoading } = useListSchedules(
     { deviceId: deviceId || "" },
@@ -151,6 +155,13 @@ export default function Home() {
           </h1>
           <p className="text-muted-foreground text-lg">Your AI-powered study planner.</p>
         </header>
+
+        {isPro && (
+          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-primary/10 border border-primary/20 text-primary w-fit">
+            <Zap className="w-4 h-4 shrink-0 fill-primary" />
+            <span className="text-sm font-semibold">You're a Premium member — enjoy unlimited plans.</span>
+          </div>
+        )}
 
         {activeSchedule && !isPlansPage ? (
           <div>
