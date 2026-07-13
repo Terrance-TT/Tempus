@@ -24,6 +24,14 @@ args = "test"
 task = "workflow.run"
 args = "typecheck"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "API Server"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Study Flow Web"
+
 [[workflows.workflow]]
 name = "test"
 author = "agent"
@@ -45,6 +53,30 @@ args = "pnpm run typecheck"
 
 [workflows.workflow.metadata]
 isValidation = true
+
+[[workflows.workflow]]
+name = "API Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=8080 pnpm --filter @workspace/api-server run dev"
+waitForPort = 8080
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "Study Flow Web"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=5173 BASE_PATH=/ pnpm --filter @workspace/study-flow-web run dev"
+waitForPort = 5173
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [agent]
 stack = "PNPM_WORKSPACE"
