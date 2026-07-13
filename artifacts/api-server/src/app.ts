@@ -1,5 +1,7 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
+import compression from "compression";
+import helmet from "helmet";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
@@ -14,6 +16,37 @@ import { WebhookHandlers } from "./webhookHandlers";
 
 const app: Express = express();
 
+// Trust proxy headers when behind Render/Railway load balancer
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", true);
+}
+
+// Security headers (helmet) — applied before all routes
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // handled by the frontend build
+    crossOriginEmbedderPolicy: false, // allow Clerk proxy embeds
+  }),
+);
+
+// Compression (gzip/brotli) for all responses
+app.use(compression());
+
+// CORS — restrict to known origins in production, allow all in dev
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",")
+  : process.env.NODE_ENV === "production"
+    ? []
+    : ["*"];
+
+app.use(
+  cors({
+    credentials: true,
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  }),
+);
+
+// HTTP request logging
 app.use(
   pinoHttp({
     logger,
@@ -34,11 +67,10 @@ app.use(
   }),
 );
 
+// Clerk Frontend API proxy — must be BEFORE express.json()
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
-app.use(cors({ credentials: true, origin: true }));
-
-// Stripe webhook must be registered BEFORE express.json() — it needs the raw Buffer body.
+// Stripe webhook — must be BEFORE express.json() (needs raw Buffer body)
 app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
@@ -59,13 +91,11 @@ app.post(
   },
 );
 
+// Body parsing
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
-// Optional session detection only — mobile requests carry no Clerk session
-// and simply pass through unauthenticated (they keep using their own
-// deviceId, unaffected by this middleware). Web requests from a signed-in
-// user get req.auth populated so routes can resolve the real owner id.
+// Clerk session detection
 app.use(
   clerkMiddleware((req) => ({
     publishableKey: publishableKeyFromHost(
@@ -75,11 +105,33 @@ app.use(
   })),
 );
 
-// Root health check for Render and other hosting platforms
-app.get("/", (req, res) => {
-  res.send("OK");
+// Root health check for Render/Railway
+app.get("/", (_req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// API routes
 app.use("/api", router);
+
+// 404 handler for unmatched API routes
+app.use("/api/*", (_req, res) => {
+  res.status(404).json({ error: "Not found", path: _req.originalUrl });
+});
+
+// Global error handler — no stack traces in production
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const isProduction = process.env.NODE_ENV === "production";
+  const statusCode = err.statusCode || err.status || 500;
+
+  logger.error(
+    { err: isProduction ? err.message : err },
+    "Unhandled error",
+  );
+
+  res.status(statusCode).json({
+    error: err.message || "Internal server error",
+    ...(isProduction ? {} : { stack: err.stack }),
+  });
+});
 
 export default app;
