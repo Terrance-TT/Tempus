@@ -7,6 +7,10 @@ import { Check, Zap, ArrowLeft, Loader2, Gift, Tag } from "lucide-react";
 import { useSubscriptionStatus, useCreateCheckout, useManageSubscription, useProProducts } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
 
+// Fallback Stripe Price ID for Tempus Pro ($9.99/month)
+// Used when the API hasn't synced products yet
+const PRO_PRICE_ID = "price_1TsRGGRvp8z0OE24yTXACOHs";
+
 export default function Pricing() {
   const [, setLocation] = useLocation();
   const { user } = useUser();
@@ -25,12 +29,14 @@ export default function Pricing() {
       setLocation("/sign-in");
       return;
     }
-    if (!proPrice) {
+    // Use API price if available, fall back to hardcoded Price ID
+    const priceId = proPrice?.id || PRO_PRICE_ID;
+    if (!priceId) {
       toast({ title: "Plan not available", description: "Please try again shortly.", variant: "destructive" });
       return;
     }
     try {
-      const { url } = await createCheckout.mutateAsync(proPrice.id);
+      const { url } = await createCheckout.mutateAsync(priceId);
       window.location.href = url;
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
