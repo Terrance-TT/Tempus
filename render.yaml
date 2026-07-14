@@ -4,7 +4,7 @@ services:
     name: tempus-api
     runtime: node
     plan: starter
-    buildCommand: npm install -g pnpm@10.13.1 && pnpm install && pnpm --filter @workspace/api-server run build
+    buildCommand: pnpm install && pnpm --filter @workspace/api-server run build
     startCommand: node --enable-source-maps ./artifacts/api-server/dist/index.mjs
     healthCheckPath: /
     envVars:
