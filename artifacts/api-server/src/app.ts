@@ -1,7 +1,5 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
-import compression from "compression";
-import helmet from "helmet";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
@@ -20,17 +18,6 @@ const app: Express = express();
 if (process.env.NODE_ENV === "production") {
   app.set("trust proxy", true);
 }
-
-// Security headers (helmet) — applied before all routes
-app.use(
-  helmet({
-    contentSecurityPolicy: false, // handled by the frontend build
-    crossOriginEmbedderPolicy: false, // allow Clerk proxy embeds
-  }),
-);
-
-// Compression (gzip/brotli) for all responses
-app.use(compression());
 
 // CORS — restrict to known origins in production, allow all in dev
 const allowedOrigins = process.env.CORS_ORIGINS
